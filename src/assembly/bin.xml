@@ -17,7 +17,8 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>${project.build.directpry}/bin</directory>
+      <directory>${project.basedir}/src/main/scripts</directory>
+      <outputDirectory>bin</outputDirectory>
       <includes>
         <include>*.sh</include>
       </includes>

@@ -79,10 +79,6 @@
         <directory>src/main/resources</directory>
         <filtering>true</filtering>
       </resource>
-      <resource>
-        <directory>src/main/scripot</directory>
-        <targetPath>bin</targetPath>
-      </resource>
     </resources>   
     <plugins>
       <plugin>
