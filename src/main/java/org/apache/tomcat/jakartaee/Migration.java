@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -97,6 +98,7 @@ public class Migration {
                 JarOutputStream jarOs = new JarOutputStream(new NonClosingOutputStream(dest))) {
             Manifest manifest = jarIs.getManifest();
             if (manifest != null) {
+                updateVersion(manifest);
                 JarEntry manifestEntry = new JarEntry(JarFile.MANIFEST_NAME);
                 jarOs.putNextEntry(manifestEntry);
                 manifest.write(jarOs);
@@ -125,6 +127,22 @@ public class Migration {
                     break;
                 }
             }
+        }
+    }
+
+
+    private void updateVersion(Manifest manifest) {
+        updateVersion(manifest.getMainAttributes());
+        for (Attributes attributes : manifest.getEntries().values()) {
+            updateVersion(attributes);
+        }
+    }
+
+
+    private void updateVersion(Attributes attributes) {
+        if (attributes.containsKey(Attributes.Name.IMPLEMENTATION_VERSION)) {
+            String newValue = attributes.get(Attributes.Name.IMPLEMENTATION_VERSION) + "-" + Info.getVersion();
+            attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
         }
     }
 
