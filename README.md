@@ -4,7 +4,7 @@
 
 This tool is a work in progress.
 
-The aim of the tool is to take a web application written for Java EE 8 that runs on Apache Tomcat 9 and convert it automatically so it runs on Apache Tomact 10 which implements Jakarta EE 9.
+The aim of the tool is to take a web application written for Java EE 8 that runs on Apache Tomcat 9 and convert it automatically so it runs on Apache Tomcat 10 which implements Jakarta EE 9.
 
 ## Differences between Java EE 8 and Jakarta EE 9
 
