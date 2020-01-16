@@ -64,7 +64,7 @@
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
   </properties>
- 
+
   <dependencies>
     <dependency>
       <groupId>org.apache.bcel</groupId>
@@ -114,10 +114,13 @@
             <goals>
               <goal>shade</goal>
             </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+            </configuration>
           </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
-    
+
 </project>
