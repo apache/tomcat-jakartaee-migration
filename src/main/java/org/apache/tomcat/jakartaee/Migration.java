@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -71,6 +72,7 @@ public class Migration {
     public boolean execute() throws IOException {
         logger.log(Level.INFO, sm.getString("migration.execute", source.getAbsolutePath(),
                 destination.getAbsolutePath()));
+        long t1 = System.nanoTime();
         if (source.isDirectory()) {
             if (destination.mkdirs()) {
                 migrateDirectory(source, destination);
@@ -86,7 +88,8 @@ public class Migration {
                 logger.log(Level.SEVERE, sm.getString("migration.mkdirError", parentDestination.getAbsolutePath()));
             }
         }
-        logger.log(Level.INFO, sm.getString("migration.done"));
+        logger.log(Level.INFO, sm.getString("migration.done"),
+                Long.valueOf(TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS)));
         return true;
     }
 
@@ -141,10 +144,11 @@ public class Migration {
 
 
     private void migrateStream(String name, InputStream src, OutputStream dest) throws IOException {
-        logger.log(Level.FINE, sm.getString("migration.stream", name));
         if (isArchive(name)) {
+            logger.log(Level.INFO, sm.getString("migration.archive", name));
             migrateArchive(src, dest);
         } else {
+            logger.log(Level.FINE, sm.getString("migration.stream", name));
             for (Converter converter : converters) {
                 if (converter.accpets(name)) {
                     converter.convert(src, dest);
