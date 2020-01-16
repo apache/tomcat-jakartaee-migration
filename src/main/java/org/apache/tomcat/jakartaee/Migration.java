@@ -80,7 +80,14 @@ public class Migration {
     private void migrateDirectory(File src, File dest) throws IOException {
         String[] files = src.list();
         for (String file : files) {
-            migrateFile(new File(src, file), new File(dest, file));
+            File srcFile = new File(src, file);
+            File destFile = new File(dest, file);
+            if (srcFile.isDirectory()) {
+                destFile.mkdirs();
+                migrateDirectory(srcFile, destFile);
+            } else {
+                migrateFile(srcFile, destFile);
+            }
         }
     }
 
