@@ -31,6 +31,7 @@ public class TextConverter implements Converter {
 
     static {
         supportedExtensions = new ArrayList<>();
+        supportedExtensions.add("java");
         supportedExtensions.add("jsp");
         supportedExtensions.add("jspx");
         supportedExtensions.add("tag");
