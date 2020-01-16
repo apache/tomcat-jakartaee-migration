@@ -30,8 +30,13 @@ import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class Migration {
+
+    private static final Logger logger = Logger.getLogger(Migration.class.getCanonicalName());
+    private static final StringManager sm = StringManager.getManager(Migration.class);
 
     private File source;
     private File destination;
@@ -51,29 +56,38 @@ public class Migration {
 
     public void setSource(File source) {
         if (!source.canRead()) {
-            // TODO i18n
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(sm.getString("migration.cannotReadSource",
+                    source.getAbsolutePath()));
         }
         this.source = source;
     }
 
 
     public void setDestination(File destination) {
-        // TODO validate
         this.destination = destination;
     }
 
 
     public boolean execute() throws IOException {
-        // TODO validate arguments
-
+        logger.log(Level.INFO, sm.getString("migration.execute", source.getAbsolutePath(),
+                destination.getAbsolutePath()));
         if (source.isDirectory()) {
-            migrateDirectory(source, destination);
+            if (destination.mkdirs()) {
+                migrateDirectory(source, destination);
+            } else {
+                logger.log(Level.SEVERE, sm.getString("migration.mkdirError", destination.getAbsolutePath()));
+            }
         } else {
             // Single file
-            migrateFile(source, destination);
+            File parentDestination = destination.getParentFile();
+            if (parentDestination.exists() || parentDestination.mkdirs()) {
+                migrateFile(source, destination);
+            } else {
+                logger.log(Level.SEVERE, sm.getString("migration.mkdirError", parentDestination.getAbsolutePath()));
+            }
         }
-        return false;
+        logger.log(Level.INFO, sm.getString("migration.done"));
+        return true;
     }
 
 
@@ -83,8 +97,11 @@ public class Migration {
             File srcFile = new File(src, file);
             File destFile = new File(dest, file);
             if (srcFile.isDirectory()) {
-                destFile.mkdirs();
-                migrateDirectory(srcFile, destFile);
+                if (destFile.mkdir()) {
+                    migrateDirectory(srcFile, destFile);
+                } else {
+                    logger.log(Level.SEVERE, sm.getString("migration.mkdirError", destFile.getAbsolutePath()));
+                }
             } else {
                 migrateFile(srcFile, destFile);
             }
@@ -113,7 +130,7 @@ public class Migration {
             JarEntry jarEntry;
             while ((jarEntry = jarIs.getNextJarEntry()) != null) {
                 String sourceName = jarEntry.getName();
-                System.out.println("Migrating JarEntry [" + sourceName + "]");
+                logger.log(Level.FINE, sm.getString("migration.entry", sourceName));
                 String destName = Util.convert(sourceName);
                 JarEntry destEntry = new JarEntry(destName);
                 jarOs.putNextEntry(destEntry);
@@ -124,7 +141,7 @@ public class Migration {
 
 
     private void migrateStream(String name, InputStream src, OutputStream dest) throws IOException {
-        System.out.println("Migrating stream [" + name + "]");
+        logger.log(Level.FINE, sm.getString("migration.stream", name));
         if (isArchive(name)) {
             migrateArchive(src, dest);
         } else {
@@ -166,8 +183,7 @@ public class Migration {
         try {
             result = migration.execute();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.log(Level.SEVERE, sm.getString("migration.error"), e);
         }
 
         // Signal caller that migration failed
@@ -178,7 +194,7 @@ public class Migration {
 
 
     private static void usage() {
-        System.out.println("Usage: Migration <source> <destination>");
+        System.out.println(sm.getString("migration.usage"));
     }
 
 
