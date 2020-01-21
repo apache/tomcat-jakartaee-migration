@@ -72,55 +72,63 @@ public class Migration {
     public boolean execute() throws IOException {
         logger.log(Level.INFO, sm.getString("migration.execute", source.getAbsolutePath(),
                 destination.getAbsolutePath()));
+        boolean result = true;
         long t1 = System.nanoTime();
         if (source.isDirectory()) {
             if (destination.mkdirs()) {
-                migrateDirectory(source, destination);
+                result = result && migrateDirectory(source, destination);
             } else {
-                logger.log(Level.SEVERE, sm.getString("migration.mkdirError", destination.getAbsolutePath()));
+                logger.log(Level.WARNING, sm.getString("migration.mkdirError", destination.getAbsolutePath()));
+                result = false;
             }
         } else {
             // Single file
             File parentDestination = destination.getParentFile();
             if (parentDestination.exists() || parentDestination.mkdirs()) {
-                migrateFile(source, destination);
+                result = result && migrateFile(source, destination);
             } else {
-                logger.log(Level.SEVERE, sm.getString("migration.mkdirError", parentDestination.getAbsolutePath()));
+                logger.log(Level.WARNING, sm.getString("migration.mkdirError", parentDestination.getAbsolutePath()));
+                result = false;
             }
         }
-        logger.log(Level.INFO, sm.getString("migration.done"),
-                Long.valueOf(TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS)));
-        return true;
+        logger.log(Level.INFO, sm.getString("migration.done",
+                Long.valueOf(TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS)),
+                Boolean.valueOf(result)));
+        return result;
     }
 
 
-    private void migrateDirectory(File src, File dest) throws IOException {
+    private boolean migrateDirectory(File src, File dest) throws IOException {
+        boolean result = true;
         String[] files = src.list();
         for (String file : files) {
             File srcFile = new File(src, file);
             File destFile = new File(dest, file);
             if (srcFile.isDirectory()) {
                 if (destFile.mkdir()) {
-                    migrateDirectory(srcFile, destFile);
+                    result = result && migrateDirectory(srcFile, destFile);
                 } else {
-                    logger.log(Level.SEVERE, sm.getString("migration.mkdirError", destFile.getAbsolutePath()));
+                    logger.log(Level.WARNING, sm.getString("migration.mkdirError", destFile.getAbsolutePath()));
+                    result = false;
                 }
             } else {
-                migrateFile(srcFile, destFile);
+                result = result && migrateFile(srcFile, destFile);
             }
         }
+        return result;
     }
 
 
-    private void migrateFile(File src, File dest) throws IOException {
+    private boolean migrateFile(File src, File dest) throws IOException {
         try (InputStream is = new FileInputStream(src);
                 OutputStream os = new FileOutputStream(dest)) {
-            migrateStream(src.getName(), is, os);
+            return migrateStream(src.getName(), is, os);
         }
     }
 
 
-    private void migrateArchive(InputStream src, OutputStream dest) throws IOException {
+    private boolean migrateArchive(InputStream src, OutputStream dest) throws IOException {
+        boolean result = true;
         try (JarInputStream jarIs = new JarInputStream(new NonClosingInputStream(src));
                 JarOutputStream jarOs = new JarOutputStream(new NonClosingOutputStream(dest))) {
             Manifest manifest = jarIs.getManifest();
@@ -137,16 +145,17 @@ public class Migration {
                 String destName = Util.convert(sourceName);
                 JarEntry destEntry = new JarEntry(destName);
                 jarOs.putNextEntry(destEntry);
-                migrateStream(destEntry.getName(), jarIs, jarOs);
+                result = result && migrateStream(destEntry.getName(), jarIs, jarOs);
             }
         }
+        return result;
     }
 
 
-    private void migrateStream(String name, InputStream src, OutputStream dest) throws IOException {
+    private boolean migrateStream(String name, InputStream src, OutputStream dest) throws IOException {
         if (isArchive(name)) {
             logger.log(Level.INFO, sm.getString("migration.archive", name));
-            migrateArchive(src, dest);
+            return migrateArchive(src, dest);
         } else {
             logger.log(Level.FINE, sm.getString("migration.stream", name));
             for (Converter converter : converters) {
@@ -155,6 +164,7 @@ public class Migration {
                     break;
                 }
             }
+            return true;
         }
     }
 
@@ -188,6 +198,7 @@ public class Migration {
             result = migration.execute();
         } catch (IOException e) {
             logger.log(Level.SEVERE, sm.getString("migration.error"), e);
+            result = false;
         }
 
         // Signal caller that migration failed
