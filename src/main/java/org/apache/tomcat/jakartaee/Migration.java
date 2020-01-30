@@ -159,7 +159,7 @@ public class Migration {
         } else {
             logger.log(Level.FINE, sm.getString("migration.stream", name));
             for (Converter converter : converters) {
-                if (converter.accpets(name)) {
+                if (converter.accepts(name)) {
                     converter.convert(src, dest);
                     break;
                 }

@@ -23,7 +23,7 @@ import java.io.OutputStream;
 public class NoOpConverter implements Converter {
 
     @Override
-    public boolean accpets(String filename) {
+    public boolean accepts(String filename) {
         // Accepts everything
         return true;
     }

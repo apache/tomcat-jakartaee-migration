@@ -28,7 +28,7 @@ import org.apache.bcel.classfile.JavaClass;
 public class ClassConverter implements Converter {
 
     @Override
-    public boolean accpets(String filename) {
+    public boolean accepts(String filename) {
         String extension = Util.getExtension(filename);
         if (extension == null || extension.length() == 0) {
             return false;

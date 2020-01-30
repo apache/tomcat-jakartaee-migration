@@ -22,7 +22,7 @@ import java.io.OutputStream;
 
 public interface Converter {
 
-    boolean accpets(String filename);
+    boolean accepts(String filename);
 
     void convert(InputStream src, OutputStream dest) throws IOException;
 }
