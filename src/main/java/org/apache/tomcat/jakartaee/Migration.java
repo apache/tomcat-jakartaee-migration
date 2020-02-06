@@ -83,7 +83,7 @@ public class Migration {
             }
         } else {
             // Single file
-            File parentDestination = destination.getParentFile();
+            File parentDestination = destination.getAbsoluteFile().getParentFile();
             if (parentDestination.exists() || parentDestination.mkdirs()) {
                 result = result && migrateFile(source, destination);
             } else {
