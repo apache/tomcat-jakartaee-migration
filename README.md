@@ -18,8 +18,9 @@ Build the migration tool with:
 
 Migrate your Servlet application with:
 
-    java -cp target/jakartaee-migration-*-shaded.jar org.apache.tomcat.jakartaee.Migration /path/to/my-javax.war my-jakarta.war
+    java -jar target/jakartaee-migration-*-shaded.jar <source> <destination>
 
+The source should be a path to a compressed archive, a folder or an individual file. The destination will be created at the specified path as a resource of the same type as the source.
 
 ## Differences between Java EE 8 and Jakarta EE 9
 
