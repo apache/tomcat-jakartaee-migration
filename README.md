@@ -6,6 +6,21 @@ This tool is a work in progress.
 
 The aim of the tool is to take a web application written for Java EE 8 that runs on Apache Tomcat 9 and convert it automatically so it runs on Apache Tomcat 10 which implements Jakarta EE 9.
 
+## Usage
+
+### Build
+
+Build the migration tool with:
+
+    `mvn verify`
+
+### Migrate
+
+Migrate your Servlet application with:
+
+    `java -cp target/jakartaee-migration-*-shaded.jar org.apache.tomcat.jakartaee.Migration /path/to/my-javax.war my-jakarta.war`
+
+
 ## Differences between Java EE 8 and Jakarta EE 9
 
 Jakarta EE 9 is still under development and there are some details that remain to be worked out.
