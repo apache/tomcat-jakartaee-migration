@@ -30,15 +30,7 @@ public class ClassConverter implements Converter {
     @Override
     public boolean accepts(String filename) {
         String extension = Util.getExtension(filename);
-        if (extension == null || extension.length() == 0) {
-            return false;
-        }
-
-        if ("class".equals(extension)) {
-            return true;
-        }
-
-        return false;
+        return "class".equals(extension);
     }
 
 
