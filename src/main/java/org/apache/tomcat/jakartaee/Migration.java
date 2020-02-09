@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
@@ -133,7 +135,11 @@ public class Migration {
                 JarOutputStream jarOs = new JarOutputStream(new NonClosingOutputStream(dest))) {
             Manifest manifest = jarIs.getManifest();
             if (manifest != null) {
+                // Make a safe copy to leave original manifest untouched.
+                // Otherwise messing with signatures will fail
+                manifest = new Manifest(manifest);
                 updateVersion(manifest);
+                removeSignatures(manifest);
                 JarEntry manifestEntry = new JarEntry(JarFile.MANIFEST_NAME);
                 jarOs.putNextEntry(manifestEntry);
                 manifest.write(jarOs);
@@ -142,6 +148,10 @@ public class Migration {
             while ((jarEntry = jarIs.getNextJarEntry()) != null) {
                 String sourceName = jarEntry.getName();
                 logger.log(Level.FINE, sm.getString("migration.entry", sourceName));
+                if (isSignatureFile(sourceName)) {
+                    logger.log(Level.FINE, sm.getString("migration.skipSignatureFile", sourceName));
+                    continue;
+                }
                 String destName = Util.convert(sourceName);
                 JarEntry destEntry = new JarEntry(destName);
                 jarOs.putNextEntry(destEntry);
@@ -149,6 +159,12 @@ public class Migration {
             }
         }
         return result;
+    }
+
+
+    private boolean isSignatureFile(String sourceName) {
+        return sourceName.startsWith("META-INF/")
+                && (sourceName.endsWith(".SF") || sourceName.endsWith(".RSA") || sourceName.endsWith(".DSA"));
     }
 
 
@@ -166,6 +182,32 @@ public class Migration {
             }
             return true;
         }
+    }
+
+
+    private void removeSignatures(Manifest manifest) {
+        manifest.getMainAttributes().remove(Attributes.Name.SIGNATURE_VERSION);
+        List<String> signatureEntries = new ArrayList<>();
+        Map<String, Attributes> manifestAttributeEntries = manifest.getEntries();
+        for (Entry<String, Attributes> entry : manifestAttributeEntries.entrySet()) {
+            if (isCryptoSignatureEntry(entry.getValue())) {
+                String entryName = entry.getKey();
+                signatureEntries.add(entryName);
+                logger.log(Level.FINE, sm.getString("migration.removeSignature", entryName));
+            }
+        }
+        signatureEntries.stream()
+            .forEach(manifestAttributeEntries::remove);
+    }
+
+
+    private boolean isCryptoSignatureEntry(Attributes attributes) {
+        for (Object attributeKey : attributes.keySet()) {
+            if (attributeKey.toString().endsWith("-Digest")) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
