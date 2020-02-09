@@ -27,7 +27,7 @@ public class Util {
 
     public static String getExtension(String filename) {
         // Extract the extension
-        int lastPeriod = filename.lastIndexOf(".");
+        int lastPeriod = filename.lastIndexOf('.');
         if (lastPeriod == -1) {
             return null;
         }
