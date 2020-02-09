@@ -27,10 +27,13 @@ The source should be a path to a compressed archive, a folder or an individual f
 Jakarta EE 9 is still under development and there are some details that remain to be worked out.
 
 The differences currently supported by this tool are:
-* Renaming packages for Jakarta EE 9 APIs from javax.* to jakarta.*
+
+* Renaming packages for Jakarta EE 9 APIs from `javax.*` to `jakarta.*`
 
 The differences yet to be implemented by this tool are:
+
 * Remaining issues once resolved
 
 The issues still to be resolved by the Jakarta EE projects that will impact this tool are:
+
 * XML schemas
