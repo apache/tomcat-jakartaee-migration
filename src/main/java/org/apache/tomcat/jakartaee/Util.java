@@ -25,11 +25,18 @@ public class Util {
     private static Pattern PATTERN = Pattern.compile(
             "javax([/\\.](annotation|ejb|el|mail|persistence|security[/\\.]auth[/\\.]message|servlet|transaction|websocket))");
 
+    /**
+     * Get the extension of a filename
+     * <p>
+     * The extension is the string after the last '{@code .}' in the filename.
+     * @param filename the name of the file
+     * @return the extension or an empty string, if no dot is found in the filename
+     */
     public static String getExtension(String filename) {
         // Extract the extension
         int lastPeriod = filename.lastIndexOf('.');
         if (lastPeriod == -1) {
-            return null;
+            return "";
         }
         return filename.substring(lastPeriod + 1).toLowerCase(Locale.ENGLISH);
     }
