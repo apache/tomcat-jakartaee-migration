@@ -139,7 +139,9 @@ public class Migration {
                 // Otherwise messing with signatures will fail
                 manifest = new Manifest(manifest);
                 updateVersion(manifest);
-                removeSignatures(manifest);
+                if (removeSignatures(manifest)) {
+                    logger.log(Level.WARNING, sm.getString("migration.warnSignatureRemoval"));
+                }
                 JarEntry manifestEntry = new JarEntry(JarFile.MANIFEST_NAME);
                 jarOs.putNextEntry(manifestEntry);
                 manifest.write(jarOs);
@@ -185,8 +187,8 @@ public class Migration {
     }
 
 
-    private void removeSignatures(Manifest manifest) {
-        manifest.getMainAttributes().remove(Attributes.Name.SIGNATURE_VERSION);
+    private boolean removeSignatures(Manifest manifest) {
+        boolean removedSignatures = manifest.getMainAttributes().remove(Attributes.Name.SIGNATURE_VERSION) != null;
         List<String> signatureEntries = new ArrayList<>();
         Map<String, Attributes> manifestAttributeEntries = manifest.getEntries();
         for (Entry<String, Attributes> entry : manifestAttributeEntries.entrySet()) {
@@ -194,10 +196,12 @@ public class Migration {
                 String entryName = entry.getKey();
                 signatureEntries.add(entryName);
                 logger.log(Level.FINE, sm.getString("migration.removeSignature", entryName));
+                removedSignatures = true;
             }
         }
         signatureEntries.stream()
             .forEach(manifestAttributeEntries::remove);
+        return removedSignatures;
     }
 
 

@@ -22,6 +22,11 @@ Migrate your Servlet application with:
 
 The source should be a path to a compressed archive, a folder or an individual file. The destination will be created at the specified path as a resource of the same type as the source.
 
+> **INFO**
+> This tool will remove cryptographic signatures from JAR files contained in the *source*, as the changed resources would not match them anymore.
+>
+> A warning will be logged for each JAR file where the signature has been removed.
+
 ## Differences between Java EE 8 and Jakarta EE 9
 
 Jakarta EE 9 is still under development and there are some details that remain to be worked out.
