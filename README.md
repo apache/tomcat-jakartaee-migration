@@ -12,7 +12,7 @@ The aim of the tool is to take a web application written for Java EE 8 that runs
 
 Build the migration tool with:
 
-    mvn verify
+    ./mvnw verify
 
 ### Migrate
 
