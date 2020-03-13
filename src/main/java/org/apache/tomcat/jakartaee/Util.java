@@ -23,8 +23,7 @@ import java.util.regex.Pattern;
 public class Util {
 
     private static Pattern PATTERN = Pattern.compile(
-            "javax([/\\.](annotation|decorator|ejb|el|enterprise|inject|mail|persistence|security[/\\.]auth[/\\"
-            + ".]message|servlet|transaction|websocket))");
+            "javax([/\\.](annotation|ejb|el|mail|persistence|security[/\\.]auth[/\\.]message|servlet|transaction|websocket))");
 
     /**
      * Get the extension of a filename
