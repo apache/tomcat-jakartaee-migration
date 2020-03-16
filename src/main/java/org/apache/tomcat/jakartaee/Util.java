@@ -22,8 +22,30 @@ import java.util.regex.Pattern;
 
 public class Util {
 
-    private static Pattern PATTERN = Pattern.compile(
+    public enum EESpecLevel { TOMCAT, EE };
+
+    private static final Pattern TOMCAT_PATTERN = Pattern.compile(
             "javax([/\\.](annotation|ejb|el|mail|persistence|security[/\\.]auth[/\\.]message|servlet|transaction|websocket))");
+
+    private static final Pattern EE_PATTERN = Pattern.compile(
+            "javax([/\\.](annotation|decorator|ejb|el|enterprise|inject|mail|persistence|security[/\\.]auth[/\\"
+            + ".]message|servlet|transaction|websocket))");
+
+    private static EESpecLevel level = EESpecLevel.TOMCAT;
+    private static Pattern pattern = TOMCAT_PATTERN;
+
+    public static void setEESpecLevel(EESpecLevel level) {
+        Util.level = level;
+        if (level == EESpecLevel.TOMCAT) {
+            pattern = TOMCAT_PATTERN;
+        } else if (level == EESpecLevel.EE) {
+            pattern = EE_PATTERN;
+        }
+    }
+
+    public static EESpecLevel getEESpecLevel() {
+        return level;
+    }
 
     /**
      * Get the extension of a filename
@@ -43,7 +65,7 @@ public class Util {
 
 
     public static String convert(String name) {
-        Matcher m = PATTERN.matcher(name);
+        Matcher m = pattern.matcher(name);
         return m.replaceAll("jakarta$1");
     }
 

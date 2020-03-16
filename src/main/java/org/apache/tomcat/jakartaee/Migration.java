@@ -73,7 +73,7 @@ public class Migration {
 
     public boolean execute() throws IOException {
         logger.log(Level.INFO, sm.getString("migration.execute", source.getAbsolutePath(),
-                destination.getAbsolutePath()));
+                destination.getAbsolutePath(), Util.getEESpecLevel().toString()));
         boolean result = true;
         long t1 = System.nanoTime();
         if (source.isDirectory()) {
@@ -232,13 +232,33 @@ public class Migration {
 
 
     public static void main(String[] args) {
-        if (args.length != 2) {
+        boolean valid = false;
+        String source = null;
+        String dest = null;
+        Util.EESpecLevel level = Util.EESpecLevel.TOMCAT;
+        if (args.length == 3) {
+            if (args[0].startsWith("-level")) {
+                level = Util.EESpecLevel.valueOf(args[0].substring("-level".length()));
+                if (level != null) {
+                    source = args[1];
+                    dest = args[2];
+                    valid = true;
+                }
+            }
+        }
+        if (args.length == 2) {
+            source = args[0];
+            dest = args[1];
+            valid = true;
+        }
+        if (!valid) {
             usage();
             System.exit(1);
         }
+        Util.setEESpecLevel(level);
         Migration migration = new Migration();
-        migration.setSource(new File(args[0]));
-        migration.setDestination(new File(args[1]));
+        migration.setSource(new File(source));
+        migration.setDestination(new File(dest));
         boolean result = false;
         try {
             result = migration.execute();
