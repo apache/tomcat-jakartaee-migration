@@ -22,29 +22,46 @@ import java.util.regex.Pattern;
 
 public class Util {
 
-    public enum EESpecLevel { TOMCAT, EE };
+    public enum EESpecProfile { TOMCAT, EE };
 
     private static final Pattern TOMCAT_PATTERN = Pattern.compile(
             "javax([/\\.](annotation|ejb|el|mail|persistence|security[/\\.]auth[/\\.]message|servlet|transaction|websocket))");
 
     private static final Pattern EE_PATTERN = Pattern.compile(
-            "javax([/\\.](annotation|decorator|ejb|el|enterprise|inject|mail|persistence|security[/\\.]auth[/\\"
-            + ".]message|servlet|transaction|websocket))");
+            "javax([/\\.](activation|annotation|decorator|ejb|el|enterprise|json|interceptor|inject|mail|persistence|"
+            + "security[/\\.]auth[/\\.]message|servlet|transaction|validation|websocket|ws[/\\.]rs|"
+            + "xml[/\\.](bind|namespace|rpc|soap|stream|ws|XMLConstants)))");
 
-    private static EESpecLevel level = EESpecLevel.TOMCAT;
+    private static EESpecProfile profile = EESpecProfile.TOMCAT;
     private static Pattern pattern = TOMCAT_PATTERN;
 
-    public static void setEESpecLevel(EESpecLevel level) {
-        Util.level = level;
-        if (level == EESpecLevel.TOMCAT) {
+    /**
+     * Set the Jakarta EE specifications that should be used.
+     * @param profile the Jakarta EE specification profile
+     */
+    public static void setEESpecProfile(String profile) {
+        setEESpecProfile(EESpecProfile.valueOf(profile));
+    }
+
+    /**
+     * Set the Jakarta EE specifications that should be used.
+     * @param profile the Jakarta EE specification profile
+     */
+    public static void setEESpecProfile(EESpecProfile profile) {
+        Util.profile = profile;
+        if (profile == EESpecProfile.TOMCAT) {
             pattern = TOMCAT_PATTERN;
-        } else if (level == EESpecLevel.EE) {
+        } else if (profile == EESpecProfile.EE) {
             pattern = EE_PATTERN;
         }
     }
 
-    public static EESpecLevel getEESpecLevel() {
-        return level;
+    /**
+     * Get the Jakarta EE profile being used.
+     * @return the profile
+     */
+    public static EESpecProfile getEESpecLevel() {
+        return profile;
     }
 
     /**

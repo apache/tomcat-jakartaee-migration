@@ -230,19 +230,22 @@ public class Migration {
         }
     }
 
+    private static final String PROFILE_ARG = "-profile=";
 
     public static void main(String[] args) {
         boolean valid = false;
         String source = null;
         String dest = null;
-        Util.EESpecLevel level = Util.EESpecLevel.TOMCAT;
         if (args.length == 3) {
-            if (args[0].startsWith("-level")) {
-                level = Util.EESpecLevel.valueOf(args[0].substring("-level".length()));
-                if (level != null) {
-                    source = args[1];
-                    dest = args[2];
-                    valid = true;
+            if (args[0].startsWith(PROFILE_ARG)) {
+                source = args[1];
+                dest = args[2];
+                valid = true;
+                try {
+                    Util.setEESpecProfile(args[0].substring(PROFILE_ARG.length()));
+                } catch (IllegalArgumentException e) {
+                    // Invalid profile value
+                    valid = false;
                 }
             }
         }
@@ -255,7 +258,6 @@ public class Migration {
             usage();
             System.exit(1);
         }
-        Util.setEESpecLevel(level);
         Migration migration = new Migration();
         migration.setSource(new File(source));
         migration.setDestination(new File(dest));
