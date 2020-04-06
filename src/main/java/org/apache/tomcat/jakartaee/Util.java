@@ -44,7 +44,7 @@ public class Util {
      * Get the Jakarta EE profile being used.
      * @return the profile
      */
-    public static EESpecProfile getEESpecLevel() {
+    public static EESpecProfile getEESpecProfile() {
         return profile;
     }
 

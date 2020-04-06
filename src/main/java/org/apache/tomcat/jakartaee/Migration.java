@@ -76,7 +76,7 @@ public class Migration {
 
     public boolean execute() throws IOException {
         logger.log(Level.INFO, sm.getString("migration.execute", source.getAbsolutePath(),
-                destination.getAbsolutePath(), Util.getEESpecLevel().toString()));
+                destination.getAbsolutePath(), Util.getEESpecProfile().toString()));
         boolean result = true;
         long t1 = System.nanoTime();
         if (source.isDirectory()) {
