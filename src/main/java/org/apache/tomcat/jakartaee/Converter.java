@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-interface Converter {
+public interface Converter {
 
     boolean accepts(String filename);
 

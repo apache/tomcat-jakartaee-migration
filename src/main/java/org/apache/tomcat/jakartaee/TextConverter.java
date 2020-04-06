@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-class TextConverter implements Converter {
+public class TextConverter implements Converter {
 
     private static final List<String> supportedExtensions;
 

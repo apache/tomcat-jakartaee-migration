@@ -49,7 +49,7 @@ import java.util.ResourceBundle;
  * @author Mel Martinez [mmartinez@g1440.com]
  * @see java.util.ResourceBundle
  */
-class StringManager {
+public class StringManager {
 
     private static int LOCALE_CACHE_SIZE = 10;
 

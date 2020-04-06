@@ -19,7 +19,7 @@ package org.apache.tomcat.jakartaee;
 import java.io.IOException;
 import java.util.Properties;
 
-class Info {
+public class Info {
 
     private static final String VERSION;
 
