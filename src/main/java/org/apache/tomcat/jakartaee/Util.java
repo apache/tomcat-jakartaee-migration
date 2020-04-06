@@ -20,7 +20,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Util {
+class Util {
 
     public enum EESpecProfile { TOMCAT, EE };
 

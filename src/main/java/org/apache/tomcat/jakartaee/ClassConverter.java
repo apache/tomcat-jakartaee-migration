@@ -25,7 +25,7 @@ import org.apache.bcel.classfile.Constant;
 import org.apache.bcel.classfile.ConstantUtf8;
 import org.apache.bcel.classfile.JavaClass;
 
-public class ClassConverter implements Converter {
+class ClassConverter implements Converter {
 
     @Override
     public boolean accepts(String filename) {

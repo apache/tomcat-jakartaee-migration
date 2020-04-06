@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class NoOpConverter implements Converter {
+class NoOpConverter implements Converter {
 
     @Override
     public boolean accepts(String filename) {
