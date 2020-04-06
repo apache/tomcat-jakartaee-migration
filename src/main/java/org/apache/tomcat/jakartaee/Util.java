@@ -22,18 +22,7 @@ import java.util.regex.Pattern;
 
 public class Util {
 
-    public enum EESpecProfile { TOMCAT, EE };
-
-    private static final Pattern TOMCAT_PATTERN = Pattern.compile(
-            "javax([/\\.](annotation|ejb|el|mail|persistence|security[/\\.]auth[/\\.]message|servlet|transaction|websocket))");
-
-    private static final Pattern EE_PATTERN = Pattern.compile(
-            "javax([/\\.](activation|annotation|decorator|ejb|el|enterprise|json|interceptor|inject|mail|persistence|"
-            + "security[/\\.]auth[/\\.]message|servlet|transaction|validation|websocket|ws[/\\.]rs|"
-            + "xml[/\\.](bind|namespace|rpc|soap|stream|ws|XMLConstants)))");
-
     private static EESpecProfile profile = EESpecProfile.TOMCAT;
-    private static Pattern pattern = TOMCAT_PATTERN;
 
     /**
      * Set the Jakarta EE specifications that should be used.
@@ -49,11 +38,6 @@ public class Util {
      */
     public static void setEESpecProfile(EESpecProfile profile) {
         Util.profile = profile;
-        if (profile == EESpecProfile.TOMCAT) {
-            pattern = TOMCAT_PATTERN;
-        } else if (profile == EESpecProfile.EE) {
-            pattern = EE_PATTERN;
-        }
     }
 
     /**
@@ -82,7 +66,7 @@ public class Util {
 
 
     public static String convert(String name) {
-        Matcher m = pattern.matcher(name);
+        Matcher m = profile.getPattern().matcher(name);
         return m.replaceAll("jakarta$1");
     }
 
