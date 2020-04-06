@@ -36,6 +36,9 @@ import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.output.CloseShieldOutputStream;
+
 public class Migration {
 
     private static final Logger logger = Logger.getLogger(Migration.class.getCanonicalName());
@@ -131,8 +134,8 @@ public class Migration {
 
     private boolean migrateArchive(InputStream src, OutputStream dest) throws IOException {
         boolean result = true;
-        try (JarInputStream jarIs = new JarInputStream(new NonClosingInputStream(src));
-                JarOutputStream jarOs = new JarOutputStream(new NonClosingOutputStream(dest))) {
+        try (JarInputStream jarIs = new JarInputStream(new CloseShieldInputStream(src));
+                JarOutputStream jarOs = new JarOutputStream(new CloseShieldOutputStream(dest))) {
             Manifest manifest = jarIs.getManifest();
             if (manifest != null) {
                 // Make a safe copy to leave original manifest untouched.
