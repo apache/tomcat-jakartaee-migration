@@ -236,6 +236,8 @@ public class Migration {
     private static final String PROFILE_ARG = "-profile=";
 
     public static void main(String[] args) {
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
+
         boolean valid = false;
         String source = null;
         String dest = null;
