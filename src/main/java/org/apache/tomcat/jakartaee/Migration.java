@@ -16,6 +16,7 @@
  */
 package org.apache.tomcat.jakartaee;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -144,10 +145,29 @@ public class Migration {
 
 
     private boolean migrateFile(File src, File dest) throws IOException {
-        try (InputStream is = new FileInputStream(src);
-                OutputStream os = new FileOutputStream(dest)) {
-            return migrateStream(src.getName(), is, os);
+        boolean result = false;
+
+        boolean inplace = src.equals(dest);
+        if (!inplace) {
+            try (InputStream is = new FileInputStream(src);
+                 OutputStream os = new FileOutputStream(dest)) {
+                result = migrateStream(src.getName(), is, os);
+            }
+        } else {
+            File tmp = new File(dest.getParentFile(), dest.getName() + ".tmp");
+
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream((int) (src.length() * 1.05));
+
+            try (InputStream is = new FileInputStream(src)) {
+                result = migrateStream(src.getName(), is, buffer);
+            }
+
+            try (OutputStream os = new FileOutputStream(dest)) {
+                os.write(buffer.toByteArray());
+            }
         }
+
+        return result;
     }
 
 

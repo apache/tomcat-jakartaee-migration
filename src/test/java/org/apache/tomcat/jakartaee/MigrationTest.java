@@ -49,4 +49,19 @@ public class MigrationTest {
         assertFalse("Imports not migrated", migratedSource.contains("import javax.servlet"));
         assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
     }
+
+    @Test
+    public void testMigrateSingleSourceFileInPlace() throws Exception {
+        File sourceFile = new File("target/test-classes/HelloServlet.java");
+        File migratedFile = new File("target/test-classes/HelloServlet.inplace.java");
+        FileUtils.copyFile(sourceFile, migratedFile);
+
+        Migration.main(new String[] {"-profile=EE", migratedFile.getAbsolutePath(), migratedFile.getAbsolutePath()});
+
+        assertTrue("Migrated file not found", migratedFile.exists());
+
+        String migratedSource = FileUtils.readFileToString(migratedFile);
+        assertFalse("Imports not migrated", migratedSource.contains("import javax.servlet"));
+        assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
+    }
 }
