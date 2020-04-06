@@ -57,8 +57,8 @@ public class Migration {
         converters.add(new TextConverter());
         converters.add(new ClassConverter());
 
-        // Final converter is the NoOpConverter
-        converters.add(new NoOpConverter());
+        // Final converter is the pass-through converter
+        converters.add(new PassThroughConverter());
     }
 
     /**
