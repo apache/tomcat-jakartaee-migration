@@ -24,5 +24,5 @@ public interface Converter {
 
     boolean accepts(String filename);
 
-    void convert(InputStream src, OutputStream dest) throws IOException;
+    void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException;
 }

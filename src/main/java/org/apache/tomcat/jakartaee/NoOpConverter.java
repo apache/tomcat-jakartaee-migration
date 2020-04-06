@@ -29,7 +29,7 @@ public class NoOpConverter implements Converter {
     }
 
     @Override
-    public void convert(InputStream src, OutputStream dest) throws IOException {
+    public void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
         // This simply copies the source to the destination
         byte[] buf = new byte[8192];
         int numRead;

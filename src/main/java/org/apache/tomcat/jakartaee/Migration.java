@@ -44,6 +44,7 @@ public class Migration {
     private static final Logger logger = Logger.getLogger(Migration.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(Migration.class);
 
+    private EESpecProfile profile = EESpecProfile.TOMCAT;
     private File source;
     private File destination;
     private final List<Converter> converters;
@@ -59,6 +60,23 @@ public class Migration {
         converters.add(new NoOpConverter());
     }
 
+    /**
+     * Set the Jakarta EE specifications that should be used.
+     *
+     * @param profile the Jakarta EE specification profile
+     */
+    public void setEESpecProfile(EESpecProfile profile) {
+        this.profile = profile;
+    }
+
+    /**
+     * Get the Jakarta EE profile being used.
+     *
+     * @return the profile
+     */
+    public EESpecProfile getEESpecProfile() {
+        return profile;
+    }
 
     public void setSource(File source) {
         if (!source.canRead()) {
@@ -76,7 +94,7 @@ public class Migration {
 
     public boolean execute() throws IOException {
         logger.log(Level.INFO, sm.getString("migration.execute", source.getAbsolutePath(),
-                destination.getAbsolutePath(), Util.getEESpecProfile().toString()));
+                destination.getAbsolutePath(), profile.toString()));
         boolean result = true;
         long t1 = System.nanoTime();
         if (source.isDirectory()) {
@@ -157,7 +175,7 @@ public class Migration {
                     logger.log(Level.FINE, sm.getString("migration.skipSignatureFile", sourceName));
                     continue;
                 }
-                String destName = Util.convert(sourceName);
+                String destName = profile.convert(sourceName);
                 JarEntry destEntry = new JarEntry(destName);
                 jarOs.putNextEntry(destEntry);
                 result = result && migrateStream(destEntry.getName(), jarIs, jarOs);
@@ -181,7 +199,7 @@ public class Migration {
             logger.log(Level.FINE, sm.getString("migration.stream", name));
             for (Converter converter : converters) {
                 if (converter.accepts(name)) {
-                    converter.convert(src, dest);
+                    converter.convert(src, dest, profile);
                     break;
                 }
             }
@@ -238,6 +256,8 @@ public class Migration {
     public static void main(String[] args) {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
 
+        Migration migration = new Migration();
+
         boolean valid = false;
         String source = null;
         String dest = null;
@@ -247,7 +267,7 @@ public class Migration {
                 dest = args[2];
                 valid = true;
                 try {
-                    Util.setEESpecProfile(args[0].substring(PROFILE_ARG.length()));
+                    migration.setEESpecProfile(EESpecProfile.valueOf(args[0].substring(PROFILE_ARG.length())));
                 } catch (IllegalArgumentException e) {
                     // Invalid profile value
                     valid = false;
@@ -263,7 +283,7 @@ public class Migration {
             usage();
             System.exit(1);
         }
-        Migration migration = new Migration();
+
         migration.setSource(new File(source));
         migration.setDestination(new File(dest));
         boolean result = false;

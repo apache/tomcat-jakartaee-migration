@@ -59,13 +59,13 @@ public class TextConverter implements Converter {
      * execution.
      */
     @Override
-    public void convert(InputStream src, OutputStream dest) throws IOException {
+    public void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         flow(src, baos);
 
         String srcString = new String(baos.toByteArray(), StandardCharsets.ISO_8859_1);
 
-        String destString = Util.convert(srcString);
+        String destString = profile.convert(srcString);
 
         ByteArrayInputStream bais = new ByteArrayInputStream(destString.getBytes(StandardCharsets.ISO_8859_1));
         flow (bais, dest);

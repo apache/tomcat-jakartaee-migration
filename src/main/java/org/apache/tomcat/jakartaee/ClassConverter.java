@@ -35,7 +35,7 @@ public class ClassConverter implements Converter {
 
 
     @Override
-    public void convert(InputStream src, OutputStream dest) throws IOException {
+    public void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
 
         ClassParser parser = new ClassParser(src, "unknown");
         JavaClass javaClass = parser.parse();
@@ -46,7 +46,7 @@ public class ClassConverter implements Converter {
             if (constantPool[i] instanceof ConstantUtf8) {
                 ConstantUtf8 c = (ConstantUtf8) constantPool[i];
                 String str = c.getBytes();
-                c = new ConstantUtf8(Util.convert(str));
+                c = new ConstantUtf8(profile.convert(str));
                 constantPool[i] = c;
             }
         }

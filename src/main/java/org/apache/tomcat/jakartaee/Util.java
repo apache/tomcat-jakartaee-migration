@@ -17,36 +17,8 @@
 package org.apache.tomcat.jakartaee;
 
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Util {
-
-    private static EESpecProfile profile = EESpecProfile.TOMCAT;
-
-    /**
-     * Set the Jakarta EE specifications that should be used.
-     * @param profile the Jakarta EE specification profile
-     */
-    public static void setEESpecProfile(String profile) {
-        setEESpecProfile(EESpecProfile.valueOf(profile));
-    }
-
-    /**
-     * Set the Jakarta EE specifications that should be used.
-     * @param profile the Jakarta EE specification profile
-     */
-    public static void setEESpecProfile(EESpecProfile profile) {
-        Util.profile = profile;
-    }
-
-    /**
-     * Get the Jakarta EE profile being used.
-     * @return the profile
-     */
-    public static EESpecProfile getEESpecProfile() {
-        return profile;
-    }
 
     /**
      * Get the extension of a filename
@@ -63,13 +35,6 @@ public class Util {
         }
         return filename.substring(lastPeriod + 1).toLowerCase(Locale.ENGLISH);
     }
-
-
-    public static String convert(String name) {
-        Matcher m = profile.getPattern().matcher(name);
-        return m.replaceAll("jakarta$1");
-    }
-
 
     private Util() {
         // Hide default constructor. Utility class.

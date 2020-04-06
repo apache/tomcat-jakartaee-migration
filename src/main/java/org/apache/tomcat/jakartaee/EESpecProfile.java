@@ -16,6 +16,7 @@
  */
 package org.apache.tomcat.jakartaee;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -40,5 +41,10 @@ public enum EESpecProfile {
      */
     public Pattern getPattern() {
         return pattern;
+    }
+
+    public String convert(String name) {
+        Matcher m = pattern.matcher(name);
+        return m.replaceAll("jakarta$1");
     }
 }
