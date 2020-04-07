@@ -17,7 +17,6 @@
 package org.apache.tomcat.jakartaee;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -60,25 +59,12 @@ public class TextConverter implements Converter {
      */
     @Override
     public void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        flow(src, baos);
-
-        String srcString = new String(baos.toByteArray(), StandardCharsets.ISO_8859_1);
-
+        String srcString = Util.toString(src, StandardCharsets.ISO_8859_1);
         String destString = profile.convert(srcString);
 
+        dest.write(destString.getBytes());
+
         ByteArrayInputStream bais = new ByteArrayInputStream(destString.getBytes(StandardCharsets.ISO_8859_1));
-        flow (bais, dest);
-    }
-
-
-    private static void flow(InputStream is, OutputStream os) throws IOException {
-        byte[] buf = new byte[8192];
-        int numRead;
-        while ( (numRead = is.read(buf) ) >= 0) {
-            if (os != null) {
-                os.write(buf, 0, numRead);
-            }
-        }
+        Util.copy(bais, dest);
     }
 }

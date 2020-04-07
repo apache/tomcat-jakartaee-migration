@@ -31,10 +31,6 @@ public class PassThroughConverter implements Converter {
     @Override
     public void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
         // This simply copies the source to the destination
-        byte[] buf = new byte[8192];
-        int numRead;
-        while ((numRead = src.read(buf)) >= 0) {
-            dest.write(buf, 0, numRead);
-        }
+        Util.copy(src, dest);
     }
 }

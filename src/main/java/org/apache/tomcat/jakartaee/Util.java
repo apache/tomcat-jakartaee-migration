@@ -16,6 +16,12 @@
  */
 package org.apache.tomcat.jakartaee;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 public class Util {
@@ -34,6 +40,21 @@ public class Util {
             return "";
         }
         return filename.substring(lastPeriod + 1).toLowerCase(Locale.ENGLISH);
+    }
+
+    public static void copy(InputStream is, OutputStream os) throws IOException {
+        byte[] buf = new byte[8192];
+        int numRead;
+        while ( (numRead = is.read(buf) ) >= 0) {
+            os.write(buf, 0, numRead);
+        }
+    }
+
+    public static String toString(InputStream is, Charset charset) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Util.copy(is, baos);
+
+        return new String(baos.toByteArray(), StandardCharsets.ISO_8859_1);
     }
 
     private Util() {
