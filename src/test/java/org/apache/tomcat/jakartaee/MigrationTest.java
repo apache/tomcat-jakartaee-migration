@@ -20,11 +20,23 @@ package org.apache.tomcat.jakartaee;
 import java.io.File;
 
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 public class MigrationTest {
+
+    @Before
+    public void setUp() {
+        System.setSecurityManager(new NoExitSecurityManager());
+    }
+
+    @After
+    public void tearDown() {
+        System.setSecurityManager(null);
+    }
 
     @Test
     public void testMigrateSingleSourceFile() throws Exception {
@@ -63,5 +75,18 @@ public class MigrationTest {
         String migratedSource = FileUtils.readFileToString(migratedFile);
         assertFalse("Imports not migrated", migratedSource.contains("import javax.servlet"));
         assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
+    }
+
+    @Test
+    public void testInvalidOption() throws Exception {
+        File sourceFile = new File("target/test-classes/HelloServlet.java");
+        File migratedFile = new File("target/test-classes/HelloServlet.migrated.java");
+
+        try {
+            Migration.main(new String[] {"-invalid", sourceFile.getAbsolutePath(), migratedFile.getAbsolutePath()});
+            fail("No error code returned");
+        } catch (SecurityException e) {
+            assertEquals("error code", "1", e.getMessage());
+        }
     }
 }
