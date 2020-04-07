@@ -154,8 +154,6 @@ public class Migration {
                 result = migrateStream(src.getName(), is, os);
             }
         } else {
-            File tmp = new File(dest.getParentFile(), dest.getName() + ".tmp");
-
             ByteArrayOutputStream buffer = new ByteArrayOutputStream((int) (src.length() * 1.05));
 
             try (InputStream is = new FileInputStream(src)) {
