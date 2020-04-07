@@ -37,7 +37,7 @@ public enum EESpecProfile {
     }
 
     /**
-     * Return the replacement pattern for this profile.
+     * @return the replacement pattern for this profile.
      */
     public Pattern getPattern() {
         return pattern;
