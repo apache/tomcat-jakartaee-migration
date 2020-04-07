@@ -18,6 +18,7 @@
 package org.apache.tomcat.jakartaee;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -45,7 +46,7 @@ public class MigrationTest {
 
         assertTrue("Migrated file not found", migratedFile.exists());
 
-        String migratedSource = FileUtils.readFileToString(migratedFile);
+        String migratedSource = FileUtils.readFileToString(migratedFile, StandardCharsets.UTF_8);
         assertFalse("Imports not migrated", migratedSource.contains("import javax.servlet"));
         assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
     }
@@ -57,7 +58,7 @@ public class MigrationTest {
 
         assertTrue("Migrated file not found", migratedFile.exists());
 
-        String migratedSource = FileUtils.readFileToString(migratedFile);
+        String migratedSource = FileUtils.readFileToString(migratedFile, StandardCharsets.UTF_8);
         assertFalse("Imports not migrated", migratedSource.contains("import javax.servlet"));
         assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
     }
@@ -72,7 +73,7 @@ public class MigrationTest {
 
         assertTrue("Migrated file not found", migratedFile.exists());
 
-        String migratedSource = FileUtils.readFileToString(migratedFile);
+        String migratedSource = FileUtils.readFileToString(migratedFile, StandardCharsets.UTF_8);
         assertFalse("Imports not migrated", migratedSource.contains("import javax.servlet"));
         assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
     }
