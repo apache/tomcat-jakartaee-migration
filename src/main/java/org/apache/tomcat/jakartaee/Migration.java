@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -269,68 +268,6 @@ public class Migration {
             attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
         }
     }
-
-    private static final String PROFILE_ARG = "-profile=";
-
-    public static void main(String[] args) {
-        System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
-
-        List<String> arguments = new ArrayList<>(Arrays.asList(args));
-        if (arguments.contains("-verbose")) {
-            Logger.getGlobal().getParent().getHandlers()[0].setLevel(Level.FINE);
-            Logger.getGlobal().getParent().setLevel(Level.FINE);
-            arguments.remove("-verbose");
-        }
-
-        Migration migration = new Migration();
-
-        boolean valid = false;
-        String source = null;
-        String dest = null;
-        if (arguments.size() == 3) {
-            if (arguments.get(0).startsWith(PROFILE_ARG)) {
-                source = arguments.get(1);
-                dest = arguments.get(2);
-                valid = true;
-                try {
-                    migration.setEESpecProfile(EESpecProfile.valueOf(arguments.get(0).substring(PROFILE_ARG.length())));
-                } catch (IllegalArgumentException e) {
-                    // Invalid profile value
-                    valid = false;
-                }
-            }
-        }
-        if (arguments.size() == 2) {
-            source = arguments.get(0);
-            dest = arguments.get(1);
-            valid = true;
-        }
-        if (!valid) {
-            usage();
-            System.exit(1);
-        }
-
-        migration.setSource(new File(source));
-        migration.setDestination(new File(dest));
-        boolean result = false;
-        try {
-            result = migration.execute();
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, sm.getString("migration.error"), e);
-            result = false;
-        }
-
-        // Signal caller that migration failed
-        if (!result) {
-            System.exit(1);
-        }
-    }
-
-
-    private static void usage() {
-        System.out.println(sm.getString("migration.usage"));
-    }
-
 
     private static boolean isArchive(String fileName) {
         return fileName.endsWith(".jar") || fileName.endsWith(".war") || fileName.endsWith(".zip");

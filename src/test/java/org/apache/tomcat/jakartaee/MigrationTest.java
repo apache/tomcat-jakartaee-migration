@@ -42,7 +42,7 @@ public class MigrationTest {
     @Test
     public void testMigrateSingleSourceFile() throws Exception {
         File migratedFile = new File("target/test-classes/HelloServlet.migrated.java");
-        Migration.main(new String[] {"target/test-classes/HelloServlet.java", migratedFile.getAbsolutePath()});
+        MigrationCLI.main(new String[] {"target/test-classes/HelloServlet.java", migratedFile.getAbsolutePath()});
 
         assertTrue("Migrated file not found", migratedFile.exists());
 
@@ -54,7 +54,7 @@ public class MigrationTest {
     @Test
     public void testMigrateSingleSourceFileWithProfile() throws Exception {
         File migratedFile = new File("target/test-classes/HelloServlet.migrated.java");
-        Migration.main(new String[] {"-verbose", "-profile=EE", "target/test-classes/HelloServlet.java", migratedFile.getAbsolutePath()});
+        MigrationCLI.main(new String[] {"-verbose", "-profile=EE", "target/test-classes/HelloServlet.java", migratedFile.getAbsolutePath()});
 
         assertTrue("Migrated file not found", migratedFile.exists());
 
@@ -69,7 +69,7 @@ public class MigrationTest {
         File migratedFile = new File("target/test-classes/HelloServlet.inplace.java");
         FileUtils.copyFile(sourceFile, migratedFile);
 
-        Migration.main(new String[] {"-profile=EE", migratedFile.getAbsolutePath(), migratedFile.getAbsolutePath()});
+        MigrationCLI.main(new String[] {"-profile=EE", migratedFile.getAbsolutePath(), migratedFile.getAbsolutePath()});
 
         assertTrue("Migrated file not found", migratedFile.exists());
 
@@ -84,7 +84,7 @@ public class MigrationTest {
         File migratedFile = new File("target/test-classes/HelloServlet.migrated.java");
 
         try {
-            Migration.main(new String[] {"-invalid", sourceFile.getAbsolutePath(), migratedFile.getAbsolutePath()});
+            MigrationCLI.main(new String[] {"-invalid", sourceFile.getAbsolutePath(), migratedFile.getAbsolutePath()});
             fail("No error code returned");
         } catch (SecurityException e) {
             assertEquals("error code", "1", e.getMessage());
