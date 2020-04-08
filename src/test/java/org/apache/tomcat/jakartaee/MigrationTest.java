@@ -90,4 +90,17 @@ public class MigrationTest {
             assertEquals("error code", "1", e.getMessage());
         }
     }
+
+    @Test
+    public void testInvalidProfile() throws Exception {
+        File sourceFile = new File("target/test-classes/HelloServlet.java");
+        File migratedFile = new File("target/test-classes/HelloServlet.migrated.java");
+
+        try {
+            MigrationCLI.main(new String[] {"-profile=JSERV", sourceFile.getAbsolutePath(), migratedFile.getAbsolutePath()});
+            fail("No error code returned");
+        } catch (SecurityException e) {
+            assertEquals("error code", "1", e.getMessage());
+        }
+    }
 }
