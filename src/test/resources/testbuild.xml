@@ -1,0 +1,13 @@
+<project name="Jsign Ant tests">
+
+  <taskdef name="javax2jakarta" classname="org.apache.tomcat.jakartaee.MigrationTask"/>
+
+  <target name="migrate-single-source-file">
+    <javax2jakarta src="HelloServlet.java" dest="HelloServlet.migrated-by-ant.java" profile="tomcat"/>
+  </target>
+
+  <target name="invalid-profile">
+    <javax2jakarta src="foo" dest="bar" profile="tOmCaT"/>
+  </target>
+
+</project>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<antlib>
+  <taskdef name="javax2jakarta" classname="org.apache.tomcat.jakartaee.MigrationTask"/>
+</antlib>
