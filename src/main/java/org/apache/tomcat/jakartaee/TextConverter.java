@@ -62,8 +62,6 @@ public class TextConverter implements Converter {
         String srcString = Util.toString(src, StandardCharsets.ISO_8859_1);
         String destString = profile.convert(srcString);
 
-        dest.write(destString.getBytes());
-
         ByteArrayInputStream bais = new ByteArrayInputStream(destString.getBytes(StandardCharsets.ISO_8859_1));
         Util.copy(bais, dest);
     }
