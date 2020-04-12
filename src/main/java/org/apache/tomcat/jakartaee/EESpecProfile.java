@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  */
 public enum EESpecProfile {
 
-    TOMCAT("javax([/\\.](annotation|ejb|el|mail|persistence|security[/\\.]auth[/\\.]message|servlet|transaction|websocket))"),
+    TOMCAT("javax([/\\.](annotation(?![/\\.]processing)|ejb|el|mail|persistence|security[/\\.]auth[/\\.]message|servlet|transaction(?![/\\.]xa)|websocket))"),
 
     EE("javax([/\\.](activation|annotation|decorator|ejb|el|enterprise|json|interceptor|inject|mail|persistence|"
                 + "security[/\\.]auth[/\\.]message|servlet|transaction|validation|websocket|ws[/\\.]rs|"
