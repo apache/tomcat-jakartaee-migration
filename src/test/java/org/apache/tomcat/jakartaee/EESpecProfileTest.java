@@ -55,9 +55,11 @@ public class EESpecProfileTest {
         assertEquals("javax.xml.XMLConstants", profile.convert("javax.xml.XMLConstants"));
 
         // non EE javax packages
+        assertEquals("javax.annotation.processing", profile.convert("javax.annotation.processing"));
         assertEquals("javax.security", profile.convert("javax.security"));
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
         assertEquals("javax.swing", profile.convert("javax.swing"));
+        assertEquals("javax.transaction.xa", profile.convert("javax.transaction.xa"));
     }
 
     @Test
@@ -90,8 +92,10 @@ public class EESpecProfileTest {
         assertEquals("jakarta.xml.XMLConstants", profile.convert("javax.xml.XMLConstants"));
 
         // non EE javax packages
+        assertEquals("javax.annotation.processing", profile.convert("javax.annotation.processing"));
         assertEquals("javax.security", profile.convert("javax.security"));
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
         assertEquals("javax.swing", profile.convert("javax.swing"));
+        assertEquals("javax.transaction.xa", profile.convert("javax.transaction.xa"));
     }
 }
