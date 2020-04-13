@@ -8,6 +8,8 @@ The aim of the tool is to take a web application written for Java EE 8 that
 runs on Apache Tomcat 9 and convert it automatically so it runs on Apache
 Tomcat 10 which implements Jakarta EE 9.
 
+The tool can be used from the command line or as an Ant task.
+
 ## Usage
 
 ### Build
@@ -31,6 +33,14 @@ the same type as the source.
 > in the *source*, as the changed resources would not match them anymore.
 >
 > A warning will be logged for each JAR file where the signature has been removed.
+
+## Ant task
+
+The migration tool is available as an Ant task, here is an example:
+
+    <taskdef name="javax2jakarta" classname="org.apache.tomcat.jakartaee.MigrationTask" classpath="jakartaee-migration-*-shaded.jar"/>
+    
+    <javax2jakarta src="webapp.war" dest="webapp.migrated.war" profile="tomcat"/>
 
 ## Differences between Java EE 8 and Jakarta EE 9
 
