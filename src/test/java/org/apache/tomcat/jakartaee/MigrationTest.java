@@ -103,4 +103,38 @@ public class MigrationTest {
             assertEquals("error code", "1", e.getMessage());
         }
     }
+
+    @Test
+    public void testMigrateDirectory() throws Exception {
+        File sourceDirectory = new File("src/test/resources");
+        File destinationDirectory = new File("target/test-classes/migration");
+
+        Migration migration = new Migration();
+        migration.setSource(sourceDirectory);
+        migration.setDestination(destinationDirectory);
+        boolean success = migration.execute();
+
+        assertTrue("Migration failed", success);
+        assertTrue("Destination directory not found", destinationDirectory.exists());
+
+        File migratedFile = new File("target/test-classes/migration/HelloServlet.java");
+        assertTrue("Migrated file not found", migratedFile.exists());
+
+        String migratedSource = FileUtils.readFileToString(migratedFile, StandardCharsets.UTF_8);
+        assertFalse("Imports not migrated", migratedSource.contains("import javax.servlet"));
+        assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
+    }
+
+    @Test
+    public void testMigrateClassFile() throws Exception {
+        File classFile = new File("target/test-classes/org/apache/tomcat/jakartaee/HelloCGI.class");
+
+        Migration migration = new Migration();
+        migration.setSource(classFile);
+        migration.setDestination(classFile);
+        migration.execute();
+
+        Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI");
+        assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+    }
 }

@@ -7,7 +7,7 @@
   </target>
 
   <target name="invalid-profile">
-    <javax2jakarta src="foo" dest="bar" profile="tOmCaT"/>
+    <javax2jakarta src="foo" dest="bar" profile="jserv"/>
   </target>
 
 </project>

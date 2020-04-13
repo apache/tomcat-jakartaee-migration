@@ -62,7 +62,7 @@ public class MigrationTaskTest {
     }
 
     @Test(expected = BuildException.class)
-    public void testUnsupportedKeyStoreType() {
+    public void testInvalidProfile() {
         project.executeTarget("invalid-profile");
     }
 
