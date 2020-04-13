@@ -36,13 +36,6 @@ public enum EESpecProfile {
         this.pattern = Pattern.compile(pattern);
     }
 
-    /**
-     * @return the replacement pattern for this profile.
-     */
-    public Pattern getPattern() {
-        return pattern;
-    }
-
     public String convert(String name) {
         Matcher m = pattern.matcher(name);
         return m.replaceAll("jakarta$1");
