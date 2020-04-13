@@ -238,8 +238,11 @@ public class Migration {
                 removedSignatures = true;
             }
         }
-        signatureEntries.stream()
-            .forEach(manifestAttributeEntries::remove);
+
+        for (String entry : signatureEntries) {
+            manifestAttributeEntries.remove(entry);
+        }
+
         return removedSignatures;
     }
 
