@@ -56,11 +56,6 @@ The differences currently supported by this tool are:
 
 * Renaming packages for Jakarta EE 9 APIs from `javax.*` to `jakarta.*`
 
-The differences yet to be implemented by this tool are:
-
-* Remaining issues once resolved
-
-The issues still to be resolved by the Jakarta EE projects that will impact
-this tool are:
-
-* XML schemas
+Note: It will not be necessary to migrate any references to XML schemas. The
+schemas don't directly reference javax packages and Jakarta EE 9 will continue
+to support the use of schemas from Java EE 8 and earlier.
