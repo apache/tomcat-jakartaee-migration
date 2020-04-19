@@ -18,7 +18,10 @@
 package org.apache.tomcat.jakartaee;
 
 import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+import java.util.jar.JarFile;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -136,5 +139,28 @@ public class MigrationTest {
 
         Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI");
         assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+    }
+
+    @Test
+    public void testMigrateJarFile() throws Exception {
+        File jarFile = new File("target/test-classes/hellocgi.jar");
+
+        Migration migration = new Migration();
+        migration.setSource(jarFile);
+        migration.setDestination(jarFile);
+        migration.execute();
+
+        File cgiapiFile = new File("target/test-classes/cgi-api.jar");
+        URLClassLoader classloader = new URLClassLoader(new URL[]{jarFile.toURI().toURL(), cgiapiFile.toURI().toURL()},ClassLoader.getSystemClassLoader().getParent());
+
+        Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader);
+        assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+
+        // check the modification of the Implementation-Version manifest attribute
+        JarFile jar = new JarFile(jarFile);
+        String implementationVersion = jar.getManifest().getMainAttributes().getValue("Implementation-Version");
+        assertNotNull("Missing Implementation-Version manifest attribute", implementationVersion);
+        assertNotEquals("Implementation-Version manifest attribute not changed", "1.2.3", implementationVersion);
+        assertTrue("Implementation-Version manifest attribute doesn't match the expected pattern", implementationVersion.matches("1\\.2\\.3-migrated-[\\d\\.]+.*"));
     }
 }

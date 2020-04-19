@@ -119,6 +119,29 @@
 
     <plugins>
       <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <id>create-test-jars</id>
+            <phase>process-test-classes</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <jar destfile="target/test-classes/cgi-api.jar" basedir="target/test-classes" includes="**/CommonGatewayInterface*"/>
+                <jar destfile="target/test-classes/hellocgi.jar" basedir="target/test-classes" includes="**/HelloCGI*">
+                  <manifest>
+                    <attribute name="Implementation-Version" value="1.2.3"/>
+                  </manifest>
+                </jar>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <reuseForks>false</reuseForks>
