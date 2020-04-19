@@ -205,7 +205,7 @@ public class Migration {
 
     private boolean isSignatureFile(String sourceName) {
         return sourceName.startsWith("META-INF/")
-                && (sourceName.endsWith(".SF") || sourceName.endsWith(".RSA") || sourceName.endsWith(".DSA"));
+                && (sourceName.endsWith(".SF") || sourceName.endsWith(".RSA") || sourceName.endsWith(".DSA") || sourceName.endsWith(".EC"));
     }
 
 
