@@ -163,4 +163,33 @@ public class MigrationTest {
         assertNotEquals("Implementation-Version manifest attribute not changed", "1.2.3", implementationVersion);
         assertTrue("Implementation-Version manifest attribute doesn't match the expected pattern", implementationVersion.matches("1\\.2\\.3-migrated-[\\d\\.]+.*"));
     }
+
+    @Test
+    public void testMigrateSignedJarFileRSA() throws Exception {
+        testMigrateSignedJarFile("rsa");
+    }
+
+    @Test
+    public void testMigrateSignedJarFileDSA() throws Exception {
+        testMigrateSignedJarFile("dsa");
+    }
+
+    @Test
+    public void testMigrateSignedJarFileEC() throws Exception {
+        testMigrateSignedJarFile("ec");
+    }
+
+    private void testMigrateSignedJarFile(String algorithm) throws Exception {
+        File jarFile = new File("target/test-classes/hellocgi-signed-" + algorithm + ".jar");
+
+        Migration migration = new Migration();
+        migration.setSource(jarFile);
+        migration.setDestination(jarFile);
+        migration.execute();
+
+        JarFile jar = new JarFile(jarFile);
+        assertNull("Digest not removed from the manifest", jar.getManifest().getAttributes("org/apache/tomcat/jakartaee/HelloCGI.class"));
+        assertNull("Signature key not removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + "." + algorithm.toUpperCase()));
+        assertNull("Signed manifest not removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + ".SF"));
+    }
 }

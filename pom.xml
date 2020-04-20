@@ -136,6 +136,21 @@
                     <attribute name="Implementation-Version" value="1.2.3"/>
                   </manifest>
                 </jar>
+
+                <parallel>
+                  <sequential>
+                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-rsa.jar"/>
+                    <signjar jar="target/test-classes/hellocgi-signed-rsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="rsa"/>
+                  </sequential>
+                  <sequential>
+                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-dsa.jar"/>
+                    <signjar jar="target/test-classes/hellocgi-signed-dsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="dsa"/>
+                  </sequential>
+                  <sequential>
+                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-ec.jar"/>
+                    <signjar jar="target/test-classes/hellocgi-signed-ec.jar"  keystore="src/test/resources/keystore.p12" storepass="apache" alias="ec"/>
+                  </sequential>
+                </parallel>
               </target>
             </configuration>
           </execution>
