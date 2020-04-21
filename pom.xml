@@ -137,6 +137,13 @@
                   </manifest>
                 </jar>
 
+                <!-- Generate the signed jar files -->
+                <!--
+                  The keystore contains 3 keys (RSA, DSA and EC) and was generated with Java 12:
+                    keytool -genkey -validity 3650 -keystore keystore.p12 -storetype pkcs12 -dname CN=Test -alias rsa -keyalg RSA -keysize 1024
+                    keytool -genkey -validity 3650 -keystore keystore.p12 -storetype pkcs12 -dname CN=Test -alias dsa -keyalg DSA -keysize 1024
+                    keytool -genkey -validity 3650 -keystore keystore.p12 -storetype pkcs12 -dname CN=Test -alias ec  -keyalg EC  -groupname secp384r1
+                -->
                 <parallel>
                   <sequential>
                     <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-rsa.jar"/>
