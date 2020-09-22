@@ -157,11 +157,12 @@ public class MigrationTest {
         assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
 
         // check the modification of the Implementation-Version manifest attribute
-        JarFile jar = new JarFile(jarFile);
-        String implementationVersion = jar.getManifest().getMainAttributes().getValue("Implementation-Version");
-        assertNotNull("Missing Implementation-Version manifest attribute", implementationVersion);
-        assertNotEquals("Implementation-Version manifest attribute not changed", "1.2.3", implementationVersion);
-        assertTrue("Implementation-Version manifest attribute doesn't match the expected pattern", implementationVersion.matches("1\\.2\\.3-migrated-[\\d\\.]+.*"));
+        try (JarFile jar = new JarFile(jarFile)) {
+            String implementationVersion = jar.getManifest().getMainAttributes().getValue("Implementation-Version");
+            assertNotNull("Missing Implementation-Version manifest attribute", implementationVersion);
+            assertNotEquals("Implementation-Version manifest attribute not changed", "1.2.3", implementationVersion);
+            assertTrue("Implementation-Version manifest attribute doesn't match the expected pattern", implementationVersion.matches("1\\.2\\.3-migrated-[\\d\\.]+.*"));
+        }
     }
 
     @Test
@@ -187,9 +188,10 @@ public class MigrationTest {
         migration.setDestination(jarFile);
         migration.execute();
 
-        JarFile jar = new JarFile(jarFile);
-        assertNull("Digest not removed from the manifest", jar.getManifest().getAttributes("org/apache/tomcat/jakartaee/HelloCGI.class"));
-        assertNull("Signature key not removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + "." + algorithm.toUpperCase()));
-        assertNull("Signed manifest not removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + ".SF"));
+        try (JarFile jar = new JarFile(jarFile)) {
+            assertNull("Digest not removed from the manifest", jar.getManifest().getAttributes("org/apache/tomcat/jakartaee/HelloCGI.class"));
+            assertNull("Signature key not removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + "." + algorithm.toUpperCase()));
+            assertNull("Signed manifest not removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + ".SF"));
+        }
     }
 }
