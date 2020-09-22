@@ -99,7 +99,7 @@ public class Migration {
         boolean result = true;
         long t1 = System.nanoTime();
         if (source.isDirectory()) {
-            if (destination.mkdirs()) {
+            if ((destination.exists() && destination.isDirectory()) || destination.mkdirs()) {
                 result = result && migrateDirectory(source, destination);
             } else {
                 logger.log(Level.WARNING, sm.getString("migration.mkdirError", destination.getAbsolutePath()));
@@ -129,7 +129,7 @@ public class Migration {
             File srcFile = new File(src, file);
             File destFile = new File(dest, file);
             if (srcFile.isDirectory()) {
-                if (destFile.mkdir()) {
+                if ((destFile.exists() && destFile.isDirectory()) || destFile.mkdir()) {
                     result = result && migrateDirectory(srcFile, destFile);
                 } else {
                     logger.log(Level.WARNING, sm.getString("migration.mkdirError", destFile.getAbsolutePath()));
