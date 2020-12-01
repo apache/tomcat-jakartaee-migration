@@ -15,8 +15,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
  
   <parent>
@@ -115,7 +114,7 @@
           <artifactId>cobertura-maven-plugin</artifactId>
           <version>2.7</version>
           <configuration>
-            <check/>
+            <check />
             <formats>
               <format>html</format>
               <format>xml</format>
@@ -138,10 +137,10 @@
             </goals>
             <configuration>
               <target>
-                <jar destfile="target/test-classes/cgi-api.jar" basedir="target/test-classes" includes="**/CommonGatewayInterface*"/>
+                <jar destfile="target/test-classes/cgi-api.jar" basedir="target/test-classes" includes="**/CommonGatewayInterface*" />
                 <jar destfile="target/test-classes/hellocgi.jar" basedir="target/test-classes" includes="**/HelloCGI*">
                   <manifest>
-                    <attribute name="Implementation-Version" value="1.2.3"/>
+                    <attribute name="Implementation-Version" value="1.2.3" />
                   </manifest>
                 </jar>
 
@@ -154,16 +153,16 @@
                 -->
                 <parallel>
                   <sequential>
-                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-rsa.jar"/>
-                    <signjar jar="target/test-classes/hellocgi-signed-rsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="rsa"/>
+                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-rsa.jar" />
+                    <signjar jar="target/test-classes/hellocgi-signed-rsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="rsa" />
                   </sequential>
                   <sequential>
-                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-dsa.jar"/>
-                    <signjar jar="target/test-classes/hellocgi-signed-dsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="dsa"/>
+                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-dsa.jar" />
+                    <signjar jar="target/test-classes/hellocgi-signed-dsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="dsa" />
                   </sequential>
                   <sequential>
-                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-ec.jar"/>
-                    <signjar jar="target/test-classes/hellocgi-signed-ec.jar"  keystore="src/test/resources/keystore.p12" storepass="apache" alias="ec"/>
+                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-ec.jar" />
+                    <signjar jar="target/test-classes/hellocgi-signed-ec.jar"  keystore="src/test/resources/keystore.p12" storepass="apache" alias="ec" />
                   </sequential>
                 </parallel>
               </target>
