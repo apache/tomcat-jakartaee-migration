@@ -63,6 +63,8 @@
   <properties>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
+    <!-- Override settings from parent POM -->
+    <sourceReleaseAssemblyDescriptor>src</sourceReleaseAssemblyDescriptor>
   </properties>
 
   <dependencies>
@@ -91,6 +93,12 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <scm>
+    <connection>scm:git:https://gitbox.apache.org/repos/asf/tomcat-jakartaee-migration.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/tomcat-jakartaee-migration.git</developerConnection>
+    <url>https://gitbox.apache.org/repos/asf?p=tomcat-jakartaee-migration.git</url>
+  </scm>
 
   <build>
     <resources>
@@ -212,12 +220,6 @@
          -->
         <artifactId>maven-assembly-plugin</artifactId>
         <version>3.2.0</version>
-        <configuration>
-          <descriptors>
-            <descriptor>src/assembly/bin.xml</descriptor>
-            <descriptor>src/assembly/src.xml</descriptor>
-          </descriptors>
-        </configuration>
         <executions>
           <execution>
             <id>make-assembly</id>
@@ -225,6 +227,12 @@
             <goals>
               <goal>single</goal>
             </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>src/assembly/bin.xml</descriptor>
+                <descriptor>src/assembly/src.xml</descriptor>
+              </descriptors>
+            </configuration>
           </execution>
         </executions>
       </plugin>
