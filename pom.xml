@@ -162,7 +162,7 @@
                   </sequential>
                   <sequential>
                     <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-ec.jar" />
-                    <signjar jar="target/test-classes/hellocgi-signed-ec.jar"  keystore="src/test/resources/keystore.p12" storepass="apache" alias="ec" />
+                    <signjar jar="target/test-classes/hellocgi-signed-ec.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="ec" />
                   </sequential>
                 </parallel>
               </target>
