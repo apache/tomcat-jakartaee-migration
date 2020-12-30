@@ -42,6 +42,7 @@ public class EESpecProfileTest {
         assertEquals("javax.batch", profile.convert("javax.batch"));
         assertEquals("javax.decorator", profile.convert("javax.decorator"));
         assertEquals("javax.enterprise", profile.convert("javax.enterprise"));
+        assertEquals("javax.faces", profile.convert("javax.faces"));
         assertEquals("javax.jms", profile.convert("javax.jms"));
         assertEquals("javax.json", profile.convert("javax.json"));
         assertEquals("javax.jws", profile.convert("javax.jws"));
@@ -77,6 +78,7 @@ public class EESpecProfileTest {
         assertEquals("jakarta.ejb", profile.convert("javax.ejb"));
         assertEquals("jakarta.el", profile.convert("javax.el"));
         assertEquals("jakarta.enterprise", profile.convert("javax.enterprise"));
+        assertEquals("jakarta.faces", profile.convert("javax.faces"));
         assertEquals("jakarta.jms", profile.convert("javax.jms"));
         assertEquals("jakarta.json", profile.convert("javax.json"));
         assertEquals("jakarta.jws", profile.convert("javax.jws"));
