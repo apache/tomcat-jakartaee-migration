@@ -39,6 +39,7 @@ public class EESpecProfileTest {
 
         // not converted EE packages
         assertEquals("javax.activation", profile.convert("javax.activation"));
+        assertEquals("javax.batch", profile.convert("javax.batch"));
         assertEquals("javax.decorator", profile.convert("javax.decorator"));
         assertEquals("javax.enterprise", profile.convert("javax.enterprise"));
         assertEquals("javax.jms", profile.convert("javax.jms"));
@@ -71,6 +72,7 @@ public class EESpecProfileTest {
 
         assertEquals("jakarta.activation", profile.convert("javax.activation"));
         assertEquals("jakarta.annotation", profile.convert("javax.annotation"));
+        assertEquals("jakarta.batch", profile.convert("javax.batch"));
         assertEquals("jakarta.decorator", profile.convert("javax.decorator"));
         assertEquals("jakarta.ejb", profile.convert("javax.ejb"));
         assertEquals("jakarta.el", profile.convert("javax.el"));
