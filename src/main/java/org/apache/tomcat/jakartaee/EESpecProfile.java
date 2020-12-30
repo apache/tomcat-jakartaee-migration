@@ -28,7 +28,7 @@ public enum EESpecProfile {
 
     EE("javax([/\\.](activation|annotation(?![/\\.]processing)|batch|decorator|ejb|el|enterprise|faces|jms|json|jws|interceptor|inject|mail|persistence|"
                 + "resource|security[/\\.](auth[/\\.]message|jacc)|servlet|transaction(?![/\\.]xa)|validation|websocket|ws[/\\.]rs|"
-                + "xml[/\\.](bind|namespace|rpc|soap|stream|ws|XMLConstants)))");
+                + "xml[/\\.](bind|namespace|registry|rpc|soap|stream|ws|XMLConstants)))");
 
     private Pattern pattern;
 

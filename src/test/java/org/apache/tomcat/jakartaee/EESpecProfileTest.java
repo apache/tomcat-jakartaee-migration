@@ -55,6 +55,7 @@ public class EESpecProfileTest {
         assertEquals("javax.xml.bind", profile.convert("javax.xml.bind"));
         assertEquals("javax.xml.namespace", profile.convert("javax.xml.namespace"));
         assertEquals("javax.xml.rpc", profile.convert("javax.xml.rpc"));
+        assertEquals("javax.xml.registry", profile.convert("javax.xml.registry"));
         assertEquals("javax.xml.soap", profile.convert("javax.xml.soap"));
         assertEquals("javax.xml.stream", profile.convert("javax.xml.stream"));
         assertEquals("javax.xml.ws", profile.convert("javax.xml.ws"));
@@ -97,6 +98,7 @@ public class EESpecProfileTest {
         assertEquals("jakarta.ws.rs", profile.convert("javax.ws.rs"));
         assertEquals("jakarta.xml.bind", profile.convert("javax.xml.bind"));
         assertEquals("jakarta.xml.namespace", profile.convert("javax.xml.namespace"));
+        assertEquals("jakarta.xml.registry", profile.convert("javax.xml.registry"));
         assertEquals("jakarta.xml.rpc", profile.convert("javax.xml.rpc"));
         assertEquals("jakarta.xml.soap", profile.convert("javax.xml.soap"));
         assertEquals("jakarta.xml.stream", profile.convert("javax.xml.stream"));
