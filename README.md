@@ -39,6 +39,10 @@ the same type as the source.
 >
 > A warning will be logged for each JAR file where the signature has been removed.
 
+This tool is also available on Debian and Ubuntu systems by installing the
+[tomcat-jakartaee-migration](https://tracker.debian.org/tomcat-jakartaee-migration)
+package and invoking the `javax2jakarta` command.
+
 ## Ant task
 
 The migration tool is available as an Ant task, here is an example:
