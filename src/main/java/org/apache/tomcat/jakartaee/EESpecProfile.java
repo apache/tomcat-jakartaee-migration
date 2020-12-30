@@ -27,7 +27,7 @@ public enum EESpecProfile {
     TOMCAT("javax([/\\.](annotation(?![/\\.]processing)|ejb|el|mail|persistence|security[/\\.]auth[/\\.]message|servlet|transaction(?![/\\.]xa)|websocket))"),
 
     EE("javax([/\\.](activation|annotation(?![/\\.]processing)|decorator|ejb|el|enterprise|jms|json|interceptor|inject|mail|persistence|"
-                + "security[/\\.]auth[/\\.]message|servlet|transaction(?![/\\.]xa)|validation|websocket|ws[/\\.]rs|"
+                + "resource|security[/\\.]auth[/\\.]message|servlet|transaction(?![/\\.]xa)|validation|websocket|ws[/\\.]rs|"
                 + "xml[/\\.](bind|namespace|rpc|soap|stream|ws|XMLConstants)))");
 
     private Pattern pattern;
