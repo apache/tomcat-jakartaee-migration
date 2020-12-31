@@ -51,6 +51,7 @@ public class EESpecProfileTest {
         assertEquals("javax.resource", profile.convert("javax.resource"));
         assertEquals("javax.security.enterprise", profile.convert("javax.security.enterprise"));
         assertEquals("javax.security.jacc", profile.convert("javax.security.jacc"));
+        assertEquals("javax.sql", profile.convert("javax.sql"));
         assertEquals("javax.validation", profile.convert("javax.validation"));
         assertEquals("javax.ws.rs", profile.convert("javax.ws.rs"));
         assertEquals("javax.xml.bind", profile.convert("javax.xml.bind"));
@@ -94,6 +95,7 @@ public class EESpecProfileTest {
         assertEquals("jakarta.security.enterprise", profile.convert("javax.security.enterprise"));
         assertEquals("jakarta.security.jacc", profile.convert("javax.security.jacc"));
         assertEquals("jakarta.servlet", profile.convert("javax.servlet"));
+        assertEquals("jakarta.sql", profile.convert("javax.sql"));
         assertEquals("jakarta.transaction", profile.convert("javax.transaction"));
         assertEquals("jakarta.validation", profile.convert("javax.validation"));
         assertEquals("jakarta.websocket", profile.convert("javax.websocket"));
