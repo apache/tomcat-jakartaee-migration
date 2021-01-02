@@ -17,11 +17,47 @@
 
 package org.apache.tomcat.jakartaee;
 
+import app.XPathConstantClient;
+import org.apache.bcel.classfile.ClassParser;
+import org.apache.bcel.classfile.JavaClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class EESpecProfileTest {
+    @Rule
+    public final TemporaryFolder folder = new TemporaryFolder();
+
+    @Test
+    public void testXPathConstants() throws IOException {
+        final Migration migration = new Migration();
+        migration.setEESpecProfile(EESpecProfile.EE);
+        final String name = XPathConstantClient.class.getName().replace('.', '/') + ".class";
+        final File destination = new File(folder.getRoot(), name);
+        migration.setSource(Paths.get("target/test-classes")
+                .resolve(name).toFile());
+        migration.setDestination(destination);
+        migration.execute();
+        assertTrue(destination.exists());
+
+        final byte[] bytecode = Files.readAllBytes(destination.toPath());
+        final JavaClass javaClass = new ClassParser(new ByteArrayInputStream(bytecode), "unknown").parse();
+        final String constantPool = javaClass.getConstantPool().toString();
+        // but stay javax since it is the one from the jvm, not the jakarta one (from xpathconstants dep)
+        assertTrue(constantPool, constantPool.contains("CONSTANT_Utf8[1](\"Ljavax/xml/namespace/QName;\")"));
+        assertTrue(constantPool, constantPool.contains("CONSTANT_Utf8[1](\"javax/xml/xpath/XPathConstants\")"));
+        assertFalse(constantPool, constantPool.contains("CONSTANT_Utf8[1](\"Ljakarta/xml/namespace/QName;\")"));
+    }
 
     @Test
     public void testProfileTomcat() {

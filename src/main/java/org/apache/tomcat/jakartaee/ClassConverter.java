@@ -16,14 +16,26 @@
  */
 package org.apache.tomcat.jakartaee;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.Constant;
 import org.apache.bcel.classfile.ConstantUtf8;
 import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.classfile.Utility;
+import org.apache.bcel.generic.ConstantPoolGen;
+import org.apache.bcel.util.BCELifier;
+import org.apache.tomcat.jakartaee.profile.XmlExclusionAwareProfile;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toSet;
 
 public class ClassConverter implements Converter {
 
@@ -40,14 +52,22 @@ public class ClassConverter implements Converter {
         ClassParser parser = new ClassParser(src, "unknown");
         JavaClass javaClass = parser.parse();
 
+        // can need to do it for fields too
+        final ConstantPoolGen constantPoolGen = new ConstantPoolGen(javaClass.getConstantPool());
+        final XmlExclusionListBuilder exclusionListBuilder = new XmlExclusionListBuilder(constantPoolGen);
+        javaClass.accept(exclusionListBuilder);
+
+        final Predicate<String> actualTest = new XmlExclusionAwareProfile(profile.getPredicate(), exclusionListBuilder);
+
         // Loop through constant pool
         Constant[] constantPool = javaClass.getConstantPool().getConstantPool();
         for (short i = 0; i < constantPool.length; i++) {
             if (constantPool[i] instanceof ConstantUtf8) {
                 ConstantUtf8 c = (ConstantUtf8) constantPool[i];
                 String str = c.getBytes();
-                c = new ConstantUtf8(profile.convert(str));
-                constantPool[i] = c;
+                if (actualTest.test(str)) {
+                    constantPool[i] = new ConstantUtf8(profile.doConvert(str));
+                }
             }
         }
 
