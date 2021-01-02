@@ -68,6 +68,7 @@ public class EESpecProfileTest {
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
         assertEquals("javax.swing", profile.convert("javax.swing"));
         assertEquals("javax.transaction.xa", profile.convert("javax.transaction.xa"));
+        assertEquals("javax.xml.xpath.XPathConstants", profile.convert("javax.xml.xpath.XPathConstants"));
     }
 
     @Test
@@ -113,5 +114,6 @@ public class EESpecProfileTest {
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
         assertEquals("javax.swing", profile.convert("javax.swing"));
         assertEquals("javax.transaction.xa", profile.convert("javax.transaction.xa"));
+        assertEquals("javax.xml.xpath.XPathConstants", profile.convert("javax.xml.xpath.XPathConstants"));
     }
 }
