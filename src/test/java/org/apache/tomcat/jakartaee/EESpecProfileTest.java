@@ -48,6 +48,7 @@ public class EESpecProfileTest {
         assertEquals("javax.jws", profile.convert("javax.jws"));
         assertEquals("javax.interceptor", profile.convert("javax.interceptor"));
         assertEquals("javax.inject", profile.convert("javax.inject"));
+        assertEquals("javax.management.j2ee", profile.convert("javax.management.j2ee"));
         assertEquals("javax.resource", profile.convert("javax.resource"));
         assertEquals("javax.security.enterprise", profile.convert("javax.security.enterprise"));
         assertEquals("javax.security.jacc", profile.convert("javax.security.jacc"));
@@ -64,6 +65,7 @@ public class EESpecProfileTest {
 
         // non EE javax packages
         assertEquals("javax.annotation.processing", profile.convert("javax.annotation.processing"));
+        assertEquals("javax.management", profile.convert("javax.management"));
         assertEquals("javax.security", profile.convert("javax.security"));
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
         assertEquals("javax.swing", profile.convert("javax.swing"));
@@ -89,6 +91,7 @@ public class EESpecProfileTest {
         assertEquals("jakarta.interceptor", profile.convert("javax.interceptor"));
         assertEquals("jakarta.inject", profile.convert("javax.inject"));
         assertEquals("jakarta.mail", profile.convert("javax.mail"));
+        assertEquals("jakarta.management.j2ee", profile.convert("javax.management.j2ee"));
         assertEquals("jakarta.persistence", profile.convert("javax.persistence"));
         assertEquals("jakarta.resource", profile.convert("javax.resource"));
         assertEquals("jakarta.security.auth.message", profile.convert("javax.security.auth.message"));
@@ -110,6 +113,7 @@ public class EESpecProfileTest {
 
         // non EE javax packages
         assertEquals("javax.annotation.processing", profile.convert("javax.annotation.processing"));
+        assertEquals("javax.management", profile.convert("javax.management"));
         assertEquals("javax.security", profile.convert("javax.security"));
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
         assertEquals("javax.swing", profile.convert("javax.swing"));

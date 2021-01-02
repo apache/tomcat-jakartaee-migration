@@ -48,6 +48,7 @@ public enum EESpecProfile {
             "|interceptor" +
             "|inject" +
             "|mail" +
+            "|management[/\\.]j2ee" +
             "|persistence" +
             "|resource" +
             "|security[/\\.](auth[/\\.]message|enterprise|jacc)" +
