@@ -54,6 +54,9 @@ public class XmlExclusionListBuilder extends EmptyVisitor {
     //       (guess it follows Pareto law)
     @Override
     public void visitMethod(final Method obj) {
+        if (obj.getCode() == null || obj.getCode().getCode() == null) {
+            return;
+        }
         stayInJavax.addAll(Stream.of(new InstructionList(obj.getCode().getCode()).getInstructions())
                 .filter(it -> it.getOpcode() == Const.GETSTATIC)
                 .map(GETSTATIC.class::cast)
