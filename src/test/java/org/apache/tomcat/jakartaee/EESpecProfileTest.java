@@ -55,7 +55,6 @@ public class EESpecProfileTest {
         assertEquals("javax.validation", profile.convert("javax.validation"));
         assertEquals("javax.ws.rs", profile.convert("javax.ws.rs"));
         assertEquals("javax.xml.bind", profile.convert("javax.xml.bind"));
-        assertEquals("javax.xml.namespace", profile.convert("javax.xml.namespace"));
         assertEquals("javax.xml.rpc", profile.convert("javax.xml.rpc"));
         assertEquals("javax.xml.registry", profile.convert("javax.xml.registry"));
         assertEquals("javax.xml.soap", profile.convert("javax.xml.soap"));
@@ -70,6 +69,7 @@ public class EESpecProfileTest {
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
         assertEquals("javax.swing", profile.convert("javax.swing"));
         assertEquals("javax.transaction.xa", profile.convert("javax.transaction.xa"));
+        assertEquals("javax.xml.namespace", profile.convert("javax.xml.namespace"));
         assertEquals("javax.xml.xpath.XPathConstants", profile.convert("javax.xml.xpath.XPathConstants"));
     }
 
@@ -103,7 +103,6 @@ public class EESpecProfileTest {
         assertEquals("jakarta.websocket", profile.convert("javax.websocket"));
         assertEquals("jakarta.ws.rs", profile.convert("javax.ws.rs"));
         assertEquals("jakarta.xml.bind", profile.convert("javax.xml.bind"));
-        assertEquals("jakarta.xml.namespace", profile.convert("javax.xml.namespace"));
         assertEquals("jakarta.xml.registry", profile.convert("javax.xml.registry"));
         assertEquals("jakarta.xml.rpc", profile.convert("javax.xml.rpc"));
         assertEquals("jakarta.xml.soap", profile.convert("javax.xml.soap"));
@@ -118,6 +117,7 @@ public class EESpecProfileTest {
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
         assertEquals("javax.swing", profile.convert("javax.swing"));
         assertEquals("javax.transaction.xa", profile.convert("javax.transaction.xa"));
+        assertEquals("javax.xml.namespace", profile.convert("javax.xml.namespace"));
         assertEquals("javax.xml.xpath.XPathConstants", profile.convert("javax.xml.xpath.XPathConstants"));
     }
 }
