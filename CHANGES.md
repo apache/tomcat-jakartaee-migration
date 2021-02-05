@@ -4,7 +4,7 @@
 
 - Add this changelog (markt)
 - Update dependencies (Apache Commons IO 2.8.0, Apache Ant 1.10.9) (markt)
-- Fix #9. Exclude the `javax.xml.namespace` package in the EE profile (ebourg)
+- Fix [#9](https://github.com/apache/tomcat-jakartaee-migration/issues/9). Exclude the `javax.xml.namespace` package in the EE profile (ebourg)
 - Include the `javax.management.j2ee` package in the EE profile (ebourg)
 - Add a test to confirm `javax.xml.xpath.XPathConstants` is not converted (ebourg)
 - Update README to mention the tool is now available on Debian/Ubuntu (ebourg)
@@ -15,7 +15,7 @@
 - Include the `javax.batch` package in the EE profile (ebourg)
 - Include the `javax.jws` package in the EE profile (ebourg)
 - Include the `javax.resource` package in the EE profile (ebourg)
-- Fix #7. Include the `javax.jms` package in the EE profile (alitokmen/mgirgorov)
+- Fix [#7](https://github.com/apache/tomcat-jakartaee-migration/issues/7). Include the `javax.jms` package in the EE profile (alitokmen/mgirgorov)
 - Make `migrate.sh` work from any path (mgrigorov)
 
 ## 0.1.0
