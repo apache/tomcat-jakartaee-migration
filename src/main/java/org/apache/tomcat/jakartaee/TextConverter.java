@@ -38,6 +38,8 @@ public class TextConverter implements Converter {
         supportedExtensions.add("tld");
         supportedExtensions.add("txt");
         supportedExtensions.add("xml");
+        supportedExtensions.add("json");
+        supportedExtensions.add("properties");
     }
 
 
