@@ -53,11 +53,17 @@ The migration tool is available as an Ant task, here is an example:
 
 ## Differences between Java EE 8 and Jakarta EE 9
 
-The differences between Java EE 8 and Jakarta EE 9 are limited to packages
-moving from the `javax.*` namespace to the `jakarta.*` namespace. Some packages
-have also been renamed. This migration tool performs all the package renaming
-necessary to migrate an application from Java EE 8 to Jakarta EE 9.
+The difference between Java EE 8 and Jakarta EE 9 is that all the
+[Java EE 8 packages](https://github.com/apache/tomcat-jakartaee-migration/blob/master/src/main/java/org/apache/tomcat/jakartaee/EESpecProfile.java#L37)
+in the `javax.*` namespace have moved to the `jakarta.*` namespace.
+Some sub-packages have also been renamed. 
+This migration tool performs all the necessary changes to migrate an application
+from Java EE 8 to Jakarta EE 9 by renaming each Java EE 8 package to its Jakarta
+EE 9 replacement.
 
-Note: It will not be necessary to migrate any references to XML schemas. The
-schemas don't directly reference javax packages and Jakarta EE 9 will continue
-to support the use of schemas from Java EE 8 and earlier.
+Note: Not all `javax.*` packages are part of Java EE. Only those defined by Java
+EE have moved to the `jakarta.*` namespace.
+
+Note: It is not necessary to migrate any references to XML schemas. The schemas
+don't directly reference javax packages and Jakarta EE 9 will continue to
+support the use of schemas from Java EE 8 and earlier.
