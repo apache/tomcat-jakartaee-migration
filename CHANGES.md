@@ -20,6 +20,7 @@
 - Add a new option `-zipInMemory` that processes archives (ZIP, JAR, WAR, etc.) in memory rather via a streaming approach. While less efficient, it allows archives to be processed when their structure means that a streaming approach will fail. (markt)
 - Include the Maven Wrapper source files in the source distribution. (markt)
 - Ensure that all the Manifest attributes are processed during the migration process. (markt)
+- Include `.properties` and `.json` files in the conversion process. (markt)
 
 ## 0.1.0
 
