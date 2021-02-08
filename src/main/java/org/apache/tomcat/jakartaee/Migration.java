@@ -209,6 +209,7 @@ public class Migration {
         // Read the source into memory
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         IOUtils.copy(src, baos);
+        baos.flush();
         SeekableInMemoryByteChannel srcByteChannel = new SeekableInMemoryByteChannel(baos.toByteArray());
         // Create the destination in memory
         SeekableInMemoryByteChannel destByteChannel = new SeekableInMemoryByteChannel();
@@ -234,7 +235,7 @@ public class Migration {
         }
 
         // Write the destination back to the stream
-        ByteArrayInputStream bais = new ByteArrayInputStream(destByteChannel.array());
+        ByteArrayInputStream bais = new ByteArrayInputStream(destByteChannel.array(), 0, (int) destByteChannel.size());
         IOUtils.copy(bais, dest);
 
         return result;
