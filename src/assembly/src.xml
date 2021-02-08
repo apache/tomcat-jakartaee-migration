@@ -35,5 +35,11 @@
     <fileSet>
       <directory>src</directory>
     </fileSet>
+    <fileSet>
+      <directory>.mvn</directory>
+      <excludes>
+        <exclude>**/*.jar</exclude>
+      </excludes>
+    </fileSet>
   </fileSets>
 </assembly>

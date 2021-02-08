@@ -17,7 +17,8 @@
 - Include the `javax.resource` package in the EE profile (ebourg)
 - Fix [#7](https://github.com/apache/tomcat-jakartaee-migration/issues/7). Include the `javax.jms` package in the EE profile (alitokmen/mgirgorov)
 - Make `migrate.sh` work from any path (mgrigorov)
-- Add a new option `-zipInMemory` that processes archives (ZIP, JAR, WAR, etc.) in memory rather via a streaming approach. While less efficient, it allows archives to be processed when their structure means that a streaming approach will fail.
+- Add a new option `-zipInMemory` that processes archives (ZIP, JAR, WAR, etc.) in memory rather via a streaming approach. While less efficient, it allows archives to be processed when their structure means that a streaming approach will fail. (markt)
+- Include the Maven Wrapper source files in the source distribution. (markt)
 
 ## 0.1.0
 
