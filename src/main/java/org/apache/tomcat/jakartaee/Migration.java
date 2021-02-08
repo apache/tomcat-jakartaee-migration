@@ -27,18 +27,14 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
-import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.JarInputStream;
-import java.util.jar.JarOutputStream;
-import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -65,6 +61,7 @@ public class Migration {
 
         converters.add(new TextConverter());
         converters.add(new ClassConverter());
+        converters.add(new ManifestConverter());
 
         // Final converter is the pass-through converter
         converters.add(new PassThroughConverter());
@@ -184,24 +181,11 @@ public class Migration {
 
     private boolean migrateArchiveStreaming(String name, InputStream src, OutputStream dest) throws IOException {
         boolean result = true;
-        try (JarInputStream jarIs = new JarInputStream(new CloseShieldInputStream(src));
-                JarOutputStream jarOs = new JarOutputStream(new CloseShieldOutputStream(dest))) {
-            Manifest manifest = jarIs.getManifest();
-            if (manifest != null) {
-                // Make a safe copy to leave original manifest untouched.
-                // Otherwise messing with signatures will fail
-                manifest = new Manifest(manifest);
-                updateVersion(manifest);
-                if (removeSignatures(manifest)) {
-                    logger.log(Level.WARNING, sm.getString("migration.warnSignatureRemoval"));
-                }
-                JarEntry manifestEntry = new JarEntry(JarFile.MANIFEST_NAME);
-                jarOs.putNextEntry(manifestEntry);
-                manifest.write(jarOs);
-            }
-            JarEntry jarEntry;
-            while ((jarEntry = jarIs.getNextJarEntry()) != null) {
-                String sourceName = jarEntry.getName();
+        try (ZipInputStream zipIs = new ZipInputStream(new CloseShieldInputStream(src));
+                ZipOutputStream zipOs = new ZipOutputStream(new CloseShieldOutputStream(dest))) {
+            ZipEntry zipEntry;
+            while ((zipEntry = zipIs.getNextEntry()) != null) {
+                String sourceName = zipEntry.getName();
                 logger.log(Level.FINE, sm.getString("migration.entry", sourceName));
                 if (isSignatureFile(sourceName)) {
                     logger.log(Level.FINE, sm.getString("migration.skipSignatureFile", sourceName));
@@ -209,8 +193,8 @@ public class Migration {
                 }
                 String destName = profile.convert(sourceName);
                 JarEntry destEntry = new JarEntry(destName);
-                jarOs.putNextEntry(destEntry);
-                result = result && migrateStream(destEntry.getName(), jarIs, jarOs);
+                zipOs.putNextEntry(destEntry);
+                result = result && migrateStream(destEntry.getName(), zipIs, zipOs);
             }
         } catch (ZipException ze) {
             logger.log(Level.SEVERE, sm.getString("migration.archiveFailed", name), ze);
@@ -236,28 +220,16 @@ public class Migration {
                 ZipArchiveEntry srcZipEntry = entries.nextElement();
                 String srcName = srcZipEntry.getName();
                 logger.log(Level.FINE, sm.getString("migration.entry", srcName));
-                if (srcZipEntry.getName().equals(JarFile.MANIFEST_NAME)) {
-                    // Special handling for manifest
-                    Manifest manifest = new Manifest(srcZipFile.getInputStream(srcZipEntry));
-                    updateVersion(manifest);
-                    if (removeSignatures(manifest)) {
-                        logger.log(Level.WARNING, sm.getString("migration.warnSignatureRemoval"));
-                    }
-                    destZipStream.putArchiveEntry(srcZipEntry);
-                    manifest.write(destZipStream);
-                    destZipStream.closeArchiveEntry();
-                } else {
-                    if (isSignatureFile(srcName)) {
-                        logger.log(Level.FINE, sm.getString("migration.skipSignatureFile", srcName));
-                        continue;
-                    }
-                    String destName = profile.convert(srcName);
-                    RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry);
-                    destZipEntry.setName(destName);
-                    destZipStream.putArchiveEntry(destZipEntry);
-                    result = result && migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
-                    destZipStream.closeArchiveEntry();
+                if (isSignatureFile(srcName)) {
+                    logger.log(Level.FINE, sm.getString("migration.skipSignatureFile", srcName));
+                    continue;
                 }
+                String destName = profile.convert(srcName);
+                RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry);
+                destZipEntry.setName(destName);
+                destZipStream.putArchiveEntry(destZipEntry);
+                result = result && migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
+                destZipStream.closeArchiveEntry();
             }
         }
 
@@ -295,52 +267,6 @@ public class Migration {
         }
     }
 
-
-    private boolean removeSignatures(Manifest manifest) {
-        boolean removedSignatures = manifest.getMainAttributes().remove(Attributes.Name.SIGNATURE_VERSION) != null;
-        List<String> signatureEntries = new ArrayList<>();
-        Map<String, Attributes> manifestAttributeEntries = manifest.getEntries();
-        for (Entry<String, Attributes> entry : manifestAttributeEntries.entrySet()) {
-            if (isCryptoSignatureEntry(entry.getValue())) {
-                String entryName = entry.getKey();
-                signatureEntries.add(entryName);
-                logger.log(Level.FINE, sm.getString("migration.removeSignature", entryName));
-                removedSignatures = true;
-            }
-        }
-
-        for (String entry : signatureEntries) {
-            manifestAttributeEntries.remove(entry);
-        }
-
-        return removedSignatures;
-    }
-
-
-    private boolean isCryptoSignatureEntry(Attributes attributes) {
-        for (Object attributeKey : attributes.keySet()) {
-            if (attributeKey.toString().endsWith("-Digest")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    private void updateVersion(Manifest manifest) {
-        updateVersion(manifest.getMainAttributes());
-        for (Attributes attributes : manifest.getEntries().values()) {
-            updateVersion(attributes);
-        }
-    }
-
-
-    private void updateVersion(Attributes attributes) {
-        if (attributes.containsKey(Attributes.Name.IMPLEMENTATION_VERSION)) {
-            String newValue = attributes.get(Attributes.Name.IMPLEMENTATION_VERSION) + "-" + Info.getVersion();
-            attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
-        }
-    }
 
     private static boolean isArchive(String fileName) {
         return fileName.endsWith(".jar") || fileName.endsWith(".war") || fileName.endsWith(".zip");
