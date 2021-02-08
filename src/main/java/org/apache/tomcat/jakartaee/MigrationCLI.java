@@ -32,7 +32,7 @@ public class MigrationCLI {
     private static final String PROFILE_ARG = "-profile=";
 
     public static void main(String[] args) {
-        System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n %6$s%n");
 
         List<String> arguments = new ArrayList<>(Arrays.asList(args));
         if (arguments.contains("-verbose")) {
@@ -88,5 +88,5 @@ public class MigrationCLI {
     private static void usage() {
         System.out.println(sm.getString("migration.usage"));
     }
-    
+
 }
