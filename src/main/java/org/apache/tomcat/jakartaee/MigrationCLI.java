@@ -31,6 +31,8 @@ public class MigrationCLI {
 
     private static final String PROFILE_ARG = "-profile=";
 
+    private static final String ZIPINMEMORY_ARG = "-zipInMemory";
+
     public static void main(String[] args) {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n %6$s%n");
 
@@ -41,7 +43,14 @@ public class MigrationCLI {
             arguments.remove("-verbose");
         }
 
+        boolean zipInMemory = false;
+        if (arguments.contains(ZIPINMEMORY_ARG)) {
+            zipInMemory = true;
+            arguments.remove(ZIPINMEMORY_ARG);
+        }
+
         Migration migration = new Migration();
+        migration.setZipInMemory(zipInMemory);
 
         boolean valid = false;
         String source = null;

@@ -16,6 +16,7 @@
  */
 package org.apache.tomcat.jakartaee;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -36,7 +38,13 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipException;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.output.CloseShieldOutputStream;
 
@@ -46,6 +54,7 @@ public class Migration {
     private static final StringManager sm = StringManager.getManager(Migration.class);
 
     private EESpecProfile profile = EESpecProfile.TOMCAT;
+    private boolean zipInMemory;
     private File source;
     private File destination;
     private final List<Converter> converters;
@@ -77,6 +86,10 @@ public class Migration {
      */
     public EESpecProfile getEESpecProfile() {
         return profile;
+    }
+
+    public void setZipInMemory(boolean zipInMemory) {
+        this.zipInMemory = zipInMemory;
     }
 
     public void setSource(File source) {
@@ -124,6 +137,7 @@ public class Migration {
 
     private boolean migrateDirectory(File src, File dest) throws IOException {
         boolean result = true;
+        // Won't return null because src is known to be a directory
         String[] files = src.list();
         for (String file : files) {
             File srcFile = new File(src, file);
@@ -168,7 +182,7 @@ public class Migration {
     }
 
 
-    private boolean migrateArchive(InputStream src, OutputStream dest) throws IOException {
+    private boolean migrateArchiveStreaming(String name, InputStream src, OutputStream dest) throws IOException {
         boolean result = true;
         try (JarInputStream jarIs = new JarInputStream(new CloseShieldInputStream(src));
                 JarOutputStream jarOs = new JarOutputStream(new CloseShieldOutputStream(dest))) {
@@ -198,7 +212,59 @@ public class Migration {
                 jarOs.putNextEntry(destEntry);
                 result = result && migrateStream(destEntry.getName(), jarIs, jarOs);
             }
+        } catch (ZipException ze) {
+            logger.log(Level.SEVERE, sm.getString("migration.archiveFailed", name), ze);
+            throw ze;
         }
+        return result;
+    }
+
+
+    private boolean migrateArchiveInMemory(InputStream src, OutputStream dest) throws IOException {
+        boolean result = true;
+        // Read the source into memory
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        IOUtils.copy(src, baos);
+        SeekableInMemoryByteChannel srcByteChannel = new SeekableInMemoryByteChannel(baos.toByteArray());
+        // Create the destination in memory
+        SeekableInMemoryByteChannel destByteChannel = new SeekableInMemoryByteChannel();
+
+        try (ZipFile srcZipFile = new ZipFile(srcByteChannel);
+                ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(destByteChannel)) {
+            Enumeration<ZipArchiveEntry> entries = srcZipFile.getEntries();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry srcZipEntry = entries.nextElement();
+                String srcName = srcZipEntry.getName();
+                logger.log(Level.FINE, sm.getString("migration.entry", srcName));
+                if (srcZipEntry.getName().equals(JarFile.MANIFEST_NAME)) {
+                    // Special handling for manifest
+                    Manifest manifest = new Manifest(srcZipFile.getInputStream(srcZipEntry));
+                    updateVersion(manifest);
+                    if (removeSignatures(manifest)) {
+                        logger.log(Level.WARNING, sm.getString("migration.warnSignatureRemoval"));
+                    }
+                    destZipStream.putArchiveEntry(srcZipEntry);
+                    manifest.write(destZipStream);
+                    destZipStream.closeArchiveEntry();
+                } else {
+                    if (isSignatureFile(srcName)) {
+                        logger.log(Level.FINE, sm.getString("migration.skipSignatureFile", srcName));
+                        continue;
+                    }
+                    String destName = profile.convert(srcName);
+                    RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry);
+                    destZipEntry.setName(destName);
+                    destZipStream.putArchiveEntry(destZipEntry);
+                    result = result && migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
+                    destZipStream.closeArchiveEntry();
+                }
+            }
+        }
+
+        // Write the destination back to the stream
+        ByteArrayInputStream bais = new ByteArrayInputStream(destByteChannel.array());
+        IOUtils.copy(bais, dest);
+
         return result;
     }
 
@@ -212,7 +278,11 @@ public class Migration {
     private boolean migrateStream(String name, InputStream src, OutputStream dest) throws IOException {
         if (isArchive(name)) {
             logger.log(Level.INFO, sm.getString("migration.archive", name));
-            return migrateArchive(src, dest);
+            if (zipInMemory) {
+                return migrateArchiveInMemory(src, dest);
+            } else {
+                return migrateArchiveStreaming(name, src, dest);
+            }
         } else {
             logger.log(Level.FINE, sm.getString("migration.stream", name));
             for (Converter converter : converters) {
@@ -274,5 +344,18 @@ public class Migration {
 
     private static boolean isArchive(String fileName) {
         return fileName.endsWith(".jar") || fileName.endsWith(".war") || fileName.endsWith(".zip");
+    }
+
+
+    private static class RenamableZipArchiveEntry extends ZipArchiveEntry {
+
+        public RenamableZipArchiveEntry(ZipArchiveEntry entry) throws ZipException {
+            super(entry);
+        }
+
+        @Override
+        public void setName(String name) {
+            super.setName(name);
+        }
     }
 }

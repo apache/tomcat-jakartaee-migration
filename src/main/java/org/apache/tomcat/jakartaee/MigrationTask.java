@@ -32,6 +32,7 @@ public class MigrationTask extends Task {
     private File src;
     private File dest;
     private String profile = EESpecProfile.TOMCAT.toString();
+    private boolean zipInMemory = false;
 
     public void setSrc(File src) {
         this.src = src;
@@ -43,6 +44,10 @@ public class MigrationTask extends Task {
 
     public void setProfile(String profile) {
         this.profile = profile;
+    }
+
+    public void setZipInMemory(boolean zipInMemory) {
+        this.zipInMemory = zipInMemory;
     }
 
     @Override
@@ -67,6 +72,7 @@ public class MigrationTask extends Task {
         migration.setSource(src);
         migration.setDestination(dest);
         migration.setEESpecProfile(profile);
+        migration.setZipInMemory(zipInMemory);
 
         boolean success = false;
         try {
