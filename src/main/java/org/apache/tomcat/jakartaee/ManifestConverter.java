@@ -53,7 +53,6 @@ public class ManifestConverter implements Converter {
         Manifest destManifest = new Manifest(srcManifest);
 
         removeSignatures(destManifest);
-        updateVersion(destManifest);
         updateValues(destManifest, profile);
 
         destManifest.write(dest);
@@ -91,22 +90,6 @@ public class ManifestConverter implements Converter {
     }
 
 
-    private void updateVersion(Manifest manifest) {
-        updateVersion(manifest.getMainAttributes());
-        for (Attributes attributes : manifest.getEntries().values()) {
-            updateVersion(attributes);
-        }
-    }
-
-
-    private void updateVersion(Attributes attributes) {
-        if (attributes.containsKey(Attributes.Name.IMPLEMENTATION_VERSION)) {
-            String newValue = attributes.get(Attributes.Name.IMPLEMENTATION_VERSION) + "-" + Info.getVersion();
-            attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
-        }
-    }
-
-
     private void updateValues(Manifest manifest, EESpecProfile profile) {
         updateValues(manifest.getMainAttributes(), profile);
         for (Attributes attributes : manifest.getEntries().values()) {
@@ -116,12 +99,14 @@ public class ManifestConverter implements Converter {
 
 
     private void updateValues(Attributes attributes, EESpecProfile profile) {
-        for (Entry<Object,Object> entry : attributes.entrySet()) {
-            entry.setValue(profile.convert((String) entry.getValue()));
-        }
+        // Update version info
         if (attributes.containsKey(Attributes.Name.IMPLEMENTATION_VERSION)) {
             String newValue = attributes.get(Attributes.Name.IMPLEMENTATION_VERSION) + "-" + Info.getVersion();
             attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
+        }
+        // Update package names in values
+        for (Entry<Object,Object> entry : attributes.entrySet()) {
+            entry.setValue(profile.convert((String) entry.getValue()));
         }
     }
 }
