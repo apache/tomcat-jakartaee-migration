@@ -260,6 +260,12 @@
                   </excludes>
                 </filter>
                 <filter>
+                  <artifact>org.apache.commons:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
                   <artifact>commons-io:*</artifact>
                   <excludes>
                     <exclude>META-INF/**</exclude>
