@@ -1,6 +1,6 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
-## 0.1.1 (in progress)
+## 0.2.0 (in progress)
 
 - Add this changelog (markt)
 - Update dependencies (Apache Commons IO 2.8.0, Apache Ant 1.10.9) (markt)
