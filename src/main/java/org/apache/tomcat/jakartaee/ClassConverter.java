@@ -46,8 +46,12 @@ public class ClassConverter implements Converter {
             if (constantPool[i] instanceof ConstantUtf8) {
                 ConstantUtf8 c = (ConstantUtf8) constantPool[i];
                 String str = c.getBytes();
-                c = new ConstantUtf8(profile.convert(str));
-                constantPool[i] = c;
+                String converted = profile.convert(str);
+                // Object comparison is deliberate
+                if (converted != str) {
+                    c = new ConstantUtf8(profile.convert(str));
+                    constantPool[i] = c;
+                }
             }
         }
 
