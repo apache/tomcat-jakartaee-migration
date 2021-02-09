@@ -20,82 +20,87 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class MigrationCLI {
 
-    private static final Logger logger = Logger.getLogger(MigrationCLI.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(MigrationCLI.class);
 
+    private static final String LOGLEVEL_ARG = "-logLevel=";
     private static final String PROFILE_ARG = "-profile=";
-
+    // Will be removed for 1.0.0
+    @Deprecated
+    private static final String VERBOSE_ARG = "-verbose";
     private static final String ZIPINMEMORY_ARG = "-zipInMemory";
 
-    public static void main(String[] args) {
-        System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n %6$s%n");
+    public static void main(String[] args) throws IOException {
 
-        List<String> arguments = new ArrayList<>(Arrays.asList(args));
-        if (arguments.contains("-verbose")) {
-            Logger.getGlobal().getParent().getHandlers()[0].setLevel(Level.FINE);
-            Logger.getGlobal().getParent().setLevel(Level.FINE);
-            arguments.remove("-verbose");
-        }
-
-        boolean zipInMemory = false;
-        if (arguments.contains(ZIPINMEMORY_ARG)) {
-            zipInMemory = true;
-            arguments.remove(ZIPINMEMORY_ARG);
-        }
-
+        // Defaults
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
         Migration migration = new Migration();
-        migration.setZipInMemory(zipInMemory);
 
-        boolean valid = false;
-        String source = null;
-        String dest = null;
-        if (arguments.size() == 3) {
-            if (arguments.get(0).startsWith(PROFILE_ARG)) {
-                source = arguments.get(1);
-                dest = arguments.get(2);
-                valid = true;
+        // Process argumnets
+        List<String> arguments = new ArrayList<>(Arrays.asList(args));
+
+        // Process the custom log level if present
+        // Use an iterator so we can remove the log level argument if found
+        Iterator<String> iter = arguments.iterator();
+        while (iter.hasNext()) {
+            String argument = iter.next();
+            if (argument.startsWith(LOGLEVEL_ARG)) {
+                iter.remove();
+                String logLevelName = argument.substring(LOGLEVEL_ARG.length());
+                Level level = null;
                 try {
-                    migration.setEESpecProfile(EESpecProfile.valueOf(arguments.get(0).substring(PROFILE_ARG.length())));
+                    level = Level.parse(logLevelName.toUpperCase(Locale.ENGLISH));
+                } catch (IllegalArgumentException iae) {
+                    invalidArguments();
+                }
+                // Configure the explicit level
+                Logger.getGlobal().getParent().getHandlers()[0].setLevel(level);
+                Logger.getGlobal().getParent().setLevel(level);
+            } else if (argument.startsWith(PROFILE_ARG)) {
+                iter.remove();
+                String profileName = argument.substring(PROFILE_ARG.length());
+                try {
+                    EESpecProfile profile = EESpecProfile.valueOf(profileName.toUpperCase(Locale.ENGLISH));
+                    migration.setEESpecProfile(profile);
                 } catch (IllegalArgumentException e) {
                     // Invalid profile value
-                    valid = false;
+                    invalidArguments();
+                }
+            } else if (argument.equals(ZIPINMEMORY_ARG)) {
+                iter.remove();
+                migration.setZipInMemory(true);
+            } else if (argument.equals(VERBOSE_ARG)) {
+                iter.remove();
+                // Ignore if LOGLEVEL_ARG has set something different
+                if (Logger.getGlobal().getParent().getLevel().equals(Level.INFO)) {
+                    Logger.getGlobal().getParent().getHandlers()[0].setLevel(Level.FINE);
+                    Logger.getGlobal().getParent().setLevel(Level.FINE);
                 }
             }
         }
-        if (arguments.size() == 2) {
-            source = arguments.get(0);
-            dest = arguments.get(1);
-            valid = true;
+
+        if (arguments.size() != 2) {
+            invalidArguments();
         }
-        if (!valid) {
-            usage();
-            System.exit(1);
-        }
+
+        String source = arguments.get(0);
+        String dest = arguments.get(1);
 
         migration.setSource(new File(source));
         migration.setDestination(new File(dest));
-        boolean result = false;
-        try {
-            result = migration.execute();
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, sm.getString("migration.error"), e);
-            result = false;
-        }
 
-        // Signal caller that migration failed
-        if (!result) {
-            System.exit(1);
-        }
+        migration.execute();
     }
 
-    private static void usage() {
+    private static void invalidArguments() {
         System.out.println(sm.getString("migration.usage"));
+        System.exit(1);
     }
-
 }

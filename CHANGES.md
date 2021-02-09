@@ -21,6 +21,7 @@
 - Include the Maven Wrapper source files in the source distribution. (markt)
 - Ensure that all the Manifest attributes are processed during the migration process. (markt)
 - Include `.properties` and `.json` files in the conversion process. (markt)
+- Replace `-verbose` with `-logLevel=` to provide more control over logging level. (markt)
 
 ## 0.1.0
 
