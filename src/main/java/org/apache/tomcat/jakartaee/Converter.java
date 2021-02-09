@@ -28,11 +28,12 @@ public interface Converter {
      * Copies the source to the destination, converting it if necessary,
      * according to the requirements of the given profile.
      *
+     * @param path      The path to the data being converted
      * @param src       The source data to convert
      * @param dest      The destination to write the converted data
      * @param profile   The profile that defines the conversion required
      *
      * @throws IOException  If the conversion fails
      */
-    void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException;
+    void convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException;
 }

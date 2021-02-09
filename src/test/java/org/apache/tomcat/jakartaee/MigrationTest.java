@@ -115,9 +115,8 @@ public class MigrationTest {
         Migration migration = new Migration();
         migration.setSource(sourceDirectory);
         migration.setDestination(destinationDirectory);
-        boolean success = migration.execute();
+        migration.execute();
 
-        assertTrue("Migration failed", success);
         assertTrue("Destination directory not found", destinationDirectory.exists());
 
         File migratedFile = new File("target/test-classes/migration/HelloServlet.java");

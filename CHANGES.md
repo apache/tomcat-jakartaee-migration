@@ -22,6 +22,7 @@
 - Ensure that all the Manifest attributes are processed during the migration process. (markt)
 - Include `.properties` and `.json` files in the conversion process. (markt)
 - Replace `-verbose` with `-logLevel=` to provide more control over logging level. (markt)
+- Fix [#13](https://github.com/apache/tomcat-jakartaee-migration/issues/13). Refactor mapping of log messages to log levels. (markt) 
 
 ## 0.1.0
 

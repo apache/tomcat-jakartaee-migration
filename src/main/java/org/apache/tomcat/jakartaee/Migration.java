@@ -128,8 +128,7 @@ public class Migration {
     }
 
 
-    private boolean migrateDirectory(File src, File dest) throws IOException {
-        boolean result = true;
+    private void migrateDirectory(File src, File dest) throws IOException {
         // Won't return null because src is known to be a directory
         String[] files = src.list();
         for (String file : files) {
@@ -137,71 +136,61 @@ public class Migration {
             File destFile = new File(dest, file);
             if (srcFile.isDirectory()) {
                 if ((destFile.exists() && destFile.isDirectory()) || destFile.mkdir()) {
-                    result = result && migrateDirectory(srcFile, destFile);
+                    migrateDirectory(srcFile, destFile);
                 } else {
-                    logger.log(Level.WARNING, sm.getString("migration.mkdirError", destFile.getAbsolutePath()));
-                    result = false;
+                    throw new IOException(sm.getString("migration.mkdirError", destFile.getAbsolutePath()));
                 }
             } else {
-                result = result && migrateFile(srcFile, destFile);
+                migrateFile(srcFile, destFile);
             }
         }
-        return result;
     }
 
 
-    private boolean migrateFile(File src, File dest) throws IOException {
-        boolean result = false;
-
+    private void migrateFile(File src, File dest) throws IOException {
         boolean inplace = src.equals(dest);
         if (!inplace) {
             try (InputStream is = new FileInputStream(src);
                  OutputStream os = new FileOutputStream(dest)) {
-                result = migrateStream(src.getName(), is, os);
+                migrateStream(src.getName(), is, os);
             }
         } else {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream((int) (src.length() * 1.05));
 
             try (InputStream is = new FileInputStream(src)) {
-                result = migrateStream(src.getName(), is, buffer);
+                migrateStream(src.getName(), is, buffer);
             }
 
             try (OutputStream os = new FileOutputStream(dest)) {
                 os.write(buffer.toByteArray());
             }
         }
-
-        return result;
     }
 
 
-    private boolean migrateArchiveStreaming(String name, InputStream src, OutputStream dest) throws IOException {
-        boolean result = true;
+    private void migrateArchiveStreaming(String name, InputStream src, OutputStream dest) throws IOException {
         try (ZipInputStream zipIs = new ZipInputStream(new CloseShieldInputStream(src));
                 ZipOutputStream zipOs = new ZipOutputStream(new CloseShieldOutputStream(dest))) {
             ZipEntry zipEntry;
             while ((zipEntry = zipIs.getNextEntry()) != null) {
                 String sourceName = zipEntry.getName();
-                logger.log(Level.FINE, sm.getString("migration.entry", sourceName));
                 if (isSignatureFile(sourceName)) {
-                    logger.log(Level.FINE, sm.getString("migration.skipSignatureFile", sourceName));
+                    logger.log(Level.WARNING, sm.getString("migration.skipSignatureFile", sourceName));
                     continue;
                 }
                 String destName = profile.convert(sourceName);
                 JarEntry destEntry = new JarEntry(destName);
                 zipOs.putNextEntry(destEntry);
-                result = result && migrateStream(destEntry.getName(), zipIs, zipOs);
+                migrateStream(destEntry.getName(), zipIs, zipOs);
             }
         } catch (ZipException ze) {
             logger.log(Level.SEVERE, sm.getString("migration.archiveFailed", name), ze);
             throw ze;
         }
-        return result;
     }
 
 
-    private boolean migrateArchiveInMemory(InputStream src, OutputStream dest) throws IOException {
-        boolean result = true;
+    private void migrateArchiveInMemory(InputStream src, OutputStream dest) throws IOException {
         // Read the source into memory
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         IOUtils.copy(src, baos);
@@ -216,16 +205,15 @@ public class Migration {
             while (entries.hasMoreElements()) {
                 ZipArchiveEntry srcZipEntry = entries.nextElement();
                 String srcName = srcZipEntry.getName();
-                logger.log(Level.FINE, sm.getString("migration.entry", srcName));
                 if (isSignatureFile(srcName)) {
-                    logger.log(Level.FINE, sm.getString("migration.skipSignatureFile", srcName));
+                    logger.log(Level.WARNING, sm.getString("migration.skipSignatureFile", srcName));
                     continue;
                 }
                 String destName = profile.convert(srcName);
                 RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry);
                 destZipEntry.setName(destName);
                 destZipStream.putArchiveEntry(destZipEntry);
-                result = result && migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
+                migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
                 destZipStream.closeArchiveEntry();
             }
         }
@@ -233,8 +221,6 @@ public class Migration {
         // Write the destination back to the stream
         ByteArrayInputStream bais = new ByteArrayInputStream(destByteChannel.array(), 0, (int) destByteChannel.size());
         IOUtils.copy(bais, dest);
-
-        return result;
     }
 
 
@@ -244,23 +230,24 @@ public class Migration {
     }
 
 
-    private boolean migrateStream(String name, InputStream src, OutputStream dest) throws IOException {
+    private void migrateStream(String name, InputStream src, OutputStream dest) throws IOException {
         if (isArchive(name)) {
-            logger.log(Level.INFO, sm.getString("migration.archive", name));
             if (zipInMemory) {
-                return migrateArchiveInMemory(src, dest);
+                logger.log(Level.INFO, sm.getString("migration.archive.memory", name));
+                migrateArchiveInMemory(src, dest);
+                logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
             } else {
-                return migrateArchiveStreaming(name, src, dest);
+                logger.log(Level.INFO, sm.getString("migration.archive.stream", name));
+                migrateArchiveStreaming(name, src, dest);
+                logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
             }
         } else {
-            logger.log(Level.FINE, sm.getString("migration.stream", name));
             for (Converter converter : converters) {
                 if (converter.accepts(name)) {
-                    converter.convert(src, dest, profile);
+                    converter.convert(name, src, dest, profile);
                     break;
                 }
             }
-            return true;
         }
     }
 

@@ -19,6 +19,8 @@ package org.apache.tomcat.jakartaee;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.Constant;
@@ -26,6 +28,9 @@ import org.apache.bcel.classfile.ConstantUtf8;
 import org.apache.bcel.classfile.JavaClass;
 
 public class ClassConverter implements Converter {
+
+    private static final Logger logger = Logger.getLogger(ClassConverter.class.getCanonicalName());
+    private static final StringManager sm = StringManager.getManager(ClassConverter.class);
 
     @Override
     public boolean accepts(String filename) {
@@ -35,10 +40,12 @@ public class ClassConverter implements Converter {
 
 
     @Override
-    public void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
+    public void convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
 
         ClassParser parser = new ClassParser(src, "unknown");
         JavaClass javaClass = parser.parse();
+
+        boolean converted = false;
 
         // Loop through constant pool
         Constant[] constantPool = javaClass.getConstantPool().getConstantPool();
@@ -46,12 +53,21 @@ public class ClassConverter implements Converter {
             if (constantPool[i] instanceof ConstantUtf8) {
                 ConstantUtf8 c = (ConstantUtf8) constantPool[i];
                 String str = c.getBytes();
-                String converted = profile.convert(str);
+                String newString = profile.convert(str);
                 // Object comparison is deliberate
-                if (converted != str) {
+                if (newString != str) {
                     c = new ConstantUtf8(profile.convert(str));
                     constantPool[i] = c;
+                    converted = true;
                 }
+            }
+        }
+
+        if (logger.isLoggable(Level.FINE)) {
+            if (converted) {
+                logger.log(Level.FINE, sm.getString("classConverter.converted", path));
+            } else if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, sm.getString("classConverter.noConversion", path));
             }
         }
 

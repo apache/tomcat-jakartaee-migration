@@ -26,6 +26,8 @@ import static org.junit.Assert.*;
 
 public class PassThroughConverterTest {
 
+    private static final String TEST_FILENAME = "project.properties";
+
     @Test
     public void testConverter() throws Exception {
         String content = "javax.servlet";
@@ -35,9 +37,9 @@ public class PassThroughConverterTest {
 
         Converter converter = new PassThroughConverter();
 
-        assertTrue(converter.accepts("project.properties"));
+        assertTrue(converter.accepts(TEST_FILENAME));
 
-        converter.convert(in, out, null);
+        converter.convert(TEST_FILENAME, in, out, null);
 
         assertArrayEquals(content.getBytes(), out.toByteArray());
     }

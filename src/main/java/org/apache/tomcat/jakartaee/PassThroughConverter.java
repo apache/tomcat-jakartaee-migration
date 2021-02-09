@@ -19,8 +19,13 @@ package org.apache.tomcat.jakartaee;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PassThroughConverter implements Converter {
+
+    private static final Logger logger = Logger.getLogger(PassThroughConverter.class.getCanonicalName());
+    private static final StringManager sm = StringManager.getManager(PassThroughConverter.class);
 
     @Override
     public boolean accepts(String filename) {
@@ -29,8 +34,11 @@ public class PassThroughConverter implements Converter {
     }
 
     @Override
-    public void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
+    public void convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
         // This simply copies the source to the destination
         Util.copy(src, dest);
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, sm.getString("passThroughConverter.noConversion", path));
+        }
     }
 }

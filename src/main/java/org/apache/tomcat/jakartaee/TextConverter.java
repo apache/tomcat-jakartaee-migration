@@ -23,8 +23,13 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class TextConverter implements Converter {
+
+    private static final Logger logger = Logger.getLogger(TextConverter.class.getCanonicalName());
+    private static final StringManager sm = StringManager.getManager(TextConverter.class);
 
     private static final List<String> supportedExtensions;
 
@@ -60,9 +65,20 @@ public class TextConverter implements Converter {
      * execution.
      */
     @Override
-    public void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
+    public void convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
         String srcString = Util.toString(src, StandardCharsets.ISO_8859_1);
         String destString = profile.convert(srcString);
+
+        // Object comparison is deliberate here
+        if (srcString == destString) {
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, sm.getString("classConverter.noConversion", path));
+            }
+        } else {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, sm.getString("textConverter.converted", path));
+            }
+        }
 
         ByteArrayInputStream bais = new ByteArrayInputStream(destString.getBytes(StandardCharsets.ISO_8859_1));
         Util.copy(bais, dest);

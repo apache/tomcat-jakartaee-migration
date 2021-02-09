@@ -10,6 +10,8 @@ import org.junit.Test;
 
 public class TextConverterTest {
 
+    private static final String TEST_FILENAME = "text.txt";
+
 	private static final String INPUT = "javax.servlet.http.HttpServletRequest";
 	private static final String OUTPUT = "jakarta.servlet.http.HttpServletRequest";
 
@@ -23,7 +25,7 @@ public class TextConverterTest {
 		EESpecProfile profile = EESpecProfile.EE;
 
 		// test
-		converter.convert(in, out, profile);
+		converter.convert(TEST_FILENAME, in, out, profile);
 
 		// assert
 		String result = new String(out.toByteArray(), StandardCharsets.ISO_8859_1);

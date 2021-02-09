@@ -48,7 +48,7 @@ public class ManifestConverter implements Converter {
     }
 
     @Override
-    public void convert(InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
+    public void convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
         Manifest srcManifest = new Manifest(src);
         Manifest destManifest = new Manifest(srcManifest);
 
