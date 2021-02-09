@@ -52,10 +52,16 @@ public class ManifestConverter implements Converter {
         Manifest srcManifest = new Manifest(src);
         Manifest destManifest = new Manifest(srcManifest);
 
-        removeSignatures(destManifest);
-        updateValues(destManifest, profile);
+        boolean result = false;
 
-        destManifest.write(dest);
+        result = result | removeSignatures(destManifest);
+        result = result | updateValues(destManifest, profile);
+
+        if (result) {
+            destManifest.write(dest);
+        } else {
+            srcManifest.write(dest);
+        }
     }
 
 
@@ -90,23 +96,33 @@ public class ManifestConverter implements Converter {
     }
 
 
-    private void updateValues(Manifest manifest, EESpecProfile profile) {
-        updateValues(manifest.getMainAttributes(), profile);
+    private boolean updateValues(Manifest manifest, EESpecProfile profile) {
+        boolean result = false;
+        result = result | updateValues(manifest.getMainAttributes(), profile);
         for (Attributes attributes : manifest.getEntries().values()) {
-            updateValues(attributes, profile);
+            result = result | updateValues(attributes, profile);
         }
+        return result;
     }
 
 
-    private void updateValues(Attributes attributes, EESpecProfile profile) {
+    private boolean updateValues(Attributes attributes, EESpecProfile profile) {
+        boolean result = false;
         // Update version info
         if (attributes.containsKey(Attributes.Name.IMPLEMENTATION_VERSION)) {
             String newValue = attributes.get(Attributes.Name.IMPLEMENTATION_VERSION) + "-" + Info.getVersion();
             attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
+            result = true;
         }
         // Update package names in values
         for (Entry<Object,Object> entry : attributes.entrySet()) {
-            entry.setValue(profile.convert((String) entry.getValue()));
+            String newValue = profile.convert((String) entry.getValue());
+            // Object comparison is deliberate
+            if (newValue != entry.getValue()) {
+                entry.setValue(newValue);
+                result = true;
+            }
         }
+        return result;
     }
 }
