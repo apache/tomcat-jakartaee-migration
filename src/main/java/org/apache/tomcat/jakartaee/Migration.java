@@ -26,7 +26,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.logging.Level;
@@ -49,11 +51,46 @@ public class Migration {
     private static final Logger logger = Logger.getLogger(Migration.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(Migration.class);
 
+    private static final Set<String> DEFAULT_EXCLUDES = new HashSet<>();
+
+    static {
+        // Apache Commons
+        DEFAULT_EXCLUDES.add("commons-codec-*.jar");
+        DEFAULT_EXCLUDES.add("commons-lang-*.jar");
+        // Apache HTTP Components
+        DEFAULT_EXCLUDES.add("httpclient-*.jar");
+        DEFAULT_EXCLUDES.add("httpcore-*.jar");
+        // ASM
+        DEFAULT_EXCLUDES.add("asm-*.jar");
+        // AspectJ
+        DEFAULT_EXCLUDES.add("aspectjweaver-*.jar");
+        // Bouncy Castle JCE provider
+        DEFAULT_EXCLUDES.add("bcprov*.jar");
+        DEFAULT_EXCLUDES.add("bcpkix*.jar");
+        // Hystrix
+        DEFAULT_EXCLUDES.add("hystrix-core-*.jar");
+        DEFAULT_EXCLUDES.add("hystrix-serialization-*.jar");
+        // Jackson
+        DEFAULT_EXCLUDES.add("jackson-annotations-*.jar");
+        DEFAULT_EXCLUDES.add("jackson-core-*.jar");
+        DEFAULT_EXCLUDES.add("jackson-module-afterburner-*.jar");
+        // Logging
+        DEFAULT_EXCLUDES.add("jul-to-slf4j-*.jar");
+        DEFAULT_EXCLUDES.add("log4j-to-slf4j-*.jar");
+        DEFAULT_EXCLUDES.add("slf4j-api-*.jar");
+        // Spring
+        DEFAULT_EXCLUDES.add("spring-aop-*.jar");
+        DEFAULT_EXCLUDES.add("spring-expression-*.jar");
+        DEFAULT_EXCLUDES.add("spring-security-crypto-*.jar");
+        DEFAULT_EXCLUDES.add("spring-security-rsa-*.jar");
+    }
+
     private EESpecProfile profile = EESpecProfile.TOMCAT;
     private boolean zipInMemory;
     private File source;
     private File destination;
     private final List<Converter> converters;
+    private final Set<String> excludes = new HashSet<>();
 
     public Migration() {
         // Initialise the converters
@@ -87,6 +124,10 @@ public class Migration {
 
     public void setZipInMemory(boolean zipInMemory) {
         this.zipInMemory = zipInMemory;
+    }
+
+    public void addExclude(String exclude) {
+        this.excludes.add(exclude);
     }
 
     public void setSource(File source) {
@@ -181,7 +222,7 @@ public class Migration {
                 String destName = profile.convert(sourceName);
                 JarEntry destEntry = new JarEntry(destName);
                 zipOs.putNextEntry(destEntry);
-                migrateStream(destEntry.getName(), zipIs, zipOs);
+                migrateStream(sourceName, zipIs, zipOs);
             }
         } catch (ZipException ze) {
             logger.log(Level.SEVERE, sm.getString("migration.archiveFailed", name), ze);
@@ -231,7 +272,10 @@ public class Migration {
 
 
     private void migrateStream(String name, InputStream src, OutputStream dest) throws IOException {
-        if (isArchive(name)) {
+        if (isExcluded(name)) {
+            Util.copy(src, dest);
+            logger.log(Level.INFO, sm.getString("migration.skip", name));
+        } else if (isArchive(name)) {
             if (zipInMemory) {
                 logger.log(Level.INFO, sm.getString("migration.archive.memory", name));
                 migrateArchiveInMemory(src, dest);
@@ -252,10 +296,25 @@ public class Migration {
     }
 
 
-    private static boolean isArchive(String fileName) {
+    private boolean isArchive(String fileName) {
         return fileName.endsWith(".jar") || fileName.endsWith(".war") || fileName.endsWith(".zip");
     }
 
+
+    private boolean isExcluded(String name) {
+        File f = new File(name);
+        String filename = f.getName();
+
+        if (GlobMatcher.matchName(DEFAULT_EXCLUDES, filename, true)) {
+            return true;
+        }
+
+        if (GlobMatcher.matchName(excludes, filename, true)) {
+            return true;
+        }
+
+        return false;
+    }
 
     private static class RenamableZipArchiveEntry extends ZipArchiveEntry {
 

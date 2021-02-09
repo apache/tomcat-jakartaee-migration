@@ -30,6 +30,7 @@ public class MigrationCLI {
 
     private static final StringManager sm = StringManager.getManager(MigrationCLI.class);
 
+    private static final String EXCLUDE_ARG = "-exclude=";
     private static final String LOGLEVEL_ARG = "-logLevel=";
     private static final String PROFILE_ARG = "-profile=";
     // Will be removed for 1.0.0
@@ -51,7 +52,11 @@ public class MigrationCLI {
         Iterator<String> iter = arguments.iterator();
         while (iter.hasNext()) {
             String argument = iter.next();
-            if (argument.startsWith(LOGLEVEL_ARG)) {
+            if (argument.startsWith(EXCLUDE_ARG)) {
+                iter.remove();
+                String exclude = argument.substring(EXCLUDE_ARG.length());
+                migration.addExclude(exclude);
+            } else if (argument.startsWith(LOGLEVEL_ARG)) {
                 iter.remove();
                 String logLevelName = argument.substring(LOGLEVEL_ARG.length());
                 Level level = null;

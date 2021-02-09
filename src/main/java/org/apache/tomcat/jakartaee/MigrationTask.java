@@ -33,6 +33,7 @@ public class MigrationTask extends Task {
     private File dest;
     private String profile = EESpecProfile.TOMCAT.toString();
     private boolean zipInMemory = false;
+    private String excludes;
 
     public void setSrc(File src) {
         this.src = src;
@@ -48,6 +49,16 @@ public class MigrationTask extends Task {
 
     public void setZipInMemory(boolean zipInMemory) {
         this.zipInMemory = zipInMemory;
+    }
+
+    /**
+     * Set exclusion patterns.
+     *
+     * @param excludes  Comma separated, case sensitive list of glob patterns
+     *                  for files to exclude
+     */
+    public void setExcludes(String excludes) {
+        this.excludes = excludes;
     }
 
     @Override
@@ -73,6 +84,12 @@ public class MigrationTask extends Task {
         migration.setDestination(dest);
         migration.setEESpecProfile(profile);
         migration.setZipInMemory(zipInMemory);
+        if (this.excludes != null) {
+            String[] excludes= this.excludes.split(",");
+            for (String exclude : excludes) {
+                migration.addExclude(exclude);
+            }
+        }
 
         try {
             migration.execute();
