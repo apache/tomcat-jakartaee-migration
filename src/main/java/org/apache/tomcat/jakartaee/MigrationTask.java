@@ -74,15 +74,10 @@ public class MigrationTask extends Task {
         migration.setEESpecProfile(profile);
         migration.setZipInMemory(zipInMemory);
 
-        boolean success = false;
         try {
-            success = migration.execute();
+            migration.execute();
         } catch (IOException e) {
             throw new BuildException(e, getLocation());
-        }
-
-        if (!success) {
-            throw new BuildException("Migration failed", getLocation());
         }
     }
 }

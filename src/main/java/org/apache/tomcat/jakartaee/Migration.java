@@ -103,32 +103,28 @@ public class Migration {
     }
 
 
-    public boolean execute() throws IOException {
+    public void execute() throws IOException {
         logger.log(Level.INFO, sm.getString("migration.execute", source.getAbsolutePath(),
                 destination.getAbsolutePath(), profile.toString()));
-        boolean result = true;
+
         long t1 = System.nanoTime();
         if (source.isDirectory()) {
             if ((destination.exists() && destination.isDirectory()) || destination.mkdirs()) {
-                result = result && migrateDirectory(source, destination);
+                migrateDirectory(source, destination);
             } else {
-                logger.log(Level.WARNING, sm.getString("migration.mkdirError", destination.getAbsolutePath()));
-                result = false;
+                throw new IOException(sm.getString("migration.mkdirError", destination.getAbsolutePath()));
             }
         } else {
             // Single file
             File parentDestination = destination.getAbsoluteFile().getParentFile();
             if (parentDestination.exists() || parentDestination.mkdirs()) {
-                result = result && migrateFile(source, destination);
+                migrateFile(source, destination);
             } else {
-                logger.log(Level.WARNING, sm.getString("migration.mkdirError", parentDestination.getAbsolutePath()));
-                result = false;
+                throw new IOException(sm.getString("migration.mkdirError", parentDestination.getAbsolutePath()));
             }
         }
         logger.log(Level.INFO, sm.getString("migration.done",
-                Long.valueOf(TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS)),
-                Boolean.valueOf(result)));
-        return result;
+                Long.valueOf(TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS))));
     }
 
 
