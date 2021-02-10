@@ -49,7 +49,8 @@ public class ClassConverter implements Converter {
 
         // Loop through constant pool
         Constant[] constantPool = javaClass.getConstantPool().getConstantPool();
-        for (short i = 0; i < constantPool.length; i++) {
+        // Need an int as the maximum pool size is 2^16
+        for (int i = 0; i < constantPool.length; i++) {
             if (constantPool[i] instanceof ConstantUtf8) {
                 ConstantUtf8 c = (ConstantUtf8) constantPool[i];
                 String str = c.getBytes();
