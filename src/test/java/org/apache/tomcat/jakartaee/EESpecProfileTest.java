@@ -58,9 +58,7 @@ public class EESpecProfileTest {
         assertEquals("javax.xml.rpc", profile.convert("javax.xml.rpc"));
         assertEquals("javax.xml.registry", profile.convert("javax.xml.registry"));
         assertEquals("javax.xml.soap", profile.convert("javax.xml.soap"));
-        assertEquals("javax.xml.stream", profile.convert("javax.xml.stream"));
         assertEquals("javax.xml.ws", profile.convert("javax.xml.ws"));
-        assertEquals("javax.xml.XMLConstants", profile.convert("javax.xml.XMLConstants"));
 
         // non EE javax packages
         assertEquals("javax.annotation.processing", profile.convert("javax.annotation.processing"));
@@ -69,8 +67,10 @@ public class EESpecProfileTest {
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
         assertEquals("javax.swing", profile.convert("javax.swing"));
         assertEquals("javax.transaction.xa", profile.convert("javax.transaction.xa"));
+        assertEquals("javax.xml.stream", profile.convert("javax.xml.stream"));
         assertEquals("javax.xml.namespace", profile.convert("javax.xml.namespace"));
         assertEquals("javax.xml.xpath.XPathConstants", profile.convert("javax.xml.xpath.XPathConstants"));
+        assertEquals("javax.xml.XMLConstants", profile.convert("javax.xml.XMLConstants"));
     }
 
     @Test
@@ -106,9 +106,7 @@ public class EESpecProfileTest {
         assertEquals("jakarta.xml.registry", profile.convert("javax.xml.registry"));
         assertEquals("jakarta.xml.rpc", profile.convert("javax.xml.rpc"));
         assertEquals("jakarta.xml.soap", profile.convert("javax.xml.soap"));
-        assertEquals("jakarta.xml.stream", profile.convert("javax.xml.stream"));
         assertEquals("jakarta.xml.ws", profile.convert("javax.xml.ws"));
-        assertEquals("jakarta.xml.XMLConstants", profile.convert("javax.xml.XMLConstants"));
 
         // non EE javax packages
         assertEquals("javax.annotation.processing", profile.convert("javax.annotation.processing"));
@@ -117,7 +115,9 @@ public class EESpecProfileTest {
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
         assertEquals("javax.swing", profile.convert("javax.swing"));
         assertEquals("javax.transaction.xa", profile.convert("javax.transaction.xa"));
+        assertEquals("javax.xml.stream", profile.convert("javax.xml.stream"));
         assertEquals("javax.xml.namespace", profile.convert("javax.xml.namespace"));
         assertEquals("javax.xml.xpath.XPathConstants", profile.convert("javax.xml.xpath.XPathConstants"));
+        assertEquals("javax.xml.XMLConstants", profile.convert("javax.xml.XMLConstants"));
     }
 }

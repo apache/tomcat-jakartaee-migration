@@ -25,6 +25,7 @@
 - Fix [#13](https://github.com/apache/tomcat-jakartaee-migration/issues/13). Refactor mapping of log messages to log levels. (markt)
 - Fix [#3](https://github.com/apache/tomcat-jakartaee-migration/issues/3). Add support for excluding files from conversion. (markt)
 - Fix handling of classes with more than 32768 entries in the constant pool. (markt)
+- Exclude `javax.xml.stream` and `javax.xml.XMLConstants` from the EE profile. (markt)
 
 ## 0.1.0
 
