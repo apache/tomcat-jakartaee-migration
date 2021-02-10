@@ -67,6 +67,10 @@ public class Migration {
         // Bouncy Castle JCE provider
         DEFAULT_EXCLUDES.add("bcprov*.jar");
         DEFAULT_EXCLUDES.add("bcpkix*.jar");
+        // Closure compiler
+        DEFAULT_EXCLUDES.add("closure-compiler-*.jar");
+        // Eclipse compiler for Java
+        DEFAULT_EXCLUDES.add("ecj-*.jar");
         // Hystrix
         DEFAULT_EXCLUDES.add("hystrix-core-*.jar");
         DEFAULT_EXCLUDES.add("hystrix-serialization-*.jar");
