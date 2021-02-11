@@ -273,6 +273,16 @@
                   </excludes>
                 </filter>
               </filters>
+              <relocations>
+                <relocation>
+                  <pattern>org.apache.commons</pattern>
+                  <shadedPattern>org.apache.tomcat.jakartaee.commons</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.bcel</pattern>
+                  <shadedPattern>org.apache.tomcat.jakartaee.bcel</shadedPattern>
+                </relocation>
+              </relocations>
             </configuration>
           </execution>
         </executions>

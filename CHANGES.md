@@ -26,6 +26,7 @@
 - Fix [#3](https://github.com/apache/tomcat-jakartaee-migration/issues/3). Add support for excluding files from conversion. (markt)
 - Fix handling of classes with more than 32768 entries in the constant pool. (markt)
 - Exclude `javax.xml.stream` and `javax.xml.XMLConstants` from the EE profile. (markt)
+- Relocate dependencies under the `org.apache.tomcat.jakartaee` package to avoid clashes when integrating the shaded jar. (markt)
 
 ## 0.1.0
 
