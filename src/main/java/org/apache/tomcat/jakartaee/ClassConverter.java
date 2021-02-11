@@ -16,9 +16,14 @@
  */
 package org.apache.tomcat.jakartaee;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.IllegalClassFormatException;
+import java.security.ProtectionDomain;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,7 +32,7 @@ import org.apache.bcel.classfile.Constant;
 import org.apache.bcel.classfile.ConstantUtf8;
 import org.apache.bcel.classfile.JavaClass;
 
-public class ClassConverter implements Converter {
+public class ClassConverter implements Converter, ClassFileTransformer {
 
     private static final Logger logger = Logger.getLogger(ClassConverter.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(ClassConverter.class);
@@ -74,4 +79,20 @@ public class ClassConverter implements Converter {
 
         javaClass.dump(dest);
     }
+
+
+    @Override
+    public byte[] transform(ClassLoader loader, String className,
+            Class<?> classBeingRedefined, ProtectionDomain protectionDomain,
+            byte[] classfileBuffer) throws IllegalClassFormatException {
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(classfileBuffer);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            convert(className, inputStream, outputStream, EESpecProfile.TOMCAT);
+        } catch (IOException e) {
+            throw new IllegalClassFormatException(e.getLocalizedMessage());
+        }
+        return outputStream.toByteArray();
+    }
+
 }
