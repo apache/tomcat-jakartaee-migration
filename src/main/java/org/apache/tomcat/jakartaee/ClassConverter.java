@@ -37,6 +37,14 @@ public class ClassConverter implements Converter, ClassFileTransformer {
     private static final Logger logger = Logger.getLogger(ClassConverter.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(ClassConverter.class);
 
+    protected final EESpecProfile profile;
+    public ClassConverter() {
+        this(EESpecProfile.TOMCAT);
+    }
+    public ClassConverter(EESpecProfile profile) {
+        this.profile = profile;
+    }
+
     @Override
     public boolean accepts(String filename) {
         String extension = Util.getExtension(filename);
@@ -88,7 +96,7 @@ public class ClassConverter implements Converter, ClassFileTransformer {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(classfileBuffer);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
-            convert(className, inputStream, outputStream, EESpecProfile.TOMCAT);
+            convert(className, inputStream, outputStream, profile);
         } catch (IOException e) {
             throw new IllegalClassFormatException(e.getLocalizedMessage());
         }
