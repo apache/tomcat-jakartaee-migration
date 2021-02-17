@@ -70,7 +70,7 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                 String newString = profile.convert(str);
                 // Object comparison is deliberate
                 if (newString != str) {
-                    c = new ConstantUtf8(profile.convert(str));
+                    c = new ConstantUtf8(newString);
                     constantPool[i] = c;
                     converted = true;
                 }
