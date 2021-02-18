@@ -46,6 +46,11 @@ public class ClassConverter implements Converter, ClassFileTransformer {
     }
 
     @Override
+    public String toString() {
+        return ClassConverter.class.getCanonicalName() + '[' + profile.toString() + ']';
+    }
+
+    @Override
     public boolean accepts(String filename) {
         String extension = Util.getExtension(filename);
         return "class".equals(extension);
