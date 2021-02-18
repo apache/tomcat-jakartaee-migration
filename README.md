@@ -17,17 +17,26 @@ The tool can be used from the command line or as an Ant task.
 
 ## Usage
 
+### Download
+
+Download a source or binary distribution from
+[https://tomcat.apache.org/download-migration.cgi](https://tomcat.apache.org/download-migration.cgi)
+
 ### Build
 
-Build the migration tool with:
+Build the migration tool from source with:
 
     ./mvnw verify
+
+To run the migration tool locally, you are most likely to want:
+
+    target/jakartaee-migration-*-shaded.jar
 
 ### Migrate
 
 Migrate your Servlet application with:
 
-    java -jar target/jakartaee-migration-*-shaded.jar <source> <destination>
+    java -jar jakartaee-migration-*-shaded.jar <source> <destination>
 
 The source should be a path to a compressed archive, a folder or an individual
 file. The destination will be created at the specified path as a resource of
