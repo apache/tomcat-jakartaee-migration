@@ -57,7 +57,7 @@ public enum EESpecProfile {
             "|validation" +
             "|websocket" +
             "|ws[/\\.]rs" +
-            "|xml[/\\.](bind|registry|rpc|soap|ws)))");
+            "|xml[/\\.](bind|soap|ws)))");
 
     private Pattern pattern;
 
