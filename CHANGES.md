@@ -1,6 +1,10 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
-## 0.2.0 (in progress)
+## 0.3.0 (in progress)
+
+- Fix [#14](https://github.com/apache/tomcat-jakartaee-migration/issues/14). Do not migrate `javax.xml.(registry|rpc)` namespaces. (mgrigorov)
+
+## 0.2.0
 
 - Add this changelog (markt)
 - Update dependencies (Apache Commons IO 2.8.0, Apache Ant 1.10.9) (markt)
