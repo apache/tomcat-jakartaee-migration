@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+ 
+  <parent>
+    <groupId>org.apache.tomcat</groupId>
+    <artifactId>jakartaee-migration-parent</artifactId>
+    <version>0.2.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>jakartaee-migration</artifactId>
+  <name>Apache Tomcat Migration Tool for Jakarta EE</name>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>create-test-jars</id>
+            <phase>process-test-classes</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <jar destfile="target/test-classes/cgi-api.jar" basedir="target/test-classes" includes="**/CommonGatewayInterface*" />
+                <jar destfile="target/test-classes/hellocgi.jar" basedir="target/test-classes" includes="**/HelloCGI*">
+                  <manifest>
+                    <attribute name="Implementation-Version" value="1.2.3" />
+                  </manifest>
+                </jar>
+
+                <!-- Generate the signed jar files -->
+                <!--
+                  The keystore contains 3 keys (RSA, DSA and EC) and was generated with Java 12:
+                    keytool -genkey -validity 3650 -keystore keystore.p12 -storetype pkcs12 -dname CN=Test -alias rsa -keyalg RSA -keysize 1024
+                    keytool -genkey -validity 3650 -keystore keystore.p12 -storetype pkcs12 -dname CN=Test -alias dsa -keyalg DSA -keysize 1024
+                    keytool -genkey -validity 3650 -keystore keystore.p12 -storetype pkcs12 -dname CN=Test -alias ec  -keyalg EC  -groupname secp384r1
+                -->
+                <parallel>
+                  <sequential>
+                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-rsa.jar" />
+                    <signjar jar="target/test-classes/hellocgi-signed-rsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="rsa" />
+                  </sequential>
+                  <sequential>
+                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-dsa.jar" />
+                    <signjar jar="target/test-classes/hellocgi-signed-dsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="dsa" />
+                  </sequential>
+                  <sequential>
+                    <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-ec.jar" />
+                    <signjar jar="target/test-classes/hellocgi-signed-ec.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="ec" />
+                  </sequential>
+                </parallel>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <reuseForks>false</reuseForks>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <mainClass>org.apache.tomcat.jakartaee.MigrationCLI</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptors>
+                <descriptor>src/assembly/bin.xml</descriptor>
+                <descriptor>src/assembly/src.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <minimizeJar>true</minimizeJar>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <filters>
+                <filter>
+                  <artifact>org.apache.bcel:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>org.apache.commons:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>commons-io:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/**</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <relocations>
+                <relocation>
+                  <pattern>org.apache.commons</pattern>
+                  <shadedPattern>org.apache.tomcat.jakartaee.commons</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.bcel</pattern>
+                  <shadedPattern>org.apache.tomcat.jakartaee.bcel</shadedPattern>
+                </relocation>
+              </relocations>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <manifestEntries>
+                    <Class-Path/>
+                  </manifestEntries>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
