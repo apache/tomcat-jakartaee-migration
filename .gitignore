@@ -1,8 +1,19 @@
-.classpath
-.project
-.settings
 target
+
+# Eclipse, IntelliJ, NetBeans and Visual Studio Code files
+.project
+.classpath
+.settings
 .idea
-*.iml
+.vscode
 *.ipr
 *.iws
+*.iml
+nbproject
+.factorypath
+
+# Mac DS_Store files
+.DS_Store
+
+# Temporary files created by Surefire in Windows
+TempWmicBatchFile.bat

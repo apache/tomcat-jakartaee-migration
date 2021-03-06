@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+      http://www.apache.org/licenses/LICENSE-2.0
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+ 
+  <parent>
+    <groupId>org.apache.tomcat</groupId>
+    <artifactId>jakartaee-migration-test-ear-parent</artifactId>
+    <version>0.2.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>jakartaee-migration-test-ear</artifactId>
+  <name>Apache Tomcat Migration Tool for Jakarta EE :: Test EAR</name>
+  <packaging>ear</packaging>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>jakartaee-migration-test-ear-ejb-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>jakartaee-migration-test-ear-ejb-impl</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>jakartaee-migration-test-ear-webapp</artifactId>
+      <type>war</type>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>jakartaee-migration</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-ear-plugin</artifactId>
+        <configuration>
+          <modules>
+            <jarModule>
+              <groupId>org.apache.tomcat</groupId>
+              <artifactId>jakartaee-migration-test-ear-ejb-api</artifactId>
+              <bundleDir>lib</bundleDir>
+            </jarModule>
+            <jarModule>
+              <groupId>org.apache.tomcat</groupId>
+              <artifactId>jakartaee-migration-test-ear-ejb-impl</artifactId>
+            </jarModule>
+            <webModule>
+              <groupId>org.apache.tomcat</groupId>
+              <artifactId>jakartaee-migration-test-ear-webapp</artifactId>
+              <contextRoot>/test-ear-javaee</contextRoot>
+            </webModule>
+          </modules>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>update-jakarta-ee-ejb</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.apache.tomcat.jakartaee.MigrationCLI</mainClass>
+              <arguments>
+                <argument>-profile=EE</argument>
+                <argument>${project.build.directory}/jakartaee-migration-test-ear-${project.version}/org.apache.tomcat-jakartaee-migration-test-ear-ejb-impl-${project.version}.jar</argument>
+                <argument>${project.build.directory}/jakartaee-migration-test-ear-jakarta-ee/org.apache.tomcat-jakartaee-migration-test-ear-ejb-impl-${project.version}.jar</argument>
+              </arguments>
+              <classpathScope>test</classpathScope>
+            </configuration>
+          </execution>
+          <execution>
+            <id>update-jakarta-ee-war</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.apache.tomcat.jakartaee.MigrationCLI</mainClass>
+              <arguments>
+                <argument>-profile=EE</argument>
+                <argument>${project.build.directory}/jakartaee-migration-test-ear-${project.version}/org.apache.tomcat-jakartaee-migration-test-ear-webapp-${project.version}.war</argument>
+                <argument>${project.build.directory}/jakartaee-migration-test-ear-jakarta-ee/org.apache.tomcat-jakartaee-migration-test-ear-webapp-${project.version}.war</argument>
+              </arguments>
+              <classpathScope>test</classpathScope>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>update-jakarta-ee-ear</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <replace file="${project.build.directory}/jakartaee-migration-test-ear-${project.version}/META-INF/application.xml">
+                  <replacetoken>/test-ear-javaee</replacetoken>
+                  <replacevalue>/test-ear-jakartaee</replacevalue>
+                </replace>
+                <copy file="${project.build.directory}/jakartaee-migration-test-ear-${project.version}.ear" tofile="${project.build.directory}/jakartaee-migration-test-ear-jakarta-ee.ear"/>
+                <zip destfile="${project.build.directory}/jakartaee-migration-test-ear-jakarta-ee.ear" update="true">
+                  <fileset dir="${project.build.directory}/jakartaee-migration-test-ear-${project.version}" includes="META-INF/application.xml"/>
+                  <fileset dir="${project.build.directory}/jakartaee-migration-test-ear-jakarta-ee" includes="**/*.*"/>
+                </zip>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-jakarta-ee-ear</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>attach-artifact</goal>
+            </goals>
+            <configuration>
+              <artifacts>
+                <artifact>
+                  <file>${project.build.directory}/jakartaee-migration-test-ear-jakarta-ee.ear</file>
+                  <classifier>jakarta-ee</classifier>
+                  <type>ear</type>
+                </artifact>
+              </artifacts>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

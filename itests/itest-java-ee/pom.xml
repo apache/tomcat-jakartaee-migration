@@ -39,6 +39,19 @@
       <classifier>jakarta-ee</classifier>
       <type>war</type>
     </dependency>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>jakartaee-migration-test-ear</artifactId>
+      <version>${project.version}</version>
+      <type>ear</type>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>jakartaee-migration-test-ear</artifactId>
+      <version>${project.version}</version>
+      <classifier>jakarta-ee</classifier>
+      <type>ear</type>
+    </dependency>
   </dependencies>
 
   <profiles>
@@ -88,6 +101,23 @@
                   <type>war</type>
                   <properties>
                     <context>jakarta-ee-webapp</context>
+                  </properties>
+                </deployable>
+                <deployable>
+                  <groupId>org.apache.tomcat</groupId>
+                  <artifactId>jakartaee-migration-test-ear</artifactId>
+                  <type>ear</type>
+                  <properties>
+                    <name>java-ee-ear</name>
+                  </properties>
+                </deployable>
+                <deployable>
+                  <groupId>org.apache.tomcat</groupId>
+                  <artifactId>jakartaee-migration-test-ear</artifactId>
+                  <classifier>jakarta-ee</classifier>
+                  <type>ear</type>
+                  <properties>
+                    <name>jakarta-ee-ear</name>
                   </properties>
                 </deployable>
               </deployables>

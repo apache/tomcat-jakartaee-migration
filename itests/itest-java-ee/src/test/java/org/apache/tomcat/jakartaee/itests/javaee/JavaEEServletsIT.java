@@ -41,7 +41,7 @@ public class JavaEEServletsIT {
     @BeforeClass
     public static void initializeTest() {
         String port = System.getProperty("servlet.port");
-        JavaEEServletsIT.baseUrl = "http://localhost:" + port + "/java-ee-webapp/";
+        JavaEEServletsIT.baseUrl = "http://localhost:" + port + "/";
         try {
             new URL(JavaEEServletsIT.baseUrl);
         } catch (MalformedURLException e) {
@@ -55,7 +55,7 @@ public class JavaEEServletsIT {
      * @throws Exception if anything goes wrong.
      */
     private void testServlet(String path) throws Exception {
-        URL url = new URL(JavaEEServletsIT.baseUrl + "test-" + path);
+        URL url = new URL(JavaEEServletsIT.baseUrl + "java-ee-webapp/test-" + path);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.connect();
         Assert.assertEquals(200, connection.getResponseCode());
@@ -104,5 +104,17 @@ public class JavaEEServletsIT {
     @Test
     public void testMailSessionServlet() throws Exception {
         testServlet("mailsession");
+    }
+
+    /**
+     * Test the EAR with an EJB and WAR.
+     * @throws Exception if anything goes wrong.
+     */
+    @Test
+    public void testEjbWarEar() throws Exception {
+        URL url = new URL(JavaEEServletsIT.baseUrl + "test-ear-javaee/");
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.connect();
+        Assert.assertEquals(200, connection.getResponseCode());
     }
 }

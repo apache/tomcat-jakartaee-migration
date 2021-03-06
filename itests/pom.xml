@@ -30,6 +30,7 @@
 
   <modules>
     <module>test-webapp</module>
+    <module>test-ear</module>
     <module>itest-java-ee</module>
     <module>itest-jakarta-ee</module>
   </modules>
