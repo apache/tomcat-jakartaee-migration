@@ -21,7 +21,7 @@ jdk:
   - openjdk-ea
 
 script:
-  - ./mvnw clean install
+  - ./mvnw clean verify
 
 after_success:
   - mvn clean cobertura:cobertura coveralls:report
