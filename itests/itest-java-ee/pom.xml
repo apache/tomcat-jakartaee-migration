@@ -63,7 +63,7 @@
           <value>!true</value>
         </property>
         <!-- TomEE 8.x doesn't run with Java 17 -->
-        <jdk>(,17)</jdk>
+        <jdk>(,16)</jdk>
       </activation>
       <build>
         <plugins>
