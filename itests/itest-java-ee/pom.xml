@@ -62,6 +62,8 @@
           <name>skipTests</name>
           <value>!true</value>
         </property>
+        <!-- TomEE 8.x doesn't run with Java 17 -->
+        <jdk>(,17)</jdk>
       </activation>
       <build>
         <plugins>
