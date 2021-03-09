@@ -58,6 +58,8 @@
     <profile>
       <id>run-integration-tests</id>
       <activation>
+        <!-- TomEE 9.x only works with Java versions up to Java 11 (from the LTS releases) -->
+        <jdk>(,12)</jdk>
         <property>
           <name>skipTests</name>
           <value>!true</value>
@@ -143,4 +145,15 @@
       </build>
     </profile>
   </profiles>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
