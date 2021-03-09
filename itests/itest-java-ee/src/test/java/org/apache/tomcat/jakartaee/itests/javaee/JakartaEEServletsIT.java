@@ -107,6 +107,15 @@ public class JakartaEEServletsIT {
     }
 
     /**
+     * Call the XML test servlet.
+     * @throws Exception if anything goes wrong.
+     */
+    @Test
+    public void testXmlServlet() throws Exception {
+        testServlet("xml-reader");
+    }
+
+    /**
      * Test the EAR with an EJB and WAR.
      * @throws Exception if anything goes wrong.
      */
