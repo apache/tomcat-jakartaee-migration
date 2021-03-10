@@ -23,7 +23,11 @@ import javax.ejb.Stateless;
 import org.apache.jakartaee.testdata.ejb.api.SampleEjbApi;
 
 /**
- * Implementation of the sample EJB.
+ * Implementation of the sample EJB.<br><br>
+ * Due to the way Tomcat is designed, if you have a JEE class under a (sub)package of
+ * <code>org.apache.tomcat.**</code> then Tomcat will "filter it out" - As it believes you are
+ * trying to access its own internal classes. We hence need to put our integration test classes
+ * under the <code>org.apache.jakartaee.testdata</code> package.
  */
 @Local
 @Remote

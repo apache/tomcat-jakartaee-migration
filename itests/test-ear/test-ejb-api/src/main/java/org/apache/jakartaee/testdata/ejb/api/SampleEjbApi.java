@@ -17,7 +17,11 @@
 package org.apache.jakartaee.testdata.ejb.api;
 
 /**
- * API for the sample EJB.
+ * API for the sample EJB.<br><br>
+ * Due to the way Tomcat is designed, if you have a JEE class under a (sub)package of
+ * <code>org.apache.tomcat.**</code> then Tomcat will "filter it out" - As it believes you are
+ * trying to access its own internal classes. We hence need to put our integration test classes
+ * under the <code>org.apache.jakartaee.testdata</code> package.
  */
 public interface SampleEjbApi {
     public String sayHello();

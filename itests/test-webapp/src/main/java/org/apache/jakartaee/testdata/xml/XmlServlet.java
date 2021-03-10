@@ -36,8 +36,10 @@ import org.xml.sax.SAXException;
 
 /**
  * Sample test Servlet which internally parses and XML.<br><br>
- * We cannot use the <code>org.apache.tomcat.jakartaee.testdata</code> package, else TomEE throws
- * {@link ClassNotFoundException} errors while loading the servlet.
+ * Due to the way Tomcat is designed, if you have a JEE class under a (sub)package of
+ * <code>org.apache.tomcat.**</code> then Tomcat will "filter it out" - As it believes you are
+ * trying to access its own internal classes. We hence need to put our integration test classes
+ * under the <code>org.apache.jakartaee.testdata</code> package.
  */
 @WebServlet(urlPatterns = { "/test-xml-reader" })
 public class XmlServlet extends HttpServlet {
