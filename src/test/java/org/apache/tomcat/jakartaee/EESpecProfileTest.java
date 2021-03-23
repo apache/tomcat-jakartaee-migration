@@ -28,6 +28,56 @@ public class EESpecProfileTest {
         EESpecProfile profile = EESpecProfile.TOMCAT;
 
         assertEquals("jakarta.annotation", profile.convert("javax.annotation"));
+        assertEquals("jakarta.el", profile.convert("javax.el"));
+        assertEquals("jakarta.security.auth.message", profile.convert("javax.security.auth.message"));
+        assertEquals("jakarta.servlet", profile.convert("javax.servlet"));
+        assertEquals("jakarta.websocket", profile.convert("javax.websocket"));
+
+        // not converted EE packages
+        assertEquals("javax.ejb", profile.convert("javax.ejb"));
+        assertEquals("javax.mail", profile.convert("javax.mail"));
+        assertEquals("javax.persistence", profile.convert("javax.persistence"));
+        assertEquals("javax.transaction", profile.convert("javax.transaction"));
+        assertEquals("javax.activation", profile.convert("javax.activation"));
+        assertEquals("javax.batch", profile.convert("javax.batch"));
+        assertEquals("javax.decorator", profile.convert("javax.decorator"));
+        assertEquals("javax.enterprise", profile.convert("javax.enterprise"));
+        assertEquals("javax.faces", profile.convert("javax.faces"));
+        assertEquals("javax.jms", profile.convert("javax.jms"));
+        assertEquals("javax.json", profile.convert("javax.json"));
+        assertEquals("javax.jws", profile.convert("javax.jws"));
+        assertEquals("javax.interceptor", profile.convert("javax.interceptor"));
+        assertEquals("javax.inject", profile.convert("javax.inject"));
+        assertEquals("javax.management.j2ee", profile.convert("javax.management.j2ee"));
+        assertEquals("javax.resource", profile.convert("javax.resource"));
+        assertEquals("javax.security.enterprise", profile.convert("javax.security.enterprise"));
+        assertEquals("javax.security.jacc", profile.convert("javax.security.jacc"));
+        assertEquals("javax.validation", profile.convert("javax.validation"));
+        assertEquals("javax.ws.rs", profile.convert("javax.ws.rs"));
+        assertEquals("javax.xml.bind", profile.convert("javax.xml.bind"));
+        assertEquals("javax.xml.rpc", profile.convert("javax.xml.rpc"));
+        assertEquals("javax.xml.registry", profile.convert("javax.xml.registry"));
+        assertEquals("javax.xml.soap", profile.convert("javax.xml.soap"));
+        assertEquals("javax.xml.ws", profile.convert("javax.xml.ws"));
+
+        // non EE javax packages
+        assertEquals("javax.annotation.processing", profile.convert("javax.annotation.processing"));
+        assertEquals("javax.management", profile.convert("javax.management"));
+        assertEquals("javax.security", profile.convert("javax.security"));
+        assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
+        assertEquals("javax.swing", profile.convert("javax.swing"));
+        assertEquals("javax.transaction.xa", profile.convert("javax.transaction.xa"));
+        assertEquals("javax.xml.stream", profile.convert("javax.xml.stream"));
+        assertEquals("javax.xml.namespace", profile.convert("javax.xml.namespace"));
+        assertEquals("javax.xml.xpath.XPathConstants", profile.convert("javax.xml.xpath.XPathConstants"));
+        assertEquals("javax.xml.XMLConstants", profile.convert("javax.xml.XMLConstants"));
+    }
+
+    @Test
+    public void testProfileTomcatFull() {
+        EESpecProfile profile = EESpecProfile.TOMCAT_FULL;
+
+        assertEquals("jakarta.annotation", profile.convert("javax.annotation"));
         assertEquals("jakarta.ejb", profile.convert("javax.ejb"));
         assertEquals("jakarta.el", profile.convert("javax.el"));
         assertEquals("jakarta.mail", profile.convert("javax.mail"));
