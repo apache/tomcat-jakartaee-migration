@@ -3,6 +3,7 @@
 ## 0.3.0 (in progress)
 
 - Fix [#14](https://github.com/apache/tomcat-jakartaee-migration/issues/14). Do not migrate `javax.xml.(registry|rpc)` namespaces. (mgrigorov)
+- The class transformer will now validate that its rewrite exists in the runtime environment (remm)
 
 ## 0.2.0
 

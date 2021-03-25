@@ -101,7 +101,57 @@ public class ClassConverter implements Converter, ClassFileTransformer {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(classfileBuffer);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
-            convert(className, inputStream, outputStream, profile);
+            ClassParser parser = new ClassParser(inputStream, "unknown");
+            JavaClass javaClass = parser.parse();
+
+            boolean converted = false;
+
+            // Loop through constant pool
+            Constant[] constantPool = javaClass.getConstantPool().getConstantPool();
+            // Need an int as the maximum pool size is 2^16
+            for (int i = 0; i < constantPool.length; i++) {
+                if (constantPool[i] instanceof ConstantUtf8) {
+                    ConstantUtf8 c = (ConstantUtf8) constantPool[i];
+                    String str = c.getBytes();
+                    String newString = profile.convert(str);
+                    // Object comparison is deliberate
+                    if (newString != str) {
+                        // Since this is runtime conversion, the idea is to only convert to
+                        // Jakarta EE specification classes that exist in the container 
+                        String[] split = newString.split(";");
+                        for (String current : split) {
+                            int pos = current.indexOf("jakarta/");
+                            if (pos >= 0) {
+                                boolean found = false;
+                                try {
+                                    loader.loadClass(current.substring(pos).replace('/', '.'));
+                                    found = true;
+                                } catch (Exception e) {}
+                                if (!found) {
+                                    // Cancel the replacement as the replacement does not exist
+                                    String originalFragment = current.replace("jakarta/", "javax/");
+                                    newString = newString.replace(current, originalFragment);
+                                }
+                            }
+                        }
+                        if (newString != str) {
+                            c = new ConstantUtf8(newString);
+                            constantPool[i] = c;
+                            converted = true;
+                        }
+                    }
+                }
+            }
+
+            if (logger.isLoggable(Level.FINE)) {
+                if (converted) {
+                    logger.log(Level.FINE, sm.getString("classConverter.converted", className));
+                } else if (logger.isLoggable(Level.FINEST)) {
+                    logger.log(Level.FINEST, sm.getString("classConverter.noConversion", className));
+                }
+            }
+
+            javaClass.dump(outputStream);
         } catch (IOException e) {
             throw new IllegalClassFormatException(e.getLocalizedMessage());
         }
