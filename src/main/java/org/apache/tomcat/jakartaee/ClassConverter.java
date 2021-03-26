@@ -118,16 +118,14 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                     if (newString != str) {
                         // Since this is runtime conversion, the idea is to only convert to
                         // Jakarta EE specification classes that exist in the container 
-                        String[] split = newString.split(";");
+                        String[] split = newString.split(";|<");
                         for (String current : split) {
                             int pos = current.indexOf("jakarta/");
                             if (pos >= 0) {
-                                boolean found = false;
-                                try {
-                                    loader.loadClass(current.substring(pos).replace('/', '.'));
-                                    found = true;
-                                } catch (Exception e) {}
-                                if (!found) {
+                                if (loader.getResource(current.substring(pos) + ".class") == null) {
+                                    if (logger.isLoggable(Level.FINE)) {
+                                        logger.log(Level.FINE, sm.getString("classConverter.skipName", current.substring(pos)));
+                                    }
                                     // Cancel the replacement as the replacement does not exist
                                     String originalFragment = current.replace("jakarta/", "javax/");
                                     newString = newString.replace(current, originalFragment);
