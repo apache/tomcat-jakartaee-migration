@@ -104,7 +104,8 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                             if (pos >= 0) {
                                 if (loader.getResource(current.substring(pos) + ".class") == null) {
                                     if (logger.isLoggable(Level.FINE)) {
-                                        logger.log(Level.FINE, sm.getString("classConverter.skipName", current.substring(pos)));
+                                        logger.log(Level.FINE, sm.getString("classConverter.skipName",
+                                                current.substring(pos).replace('/','.')));
                                     }
                                     // Cancel the replacement as the replacement does not exist
                                     String originalFragment = current.replace("jakarta/", "javax/");
@@ -122,9 +123,9 @@ public class ClassConverter implements Converter, ClassFileTransformer {
 
         if (logger.isLoggable(Level.FINE)) {
             if (converted) {
-                logger.log(Level.FINE, sm.getString("classConverter.converted", path));
+                logger.log(Level.FINE, sm.getString("classConverter.converted", path.replace('/','.')));
             } else if (logger.isLoggable(Level.FINEST)) {
-                logger.log(Level.FINEST, sm.getString("classConverter.noConversion", path));
+                logger.log(Level.FINEST, sm.getString("classConverter.noConversion", path.replace('/','.')));
             }
         }
 
