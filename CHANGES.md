@@ -1,6 +1,8 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
-## 1.0.0 (in progress)
+## 1.0.1 (in progress)
+
+## 1.0.0
 
 - Fix [#14](https://github.com/apache/tomcat-jakartaee-migration/issues/14). Do not migrate `javax.xml.(registry|rpc)` namespaces. (mgrigorov)
 - The class transformer will now validate that the target classes in the Jakarta namespace exist in the runtime environment (remm)
