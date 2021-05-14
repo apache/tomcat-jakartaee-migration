@@ -45,6 +45,7 @@ public class TextConverter implements Converter {
         supportedExtensions.add("xml");
         supportedExtensions.add("json");
         supportedExtensions.add("properties");
+        supportedExtensions.add("groovy");
     }
 
 

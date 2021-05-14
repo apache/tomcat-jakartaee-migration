@@ -1,6 +1,7 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
 ## 1.0.1 (in progress)
+- Fix [#19](https://github.com/apache/tomcat-jakartaee-migration/issues/19). Add support for converting `.groovy` files.
 
 - Fix [#20](https://github.com/apache/tomcat-jakartaee-migration/issues/20) by using commons-compression instead of the Java zip code (remm)
 - Remove deprecated `-verbose` command line option (remm)
