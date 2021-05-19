@@ -3,6 +3,7 @@
 ## 1.0.1 (in progress)
 
 - Fix [#20](https://github.com/apache/tomcat-jakartaee-migration/issues/20) by using commons-compression instead of the Java zip code (remm)
+- Remove deprecated `-verbose` command line option (remm)
 
 ## 1.0.0
 

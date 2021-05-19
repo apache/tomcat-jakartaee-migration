@@ -57,7 +57,7 @@ public class MigrationTest {
     @Test
     public void testMigrateSingleSourceFileWithProfile() throws Exception {
         File migratedFile = new File("target/test-classes/HelloServlet.migrated.java");
-        MigrationCLI.main(new String[] {"-verbose", "-profile=EE", "target/test-classes/HelloServlet.java", migratedFile.getAbsolutePath()});
+        MigrationCLI.main(new String[] {"-logLevel=FINE", "-profile=EE", "target/test-classes/HelloServlet.java", migratedFile.getAbsolutePath()});
 
         assertTrue("Migrated file not found", migratedFile.exists());
 

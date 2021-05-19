@@ -33,9 +33,6 @@ public class MigrationCLI {
     private static final String EXCLUDE_ARG = "-exclude=";
     private static final String LOGLEVEL_ARG = "-logLevel=";
     private static final String PROFILE_ARG = "-profile=";
-    // Will be removed for 1.0.0
-    @Deprecated
-    private static final String VERBOSE_ARG = "-verbose";
     private static final String ZIPINMEMORY_ARG = "-zipInMemory";
 
     public static void main(String[] args) throws IOException {
@@ -81,13 +78,6 @@ public class MigrationCLI {
             } else if (argument.equals(ZIPINMEMORY_ARG)) {
                 iter.remove();
                 migration.setZipInMemory(true);
-            } else if (argument.equals(VERBOSE_ARG)) {
-                iter.remove();
-                // Ignore if LOGLEVEL_ARG has set something different
-                if (Logger.getGlobal().getParent().getLevel().equals(Level.INFO)) {
-                    Logger.getGlobal().getParent().getHandlers()[0].setLevel(Level.FINE);
-                    Logger.getGlobal().getParent().setLevel(Level.FINE);
-                }
             }
         }
 
