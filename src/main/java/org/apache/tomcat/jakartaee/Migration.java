@@ -30,21 +30,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.jar.JarEntry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
-import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.CloseShieldInputStream;
-import org.apache.commons.io.output.CloseShieldOutputStream;
 
 public class Migration {
 
@@ -214,23 +209,22 @@ public class Migration {
 
 
     private void migrateArchiveStreaming(String name, InputStream src, OutputStream dest) throws IOException {
-        try (ZipInputStream zipIs = new ZipInputStream(new CloseShieldInputStream(src));
-                ZipOutputStream zipOs = new ZipOutputStream(new CloseShieldOutputStream(dest))) {
-            ZipEntry zipEntry;
-            while ((zipEntry = zipIs.getNextEntry()) != null) {
-                String sourceName = zipEntry.getName();
-                if (isSignatureFile(sourceName)) {
-                    logger.log(Level.WARNING, sm.getString("migration.skipSignatureFile", sourceName));
+        try (ZipArchiveInputStream srcZipStream = new ZipArchiveInputStream(src);
+                ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(dest)) {
+            ZipArchiveEntry srcZipEntry;
+            while ((srcZipEntry = srcZipStream.getNextZipEntry()) != null) {
+                String srcName = srcZipEntry.getName();
+                if (isSignatureFile(srcName)) {
+                    logger.log(Level.WARNING, sm.getString("migration.skipSignatureFile", srcName));
                     continue;
                 }
-                String destName = profile.convert(sourceName);
-                JarEntry destEntry = new JarEntry(destName);
-                zipOs.putNextEntry(destEntry);
-                migrateStream(sourceName, zipIs, zipOs);
+                String destName = profile.convert(srcName);
+                RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry);
+                destZipEntry.setName(destName);
+                destZipStream.putArchiveEntry(destZipEntry);
+                migrateStream(srcName, srcZipStream, destZipStream);
+                destZipStream.closeArchiveEntry();
             }
-        } catch (ZipException ze) {
-            logger.log(Level.SEVERE, sm.getString("migration.archiveFailed", name), ze);
-            throw ze;
         }
     }
 

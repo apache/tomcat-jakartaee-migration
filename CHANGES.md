@@ -2,6 +2,8 @@
 
 ## 1.0.1 (in progress)
 
+- Fix [#20] by using commons-compression instead of the Java zip code (remm)
+
 ## 1.0.0
 
 - Fix [#14](https://github.com/apache/tomcat-jakartaee-migration/issues/14). Do not migrate `javax.xml.(registry|rpc)` namespaces. (mgrigorov)
