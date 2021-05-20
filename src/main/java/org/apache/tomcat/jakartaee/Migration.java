@@ -40,6 +40,8 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.output.CloseShieldOutputStream;
 
 public class Migration {
 
@@ -209,8 +211,8 @@ public class Migration {
 
 
     private void migrateArchiveStreaming(String name, InputStream src, OutputStream dest) throws IOException {
-        try (ZipArchiveInputStream srcZipStream = new ZipArchiveInputStream(src);
-                ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(dest)) {
+        try (ZipArchiveInputStream srcZipStream = new ZipArchiveInputStream(new CloseShieldInputStream(src));
+                ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(new CloseShieldOutputStream(dest))) {
             ZipArchiveEntry srcZipEntry;
             while ((srcZipEntry = srcZipStream.getNextZipEntry()) != null) {
                 String srcName = srcZipEntry.getName();
