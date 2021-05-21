@@ -2,7 +2,7 @@
 
 
 [![Build Status](https://secure.travis-ci.org/apache/tomcat-jakartaee-migration.svg)](http://travis-ci.org/apache/tomcat-jakartaee-migration)
-[![Coverage Status](https://coveralls.io/repos/github/apache/tomcat-jakartaee-migration/badge.svg?branch=master)](https://coveralls.io/github/apache/tomcat-jakartaee-migration?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/apache/tomcat-jakartaee-migration/badge.svg?branch=main)](https://coveralls.io/github/apache/tomcat-jakartaee-migration?branch=main)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## Overview
@@ -63,7 +63,7 @@ The migration tool is available as an Ant task, here is an example:
 ## Differences between Java EE 8 and Jakarta EE 9
 
 The difference between Java EE 8 and Jakarta EE 9 is that all the
-[Java EE 8 packages](https://github.com/apache/tomcat-jakartaee-migration/blob/master/src/main/java/org/apache/tomcat/jakartaee/EESpecProfile.java#L37)
+[Java EE 8 packages](https://github.com/apache/tomcat-jakartaee-migration/blob/main/src/main/java/org/apache/tomcat/jakartaee/EESpecProfile.java#L37)
 in the `javax.*` namespace have moved to the `jakarta.*` namespace.
 Some sub-packages have also been renamed. 
 This migration tool performs all the necessary changes to migrate an application
