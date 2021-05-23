@@ -210,7 +210,7 @@ public class Migration {
     }
 
 
-    private void migrateArchiveStreaming(String name, InputStream src, OutputStream dest) throws IOException {
+    private void migrateArchiveStreaming(InputStream src, OutputStream dest) throws IOException {
         try (ZipArchiveInputStream srcZipStream = new ZipArchiveInputStream(new CloseShieldInputStream(src));
                 ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(new CloseShieldOutputStream(dest))) {
             ZipArchiveEntry srcZipEntry;
@@ -282,7 +282,7 @@ public class Migration {
                 logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
             } else {
                 logger.log(Level.INFO, sm.getString("migration.archive.stream", name));
-                migrateArchiveStreaming(name, src, dest);
+                migrateArchiveStreaming(src, dest);
                 logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
             }
         } else {
