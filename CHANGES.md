@@ -21,6 +21,8 @@
 
 - Update Maven AntRun plugin to 3.1.0. (markt)
 
+- Update Maven Assembly plugin to 3.4.0. (markt)
+
 ## 1.0.0
 
 - Fix [#14](https://github.com/apache/tomcat-jakartaee-migration/issues/14). Do not migrate `javax.xml.(registry|rpc)` namespaces. (mgrigorov)
