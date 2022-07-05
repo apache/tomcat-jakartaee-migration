@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
 public class ClassConverterTest {
 
     @Test
-    public void testConverter() {
+    public void testAccepts() {
         Converter converter = new ClassConverter();
 
         assertTrue(converter.accepts("HelloServlet.class"));
