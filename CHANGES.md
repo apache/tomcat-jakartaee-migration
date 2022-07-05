@@ -15,6 +15,8 @@
 
 - Update Apache Commons IO to 2.11.0. (markt)
 
+- Update Apache Parent to 26. (markt)
+
 ## 1.0.0
 
 - Fix [#14](https://github.com/apache/tomcat-jakartaee-migration/issues/14). Do not migrate `javax.xml.(registry|rpc)` namespaces. (mgrigorov)
