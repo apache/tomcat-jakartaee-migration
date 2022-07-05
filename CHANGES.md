@@ -17,6 +17,8 @@
 
 - Update Apache Parent to 26. (markt)
 
+- Update JUnit to 4.13.2. (markt)
+
 ## 1.0.0
 
 - Fix [#14](https://github.com/apache/tomcat-jakartaee-migration/issues/14). Do not migrate `javax.xml.(registry|rpc)` namespaces. (mgrigorov)
