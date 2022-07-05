@@ -9,6 +9,8 @@
 
 - Fix [bug 66163](https://bz.apache.org/bugzilla/show_bug.cgi?id=66163). Correct the handling of references of the form `jakarta. ...` when using the class transformer when those references are to classes not provided by the container. Based on a patch by Ole Schulz-Hildebrandt. (markt)
 
+- Update Apache Ant to 1.10.12. (markt)
+
 ## 1.0.0
 
 - Fix [#14](https://github.com/apache/tomcat-jakartaee-migration/issues/14). Do not migrate `javax.xml.(registry|rpc)` namespaces. (mgrigorov)
