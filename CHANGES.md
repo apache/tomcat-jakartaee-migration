@@ -4,25 +4,15 @@
 
 ## 1.0.1
 - Fix [#19](https://github.com/apache/tomcat-jakartaee-migration/issues/19). Add support for converting `.groovy` files.
-
 - Fix [#20](https://github.com/apache/tomcat-jakartaee-migration/issues/20) by using commons-compression instead of the Java zip code (remm)
-
 - Remove deprecated `-verbose` command line option (remm)
-
 - Fix [bug 66163](https://bz.apache.org/bugzilla/show_bug.cgi?id=66163). Correct the handling of references of the form `jakarta. ...` when using the class transformer when those references are to classes not provided by the container. Based on a patch by Ole Schulz-Hildebrandt. (markt)
-
 - Update Apache Ant to 1.10.12. (markt)
-
 - Update Apache Commons Compress to 1.21. (markt)
-
 - Update Apache Commons IO to 2.11.0. (markt)
-
 - Update Apache Parent to 26. (markt)
-
 - Update JUnit to 4.13.2. (markt)
-
 - Update Maven AntRun plugin to 3.1.0. (markt)
-
 - Update Maven Assembly plugin to 3.4.0. (markt)
 
 ## 1.0.0
