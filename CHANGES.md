@@ -11,7 +11,9 @@
 
 - Update Apache Ant to 1.10.12. (markt)
 
-- Update Commons IO to 2.11.0. (markt)
+- Update Apache Commons Compress to 1.21. (markt)
+
+- Update Apache Commons IO to 2.11.0. (markt)
 
 ## 1.0.0
 
