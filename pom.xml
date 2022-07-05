@@ -27,7 +27,7 @@
   <groupId>org.apache.tomcat</groupId>
   <artifactId>jakartaee-migration</artifactId>
   <name>Apache Tomcat Migration Tool for Jakarta EE</name>
-  <version>1.0.1</version>
+  <version>1.0.2-SNAPSHOT</version>
  
   <description>
     The aim of the tool is to take a web application written for Java EE 8 that
