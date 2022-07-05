@@ -101,14 +101,29 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                         String[] split = newString.split(";|<");
                         for (String current : split) {
                             int pos = current.indexOf("jakarta/");
+                            boolean dotMode = false;
+                            if (pos < 0) {
+                                pos = current.indexOf("jakarta.");
+                                dotMode = true;
+                            }
                             if (pos >= 0) {
-                                if (loader.getResource(current.substring(pos) + ".class") == null) {
+                                String resourceName = current.substring(pos);
+                                if (dotMode) {
+                                    resourceName = resourceName.replace('.', '/');
+                                }
+                                resourceName = resourceName + ".class";
+                                if (loader.getResource(resourceName) == null) {
                                     if (logger.isLoggable(Level.FINE)) {
                                         logger.log(Level.FINE, sm.getString("classConverter.skipName",
                                                 current.substring(pos).replace('/','.')));
                                     }
                                     // Cancel the replacement as the replacement does not exist
-                                    String originalFragment = current.replace("jakarta/", "javax/");
+                                    String originalFragment;
+                                    if (dotMode) {
+                                        originalFragment = current.replace("jakarta.", "javax.");
+                                    } else {
+                                        originalFragment = current.replace("jakarta/", "javax/");
+                                    }
                                     newString = newString.replace(current, originalFragment);
                                 }
                             }
