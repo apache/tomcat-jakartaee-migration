@@ -19,6 +19,8 @@
 
 - Update JUnit to 4.13.2. (markt)
 
+- Update Maven AntRun plugin to 3.1.0. (markt)
+
 ## 1.0.0
 
 - Fix [#14](https://github.com/apache/tomcat-jakartaee-migration/issues/14). Do not migrate `javax.xml.(registry|rpc)` namespaces. (mgrigorov)
