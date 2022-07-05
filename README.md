@@ -7,9 +7,7 @@
 
 ## Overview
 
-This tool is a work in progress.
-
-The aim of the tool is to take a web application written for Java EE 8 that
+The purpose of the tool is to take a web application written for Java EE 8 that
 runs on Apache Tomcat 9 and convert it automatically so it runs on Apache
 Tomcat 10 which implements Jakarta EE 9.
 
@@ -68,7 +66,8 @@ in the `javax.*` namespace have moved to the `jakarta.*` namespace.
 Some sub-packages have also been renamed. 
 This migration tool performs all the necessary changes to migrate an application
 from Java EE 8 to Jakarta EE 9 by renaming each Java EE 8 package to its Jakarta
-EE 9 replacement.
+EE 9 replacement. This includes package references in classes, String constants,
+configuration files, JSPs, TLDs etc.
 
 Note: Not all `javax.*` packages are part of Java EE. Only those defined by Java
 EE have moved to the `jakarta.*` namespace.
@@ -76,3 +75,11 @@ EE have moved to the `jakarta.*` namespace.
 Note: It is not necessary to migrate any references to XML schemas. The schemas
 don't directly reference javax packages and Jakarta EE 9 will continue to
 support the use of schemas from Java EE 8 and earlier.
+
+## Legal
+
+This tool modifies web application content as described in the previous section.
+This may include modification of third-party provided content. It is strongly
+recommended that you confirm that the license(s) associated with any third-party
+content permit such modifications, especially if you intend to distribute the
+result.
