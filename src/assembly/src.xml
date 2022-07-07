@@ -30,6 +30,7 @@
         <include>pom.xml</include>
         <include>README*</include>
         <include>mvnw*</include>
+        <include>CHANGES*</include>
       </includes>
     </fileSet>
     <fileSet>
