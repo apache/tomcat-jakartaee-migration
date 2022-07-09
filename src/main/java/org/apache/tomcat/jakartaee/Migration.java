@@ -211,8 +211,8 @@ public class Migration {
 
 
     private void migrateArchiveStreaming(InputStream src, OutputStream dest) throws IOException {
-        try (ZipArchiveInputStream srcZipStream = new ZipArchiveInputStream(new CloseShieldInputStream(src));
-                ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(new CloseShieldOutputStream(dest))) {
+        try (ZipArchiveInputStream srcZipStream = new ZipArchiveInputStream(CloseShieldInputStream.wrap(src));
+                ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(CloseShieldOutputStream.wrap(dest))) {
             ZipArchiveEntry srcZipEntry;
             while ((srcZipEntry = srcZipStream.getNextZipEntry()) != null) {
                 String srcName = srcZipEntry.getName();
