@@ -24,7 +24,8 @@ import java.util.regex.Pattern;
  */
 public enum EESpecProfile {
 
-    TOMCAT("javax([/\\.](annotation(?![/\\.]processing)" +
+    TOMCAT("javax", "jakarta", 
+            "javax([/\\.](annotation(?![/\\.]processing)" +
             "|ejb" +
             "|el" +
             "|mail" +
@@ -34,7 +35,33 @@ public enum EESpecProfile {
             "|transaction(?![/\\.]xa)" +
             "|websocket))"),
 
-    EE("javax([/\\.](activation" +
+    EE("javax", "jakarta", 
+            "javax([/\\.](activation" +
+            "|annotation(?![/\\.]processing)" +
+            "|batch" +
+            "|decorator" +
+            "|ejb" +
+            "|el" +
+            "|enterprise" +
+            "|faces" +
+            "|jms" +
+            "|json" +
+            "|jws" +
+            "|interceptor" +
+            "|inject" +
+            "|mail" +
+            "|management[/\\.]j2ee" +
+            "|persistence" +
+            "|resource" +
+            "|security[/\\.](auth[/\\.]message|enterprise|jacc)" +
+            "|servlet" +
+            "|transaction(?![/\\.]xa)" +
+            "|validation" +
+            "|websocket" +
+            "|ws[/\\.]rs" +
+            "|xml[/\\.](bind|soap|ws)))"),
+    JEE8("jakarta", "javax", 
+            "jakarta([/\\.](activation" +
             "|annotation(?![/\\.]processing)" +
             "|batch" +
             "|decorator" +
@@ -59,14 +86,28 @@ public enum EESpecProfile {
             "|ws[/\\.]rs" +
             "|xml[/\\.](bind|soap|ws)))");
 
+    private String source;
+    private String target;
     private Pattern pattern;
 
-    EESpecProfile(String pattern) {
+    EESpecProfile(String source, String target, String pattern) {
+        this.source = source;
+        this.target = target;
         this.pattern = Pattern.compile(pattern);
     }
 
     public String convert(String name) {
         Matcher m = pattern.matcher(name);
-        return m.replaceAll("jakarta$1");
+        return m.replaceAll(target + "$1");
+    }
+    
+    public String getSource()
+    {
+        return source;
+    }
+    
+    public String getTarget()
+    {
+        return target;
     }
 }
