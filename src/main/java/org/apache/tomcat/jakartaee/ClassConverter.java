@@ -26,7 +26,6 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.Constant;
 import org.apache.bcel.classfile.ConstantUtf8;
@@ -100,10 +99,10 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                         // Jakarta EE specification classes that exist in the container
                         String[] split = newString.split(";|<");
                         for (String current : split) {
-                            int pos = current.indexOf("jakarta/");
+                            int pos = current.indexOf(profile.getTarget() + "/");
                             boolean dotMode = false;
                             if (pos < 0) {
-                                pos = current.indexOf("jakarta.");
+                                pos = current.indexOf(profile.getTarget() + ".");
                                 dotMode = true;
                             }
                             if (pos >= 0) {
@@ -115,14 +114,15 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                                 if (loader.getResource(resourceName) == null) {
                                     if (logger.isLoggable(Level.FINE)) {
                                         logger.log(Level.FINE, sm.getString("classConverter.skipName",
+                                                profile.getSource(),
                                                 current.substring(pos).replace('/','.')));
                                     }
                                     // Cancel the replacement as the replacement does not exist
                                     String originalFragment;
                                     if (dotMode) {
-                                        originalFragment = current.replace("jakarta.", "javax.");
+                                        originalFragment = current.replace(profile.getTarget() + ".", profile.getSource() + ".");
                                     } else {
-                                        originalFragment = current.replace("jakarta/", "javax/");
+                                        originalFragment = current.replace(profile.getTarget() + "/", profile.getSource() + "/");
                                     }
                                     newString = newString.replace(current, originalFragment);
                                 }
