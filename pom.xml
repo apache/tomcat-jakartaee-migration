@@ -34,6 +34,8 @@
     Tomcat 10 which implements Jakarta EE 9.</description>
   <!-- TODO: Update this once the web site is updated. -->
   <url>https://tomcat.apache.org</url>
+  <inceptionYear>2020</inceptionYear>
+
   <mailingLists>
     <mailingList>
       <name>Apache Tomcat Announce List</name>
