@@ -17,7 +17,7 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
- 
+
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
@@ -26,14 +26,12 @@
 
   <groupId>org.apache.tomcat</groupId>
   <artifactId>jakartaee-migration</artifactId>
-  <name>Apache Tomcat Migration Tool for Jakarta EE</name>
   <version>1.0.2-SNAPSHOT</version>
- 
-  <description>
-    The aim of the tool is to take a web application written for Java EE 8 that
+  <name>Apache Tomcat Migration Tool for Jakarta EE</name>
+
+  <description>The aim of the tool is to take a web application written for Java EE 8 that
     runs on Apache Tomcat 9 and convert it automatically so it runs on Apache
-    Tomcat 10 which implements Jakarta EE 9.
-  </description>
+    Tomcat 10 which implements Jakarta EE 9.</description>
   <!-- TODO: Update this once the web site is updated. -->
   <url>https://tomcat.apache.org</url>
   <mailingLists>
@@ -56,9 +54,16 @@
       <unsubscribe>users-unsubscribe@tomcat.apache.org</unsubscribe>
       <post>users@tomcat.apache.org</post>
       <archive>https://lists.apache.org/list.html?users@tomcat.apache.org</archive>
-    </mailingList>    
+    </mailingList>
   </mailingLists>
-  
+
+  <scm>
+    <connection>scm:git:https://gitbox.apache.org/repos/asf/tomcat-jakartaee-migration.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/tomcat-jakartaee-migration.git</developerConnection>
+    <tag>main</tag>
+    <url>https://gitbox.apache.org/repos/asf?p=tomcat-jakartaee-migration.git</url>
+  </scm>
+
   <properties>
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
@@ -98,20 +103,13 @@
     </dependency>
   </dependencies>
 
-  <scm>
-    <connection>scm:git:https://gitbox.apache.org/repos/asf/tomcat-jakartaee-migration.git</connection>
-    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/tomcat-jakartaee-migration.git</developerConnection>
-    <url>https://gitbox.apache.org/repos/asf?p=tomcat-jakartaee-migration.git</url>
-    <tag>main</tag>
-  </scm>
-
   <build>
     <resources>
       <resource>
-        <directory>src/main/resources</directory>
         <filtering>true</filtering>
+        <directory>src/main/resources</directory>
       </resource>
-    </resources>   
+    </resources>
 
     <pluginManagement>
       <plugins>
@@ -137,14 +135,14 @@
         <executions>
           <execution>
             <id>create-test-jars</id>
-            <phase>process-test-classes</phase>
             <goals>
               <goal>run</goal>
             </goals>
+            <phase>process-test-classes</phase>
             <configuration>
               <target>
-                <jar destfile="target/test-classes/cgi-api.jar" basedir="target/test-classes" includes="**/CommonGatewayInterface*" />
-                <jar destfile="target/test-classes/hellocgi.jar" basedir="target/test-classes" includes="**/HelloCGI*">
+                <jar basedir="target/test-classes" destfile="target/test-classes/cgi-api.jar" includes="**/CommonGatewayInterface*" />
+                <jar basedir="target/test-classes" destfile="target/test-classes/hellocgi.jar" includes="**/HelloCGI*">
                   <manifest>
                     <attribute name="Implementation-Version" value="1.2.3" />
                   </manifest>
@@ -160,15 +158,15 @@
                 <parallel>
                   <sequential>
                     <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-rsa.jar" />
-                    <signjar jar="target/test-classes/hellocgi-signed-rsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="rsa" />
+                    <signjar alias="rsa" jar="target/test-classes/hellocgi-signed-rsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" />
                   </sequential>
                   <sequential>
                     <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-dsa.jar" />
-                    <signjar jar="target/test-classes/hellocgi-signed-dsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="dsa" />
+                    <signjar alias="dsa" jar="target/test-classes/hellocgi-signed-dsa.jar" keystore="src/test/resources/keystore.p12" storepass="apache" />
                   </sequential>
                   <sequential>
                     <copy file="target/test-classes/hellocgi.jar" tofile="target/test-classes/hellocgi-signed-ec.jar" />
-                    <signjar jar="target/test-classes/hellocgi-signed-ec.jar" keystore="src/test/resources/keystore.p12" storepass="apache" alias="ec" />
+                    <signjar alias="ec" jar="target/test-classes/hellocgi-signed-ec.jar" keystore="src/test/resources/keystore.p12" storepass="apache" />
                   </sequential>
                 </parallel>
               </target>
@@ -200,10 +198,10 @@
         <executions>
           <execution>
             <id>attach-sources</id>
-            <phase>verify</phase>
             <goals>
               <goal>jar-no-fork</goal>
             </goals>
+            <phase>verify</phase>
           </execution>
         </executions>
       </plugin>
@@ -228,10 +226,10 @@
         <executions>
           <execution>
             <id>make-assembly</id>
-            <phase>package</phase>
             <goals>
               <goal>single</goal>
             </goals>
+            <phase>package</phase>
             <configuration>
               <descriptors>
                 <descriptor>src/assembly/bin.xml</descriptor>
