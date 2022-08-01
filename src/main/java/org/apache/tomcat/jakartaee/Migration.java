@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -223,6 +224,7 @@ public class Migration {
                 String destName = profile.convert(srcName);
                 RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry);
                 destZipEntry.setName(destName);
+                destZipEntry.setMethod(ZipEntry.DEFLATED);
                 destZipStream.putArchiveEntry(destZipEntry);
                 migrateStream(srcName, srcZipStream, destZipStream);
                 destZipStream.closeArchiveEntry();
