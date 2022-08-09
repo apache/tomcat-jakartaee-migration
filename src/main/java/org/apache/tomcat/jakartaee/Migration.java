@@ -32,9 +32,11 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -213,7 +215,7 @@ public class Migration {
 
     private void migrateArchiveStreaming(InputStream src, OutputStream dest) throws IOException {
         try (ZipArchiveInputStream srcZipStream = new ZipArchiveInputStream(new CloseShieldInputStream(src));
-                ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(new CloseShieldOutputStream(dest))) {
+                CrcZipArchiveOutputStream destZipStream = new CrcZipArchiveOutputStream(new CloseShieldOutputStream(dest))) {
             ZipArchiveEntry srcZipEntry;
             while ((srcZipEntry = srcZipStream.getNextZipEntry()) != null) {
                 String srcName = srcZipEntry.getName();
@@ -224,8 +226,7 @@ public class Migration {
                 String destName = profile.convert(srcName);
                 RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry);
                 destZipEntry.setName(destName);
-                destZipEntry.setMethod(ZipEntry.DEFLATED);
-                destZipStream.putArchiveEntry(destZipEntry);
+                destZipStream.putRenameZipArchiveEntry(destZipEntry);
                 migrateStream(srcName, srcZipStream, destZipStream);
                 destZipStream.closeArchiveEntry();
             }
@@ -319,14 +320,74 @@ public class Migration {
     }
 
     private static class RenamableZipArchiveEntry extends ZipArchiveEntry {
-
+        protected final CRC32 crc = new CRC32();
+        protected long size = 0;
+        protected boolean needResetCrc;
         public RenamableZipArchiveEntry(ZipArchiveEntry entry) throws ZipException {
             super(entry);
+            needResetCrc = entry.getMethod() == ZipEntry.STORED;
+        }
+
+        @Override
+        public long getSize() {
+            return needResetCrc ? size : super.getSize();
+        }
+
+        @Override
+        public long getCrc() {
+            return needResetCrc ? crc.getValue() : super.getCrc();
+        }
+
+        public void update(byte[] b, int offset, int length) {
+            if (needResetCrc) {
+                crc.update(b, offset, length);
+                size += length;
+            }
         }
 
         @Override
         public void setName(String name) {
             super.setName(name);
+        }
+    }
+
+    private static class CrcZipArchiveOutputStream extends ZipArchiveOutputStream {
+        private RenamableZipArchiveEntry current;
+        private CrcZipArchiveOutputStream(OutputStream out) {
+            super(out);
+        }
+
+        @Override
+        public void write(byte[] b, int offset, int length) throws IOException {
+            super.write(b, offset, length);
+            update(b, offset, length);
+        }
+
+        @Override
+        public void putArchiveEntry(ArchiveEntry archiveEntry) throws IOException {
+            super.putArchiveEntry(archiveEntry);
+        }
+
+        @Override
+        public void closeArchiveEntry() throws IOException {
+            reset();
+            super.closeArchiveEntry();
+        }
+
+        public void putRenameZipArchiveEntry(RenamableZipArchiveEntry archiveEntry) throws IOException {
+            current = archiveEntry;
+            putArchiveEntry(archiveEntry);
+        }
+
+
+        private void reset() {
+            current = null;
+        }
+
+        private void update(byte[] b, int offset, int length) {
+            if (current != null) {
+                current.update(b, offset, length);
+            }
         }
     }
 }
