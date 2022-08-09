@@ -224,7 +224,7 @@ public class Migration {
                     continue;
                 }
                 String destName = profile.convert(srcName);
-                RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry);
+                RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry, false);
                 destZipEntry.setName(destName);
                 destZipStream.putRenameZipArchiveEntry(destZipEntry);
                 migrateStream(srcName, srcZipStream, destZipStream);
@@ -254,7 +254,7 @@ public class Migration {
                     continue;
                 }
                 String destName = profile.convert(srcName);
-                RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry);
+                RenamableZipArchiveEntry destZipEntry = new RenamableZipArchiveEntry(srcZipEntry, true);
                 destZipEntry.setName(destName);
                 destZipStream.putArchiveEntry(destZipEntry);
                 migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
@@ -323,9 +323,9 @@ public class Migration {
         protected final CRC32 crc = new CRC32();
         protected long size = 0;
         protected boolean needResetCrc;
-        public RenamableZipArchiveEntry(ZipArchiveEntry entry) throws ZipException {
+        public RenamableZipArchiveEntry(ZipArchiveEntry entry, boolean inMemory) throws ZipException {
             super(entry);
-            needResetCrc = entry.getMethod() == ZipEntry.STORED;
+            needResetCrc = !inMemory && entry.getMethod() == ZipEntry.STORED;
         }
 
         @Override
