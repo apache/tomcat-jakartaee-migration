@@ -1,6 +1,7 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
 ## 1.0.2 (in progress)
+- Fix [#29](https://github.com/apache/tomcat-jakartaee-migration/issues/29) by recalculating the CRC value of the entry type is SORTED after converting (lihan)
 
 ## 1.0.1
 - Fix [#19](https://github.com/apache/tomcat-jakartaee-migration/issues/19). Add support for converting `.groovy` files.
