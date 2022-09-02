@@ -4,6 +4,7 @@
 - Fix [#29](https://github.com/apache/tomcat-jakartaee-migration/issues/29) by recalculating the CRC value of the entry type is SORTED after converting (lihan)
 - Update Apache Parent to 27. (markt)
 - Update Maven Assembly plugin to 3.4.2. (markt)
+- Update Maven Source plugin to 3.2.1. (markt)
 
 ## 1.0.1
 - Fix [#19](https://github.com/apache/tomcat-jakartaee-migration/issues/19). Add support for converting `.groovy` files.
