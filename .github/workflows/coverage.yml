@@ -5,7 +5,7 @@
 # (the "License"); you may not use this file except in compliance with
 # the License.  You may obtain a copy of the License at
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: CI
+name: Coverage
 
 on:
   push:
@@ -27,17 +27,11 @@ env:
   LC_ALL: en_US.UTF-8
 
 jobs:
-  JDKxx_Matrix:
+  build:
     strategy:
-      fail-fast: false
       matrix:
-        java: [ 11, 17, 18, 19-ea ]
-        os: [ ubuntu-latest ]
-        include:
-        - os: windows-latest
-          java: 11
-    name: JDK${{ matrix.java }} ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+        java: [ 8 ]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - uses: actions/cache@v3.0.8
@@ -51,12 +45,8 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
     - name: Build
-      run: mvn -V test --file pom.xml --no-transfer-progress
-      continue-on-error:
-        true
-    - name: Upload logs
-      uses: actions/upload-artifact@v2
+      run: mvn -V test jacoco:report --file pom.xml --no-transfer-progress
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
       with:
-        name: JDK${{ matrix.java }}-${{ matrix.os }}-logs
-        path: output/build/logs/TEST*.txt
-        retention-days: 7
+        files: ./target/site/jacoco/jacoco.xml
