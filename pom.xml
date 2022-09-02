@@ -113,23 +113,6 @@
       </resource>
     </resources>
 
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>cobertura-maven-plugin</artifactId>
-          <version>2.7</version>
-          <configuration>
-            <check />
-            <formats>
-              <format>html</format>
-              <format>xml</format>
-            </formats>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-
     <plugins>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
