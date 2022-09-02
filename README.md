@@ -1,6 +1,7 @@
 # Apache Tomcat migration tool for Jakarta EE
 
 
+[![Coverage Status](https://codecov.io/gh/apache/tomcat-jakartaee-migration/branch/main/graph/badge.svg)](https://app.codecov.io/gh/apache/tomcat-jakartaee-migration/branch/main)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## Overview
