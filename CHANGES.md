@@ -1,6 +1,7 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
 ## 1.0.3 (in progress)
+- Fix [#32](https://github.com/apache/tomcat-jakartaee-migration/issues/32) handle conversion of manifests in exploded JARs. PR by wmccusker/ (markt
 
 ## 1.0.2 (not released)
 - Fix [#29](https://github.com/apache/tomcat-jakartaee-migration/issues/29) by recalculating the CRC value of the entry type is SORTED after converting (lihan)
