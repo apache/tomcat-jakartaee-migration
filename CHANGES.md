@@ -2,7 +2,7 @@
 
 ## 1.0.3 (in progress)
 
-## 1.0.2
+## 1.0.2 (not released)
 - Fix [#29](https://github.com/apache/tomcat-jakartaee-migration/issues/29) by recalculating the CRC value of the entry type is SORTED after converting (lihan)
 - Update Apache Parent to 27. (markt)
 - Update Maven Assembly plugin to 3.4.2. (markt)
