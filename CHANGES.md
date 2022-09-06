@@ -1,5 +1,9 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
+## 1.0.4 (in progress)
+
+- TBD
+
 ## 1.0.3
 
 - Fix [#32](https://github.com/apache/tomcat-jakartaee-migration/issues/32) handle conversion of manifests in exploded JARs. PR by wmccusker/ (markt)
