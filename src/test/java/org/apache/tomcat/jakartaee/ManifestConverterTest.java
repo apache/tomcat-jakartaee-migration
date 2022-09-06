@@ -17,6 +17,7 @@
 
 package org.apache.tomcat.jakartaee;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -29,5 +30,8 @@ public class ManifestConverterTest {
 
         assertTrue(converter.accepts("META-INF/MANIFEST.MF"));
         assertTrue(converter.accepts("WEB-INF/bundles/com.example.bundle/META-INF/MANIFEST.MF"));
+
+        assertFalse(converter.accepts("xMETA-INF/MANIFEST.MF"));
+        assertFalse(converter.accepts("WEB-INF/bundles/com.example.bundle/xMETA-INF/MANIFEST.MF"));
     }
 }

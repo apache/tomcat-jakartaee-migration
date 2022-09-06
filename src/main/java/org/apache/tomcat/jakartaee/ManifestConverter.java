@@ -39,7 +39,7 @@ public class ManifestConverter implements Converter {
 
     @Override
     public boolean accepts(String filename) {
-        if (filename.endsWith(JarFile.MANIFEST_NAME)) {
+        if (filename.equals(JarFile.MANIFEST_NAME) || filename.endsWith("/" + JarFile.MANIFEST_NAME)) {
             return true;
         }
 
