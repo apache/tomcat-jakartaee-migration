@@ -1,5 +1,9 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
+## 1.0.5
+
+- TBD
+
 ## 1.0.4
 
 - Correct a wrong implementation in the previous fix for [#29](https://github.com/apache/tomcat-jakartaee-migration/issues/29) (lihan)
