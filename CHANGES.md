@@ -2,7 +2,7 @@
 
 ## 1.0.4 (in progress)
 
-- Correct a regression in the previous fix for [#29](https://github.com/apache/tomcat-jakartaee-migration/issues/29) (lihan)
+- Correct a wrong implementation in the previous fix for [#29](https://github.com/apache/tomcat-jakartaee-migration/issues/29) (lihan)
 
 ## 1.0.3
 
