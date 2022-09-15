@@ -1,6 +1,6 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
-## 1.0.4 (in progress)
+## 1.0.4
 
 - Correct a wrong implementation in the previous fix for [#29](https://github.com/apache/tomcat-jakartaee-migration/issues/29) (lihan)
 - Add support for a JEE8 profile that attempts to migrate code using the Jakarta EE APIs to Java EE 8. Note that this will fail if the code uses any APIs added in Jakarta EE 10 onwards. PR #28 provided by blasss. (markt)
