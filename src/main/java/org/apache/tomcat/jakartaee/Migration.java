@@ -36,7 +36,6 @@ import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 
-import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -215,8 +214,9 @@ public class Migration {
 
     private void migrateArchiveStreaming(InputStream src, OutputStream dest) throws IOException {
         try (ZipArchiveInputStream srcZipStream = new ZipArchiveInputStream(CloseShieldInputStream.wrap(src));
-                CrcZipArchiveOutputStream destZipStream = new CrcZipArchiveOutputStream(CloseShieldOutputStream.wrap(dest))) {
+                ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(CloseShieldOutputStream.wrap(dest))) {
             ZipArchiveEntry srcZipEntry;
+            CRC32 crc32 = new CRC32();
             while ((srcZipEntry = srcZipStream.getNextZipEntry()) != null) {
                 String srcName = srcZipEntry.getName();
                 if (isSignatureFile(srcName)) {
@@ -224,11 +224,25 @@ public class Migration {
                     continue;
                 }
                 String destName = profile.convert(srcName);
-                MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry, false);
-                destZipEntry.setName(destName);
-                destZipStream.putArchiveEntry(destZipEntry);
-                migrateStream(srcName, srcZipStream, destZipStream);
-                destZipStream.closeArchiveEntry();
+                if (srcZipEntry.getMethod() == ZipEntry.STORED) {
+                    ByteArrayOutputStream tempBuffer = new ByteArrayOutputStream((int) (srcZipEntry.getSize() * 1.05));
+                    migrateStream(srcName, srcZipStream, tempBuffer);
+                    crc32.update(tempBuffer.toByteArray(), 0, tempBuffer.size());
+                    MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
+                    destZipEntry.setName(destName);
+                    destZipEntry.setSize(tempBuffer.size());
+                    destZipEntry.setCrc(crc32.getValue());
+                    destZipStream.putArchiveEntry(destZipEntry);
+                    tempBuffer.writeTo(destZipStream);
+                    destZipStream.closeArchiveEntry();
+                    crc32.reset();
+                } else {
+                    MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
+                    destZipEntry.setName(destName);
+                    destZipStream.putArchiveEntry(destZipEntry);
+                    migrateStream(srcName, srcZipStream, destZipStream);
+                    destZipStream.closeArchiveEntry();
+                }
             }
         }
     }
@@ -254,7 +268,7 @@ public class Migration {
                     continue;
                 }
                 String destName = profile.convert(srcName);
-                MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry, true);
+                MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
                 destZipEntry.setName(destName);
                 destZipStream.putArchiveEntry(destZipEntry);
                 migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
@@ -320,72 +334,13 @@ public class Migration {
     }
 
     private static class MigrationZipArchiveEntry extends ZipArchiveEntry {
-        protected final CRC32 crc = new CRC32();
-        protected long size = 0;
-        protected boolean needResetCrc;
-        public MigrationZipArchiveEntry(ZipArchiveEntry entry, boolean inMemory) throws ZipException {
+        public MigrationZipArchiveEntry(ZipArchiveEntry entry) throws ZipException {
             super(entry);
-            // No recalculation required, when in memory mode and not of type SORTED
-            needResetCrc = !inMemory && entry.getMethod() == ZipEntry.STORED;
-        }
-
-        @Override
-        public long getSize() {
-            return needResetCrc ? size : super.getSize();
-        }
-
-        @Override
-        public long getCrc() {
-            return needResetCrc ? crc.getValue() : super.getCrc();
-        }
-
-        public void update(byte[] b, int offset, int length) {
-            if (needResetCrc) {
-                crc.update(b, offset, length);
-                size += length;
-            }
         }
 
         @Override
         public void setName(String name) {
             super.setName(name);
-        }
-    }
-
-    private static class CrcZipArchiveOutputStream extends ZipArchiveOutputStream {
-        private MigrationZipArchiveEntry current;
-        private CrcZipArchiveOutputStream(OutputStream out) {
-            super(out);
-        }
-
-        @Override
-        public void write(byte[] b, int offset, int length) throws IOException {
-            super.write(b, offset, length);
-            update(b, offset, length);
-        }
-
-        @Override
-        public void putArchiveEntry(ArchiveEntry archiveEntry) throws IOException {
-            if (archiveEntry instanceof MigrationZipArchiveEntry) {
-                current = (MigrationZipArchiveEntry) archiveEntry;
-            }
-            super.putArchiveEntry(archiveEntry);
-        }
-
-        @Override
-        public void closeArchiveEntry() throws IOException {
-            reset();
-            super.closeArchiveEntry();
-        }
-
-        private void reset() {
-            current = null;
-        }
-
-        private void update(byte[] b, int offset, int length) {
-            if (current != null) {
-                current.update(b, offset, length);
-            }
         }
     }
 }
