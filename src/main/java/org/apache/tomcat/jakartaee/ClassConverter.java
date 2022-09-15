@@ -26,6 +26,7 @@ import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.Constant;
 import org.apache.bcel.classfile.ConstantUtf8;

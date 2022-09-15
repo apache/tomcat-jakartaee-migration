@@ -233,11 +233,7 @@ public final class GlobMatcher {
         return true;
     }
 
-    private static boolean different(
-        boolean caseSensitive, char ch, char other) {
-        return caseSensitive
-            ? ch != other
-            : Character.toUpperCase(ch) != Character.toUpperCase(other);
+    private static boolean different(boolean caseSensitive, char ch, char other) {
+        return caseSensitive ? ch != other : Character.toUpperCase(ch) != Character.toUpperCase(other);
     }
-
 }

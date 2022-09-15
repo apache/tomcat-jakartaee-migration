@@ -195,7 +195,7 @@ public class Migration {
         boolean inplace = src.equals(dest);
         if (!inplace) {
             try (InputStream is = new FileInputStream(src);
-                 OutputStream os = new FileOutputStream(dest)) {
+                    OutputStream os = new FileOutputStream(dest)) {
                 migrateStream(src.getName(), is, os);
             }
         } else {
@@ -283,8 +283,12 @@ public class Migration {
 
 
     private boolean isSignatureFile(String sourceName) {
-        return sourceName.startsWith("META-INF/")
-                && (sourceName.endsWith(".SF") || sourceName.endsWith(".RSA") || sourceName.endsWith(".DSA") || sourceName.endsWith(".EC"));
+        return sourceName.startsWith("META-INF/") && (
+                sourceName.endsWith(".SF") ||
+                sourceName.endsWith(".RSA") ||
+                sourceName.endsWith(".DSA") ||
+                sourceName.endsWith(".EC")
+                );
     }
 
 
@@ -334,7 +338,8 @@ public class Migration {
     }
 
     private static class MigrationZipArchiveEntry extends ZipArchiveEntry {
-        public MigrationZipArchiveEntry(ZipArchiveEntry entry) throws ZipException {
+
+        MigrationZipArchiveEntry(ZipArchiveEntry entry) throws ZipException {
             super(entry);
         }
 

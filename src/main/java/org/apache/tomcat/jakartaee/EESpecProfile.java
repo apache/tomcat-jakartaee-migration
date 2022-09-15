@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  */
 public enum EESpecProfile {
 
-    TOMCAT("javax", "jakarta", 
+    TOMCAT("javax", "jakarta",
             "javax([/\\.](annotation(?![/\\.]processing)" +
             "|ejb" +
             "|el" +
@@ -35,7 +35,7 @@ public enum EESpecProfile {
             "|transaction(?![/\\.]xa)" +
             "|websocket))"),
 
-    EE("javax", "jakarta", 
+    EE("javax", "jakarta",
             "javax([/\\.](activation" +
             "|annotation(?![/\\.]processing)" +
             "|batch" +
@@ -60,7 +60,7 @@ public enum EESpecProfile {
             "|websocket" +
             "|ws[/\\.]rs" +
             "|xml[/\\.](bind|soap|ws)))"),
-    JEE8("jakarta", "javax", 
+    JEE8("jakarta", "javax",
             "jakarta([/\\.](activation" +
             "|annotation(?![/\\.]processing)" +
             "|batch" +
@@ -100,12 +100,12 @@ public enum EESpecProfile {
         Matcher m = pattern.matcher(name);
         return m.replaceAll(target + "$1");
     }
-    
+
     public String getSource()
     {
         return source;
     }
-    
+
     public String getTarget()
     {
         return target;

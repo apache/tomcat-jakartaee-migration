@@ -27,11 +27,11 @@ import org.apache.tools.ant.Task;
 /**
  * JUL log handler redirecting the messages logged to Ant.
  */
- class AntHandler extends Handler {
+class AntHandler extends Handler {
 
     private final Task task;
 
-    public AntHandler(Task task) {
+    AntHandler(Task task) {
         this.task = task;
     }
 
