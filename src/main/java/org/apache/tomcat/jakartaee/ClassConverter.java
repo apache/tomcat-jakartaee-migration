@@ -31,6 +31,7 @@ import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.Constant;
 import org.apache.bcel.classfile.ConstantUtf8;
 import org.apache.bcel.classfile.JavaClass;
+import org.apache.commons.io.IOUtils;
 
 public class ClassConverter implements Converter, ClassFileTransformer {
 
@@ -80,7 +81,8 @@ public class ClassConverter implements Converter, ClassFileTransformer {
 
     protected boolean convertInternal(String path, InputStream src, OutputStream dest, EESpecProfile profile, ClassLoader loader)
             throws IOException {
-        ClassParser parser = new ClassParser(src, "unknown");
+        byte[] classBytes = IOUtils.toByteArray(src);
+        ClassParser parser = new ClassParser(new ByteArrayInputStream(classBytes), "unknown");
         JavaClass javaClass = parser.parse();
 
         boolean converted = false;
@@ -145,7 +147,11 @@ public class ClassConverter implements Converter, ClassFileTransformer {
             }
         }
 
-        javaClass.dump(dest);
+        if (converted) {
+            javaClass.dump(dest);
+        } else {
+            IOUtils.writeChunked(classBytes, dest);
+        }
 
         return converted;
     }
