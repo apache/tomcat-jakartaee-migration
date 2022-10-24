@@ -39,7 +39,7 @@ public class ClassConverter implements Converter, ClassFileTransformer {
 
     protected final EESpecProfile profile;
     public ClassConverter() {
-        this(EESpecProfile.TOMCAT);
+        this(EESpecProfiles.TOMCAT);
     }
     public ClassConverter(EESpecProfile profile) {
         this.profile = profile;
@@ -58,8 +58,8 @@ public class ClassConverter implements Converter, ClassFileTransformer {
 
 
     @Override
-    public void convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
-        convertInternal(path, src, dest, profile, null);
+    public boolean convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
+        return convertInternal(path, src, dest, profile, null);
     }
 
 
@@ -78,7 +78,7 @@ public class ClassConverter implements Converter, ClassFileTransformer {
     }
 
 
-    protected void convertInternal(String path, InputStream src, OutputStream dest, EESpecProfile profile, ClassLoader loader)
+    protected boolean convertInternal(String path, InputStream src, OutputStream dest, EESpecProfile profile, ClassLoader loader)
             throws IOException {
         ClassParser parser = new ClassParser(src, "unknown");
         JavaClass javaClass = parser.parse();
@@ -146,5 +146,7 @@ public class ClassConverter implements Converter, ClassFileTransformer {
         }
 
         javaClass.dump(dest);
+
+        return converted;
     }
 }

@@ -69,7 +69,7 @@ public class MigrationCLI {
                 iter.remove();
                 String profileName = argument.substring(PROFILE_ARG.length());
                 try {
-                    EESpecProfile profile = EESpecProfile.valueOf(profileName.toUpperCase(Locale.ENGLISH));
+                    EESpecProfile profile = EESpecProfiles.valueOf(profileName.toUpperCase(Locale.ENGLISH));
                     migration.setEESpecProfile(profile);
                 } catch (IllegalArgumentException e) {
                     // Invalid profile value

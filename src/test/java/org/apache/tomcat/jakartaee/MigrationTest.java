@@ -165,6 +165,13 @@ public class MigrationTest {
     }
 
     @Test
+    public void testHasConversionsThrowsWhenNotComplete() {
+        Migration migration = new Migration();
+        IllegalStateException exception = assertThrows(IllegalStateException.class, migration::hasConverted);
+        assertEquals("Migration has not completed", exception.getMessage());
+    }
+
+    @Test
     public void testMigrateSignedJarFileRSA() throws Exception {
         testMigrateSignedJarFile("rsa");
     }

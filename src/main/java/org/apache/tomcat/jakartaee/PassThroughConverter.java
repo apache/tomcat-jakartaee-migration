@@ -34,11 +34,12 @@ public class PassThroughConverter implements Converter {
     }
 
     @Override
-    public void convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
+    public boolean convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
         // This simply copies the source to the destination
         Util.copy(src, dest);
         if (logger.isLoggable(Level.FINEST)) {
             logger.log(Level.FINEST, sm.getString("passThroughConverter.noConversion", path));
         }
+        return false;
     }
 }

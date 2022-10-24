@@ -88,8 +88,12 @@ public class Migration {
         DEFAULT_EXCLUDES.add("spring-security-rsa-*.jar");
     }
 
-    private EESpecProfile profile = EESpecProfile.TOMCAT;
+    private EESpecProfile profile = EESpecProfiles.TOMCAT;
+
+    private boolean enableDefaultExcludes = true;
     private boolean zipInMemory;
+    private boolean converted;
+    private State state = State.NOT_STARTED;
     private File source;
     private File destination;
     private final List<Converter> converters;
@@ -105,6 +109,12 @@ public class Migration {
 
         // Final converter is the pass-through converter
         converters.add(new PassThroughConverter());
+    }
+
+    public enum State {
+        NOT_STARTED,
+        RUNNING,
+        COMPLETE
     }
 
     /**
@@ -123,6 +133,10 @@ public class Migration {
      */
     public EESpecProfile getEESpecProfile() {
         return profile;
+    }
+
+    public void setEnableDefaultExcludes(boolean enableDefaultExcludes) {
+        this.enableDefaultExcludes = enableDefaultExcludes;
     }
 
     public void setZipInMemory(boolean zipInMemory) {
@@ -147,7 +161,21 @@ public class Migration {
     }
 
 
+    public boolean hasConverted() {
+        if (state != State.COMPLETE) {
+            throw new IllegalStateException(sm.getString("migration.notCompleted"));
+        }
+        return converted;
+    }
+
+
     public void execute() throws IOException {
+        if (state == State.RUNNING) {
+            throw new IllegalStateException(sm.getString("migration.alreadyRunning"));
+        }
+        state = State.RUNNING;
+        converted = false;
+
         logger.log(Level.INFO, sm.getString("migration.execute", source.getAbsolutePath(),
                 destination.getAbsolutePath(), profile.toString()));
 
@@ -159,7 +187,7 @@ public class Migration {
                 throw new IOException(sm.getString("migration.mkdirError", destination.getAbsolutePath()));
             }
         } else {
-            // Single file
+            // Single file`
             File parentDestination = destination.getAbsoluteFile().getParentFile();
             if (parentDestination.exists() || parentDestination.mkdirs()) {
                 migrateFile(source, destination);
@@ -168,9 +196,8 @@ public class Migration {
             }
         }
         logger.log(Level.INFO, sm.getString("migration.done",
-                Long.valueOf(TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS))));
+                TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS)));
     }
-
 
     private void migrateDirectory(File src, File dest) throws IOException {
         // Won't return null because src is known to be a directory
@@ -309,13 +336,12 @@ public class Migration {
         } else {
             for (Converter converter : converters) {
                 if (converter.accepts(name)) {
-                    converter.convert(name, src, dest, profile);
+                    converted = converted | converter.convert(name, src, dest, profile);
                     break;
                 }
             }
         }
     }
-
 
     private boolean isArchive(String fileName) {
         return fileName.endsWith(".jar") || fileName.endsWith(".war") || fileName.endsWith(".zip");
@@ -326,7 +352,7 @@ public class Migration {
         File f = new File(name);
         String filename = f.getName();
 
-        if (GlobMatcher.matchName(DEFAULT_EXCLUDES, filename, true)) {
+        if (enableDefaultExcludes && GlobMatcher.matchName(DEFAULT_EXCLUDES, filename, true)) {
             return true;
         }
 
