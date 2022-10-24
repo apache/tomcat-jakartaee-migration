@@ -31,7 +31,7 @@ public class MigrationTask extends Task {
 
     private File src;
     private File dest;
-    private String profile = EESpecProfile.TOMCAT.toString();
+    private String profile = EESpecProfiles.TOMCAT.toString();
     private boolean zipInMemory = false;
     private String excludes;
 
@@ -74,7 +74,7 @@ public class MigrationTask extends Task {
         // check the parameters
         EESpecProfile profile = null;
         try {
-            profile = EESpecProfile.valueOf(this.profile.toUpperCase());
+            profile = EESpecProfiles.valueOf(this.profile.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new BuildException("Invalid profile specified: " + this.profile, getLocation()); // todo i18n
         }

@@ -48,20 +48,16 @@ public class ManifestConverter implements Converter {
     }
 
     @Override
-    public void convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
+    public boolean convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
         Manifest srcManifest = new Manifest(src);
         Manifest destManifest = new Manifest(srcManifest);
 
-        boolean result = false;
-
-        result = result | removeSignatures(destManifest);
+        boolean result = removeSignatures(destManifest);
         result = result | updateValues(destManifest, profile);
 
-        if (result) {
-            destManifest.write(dest);
-        } else {
-            srcManifest.write(dest);
-        }
+        destManifest.write(dest);
+
+        return result;
     }
 
 
@@ -97,8 +93,7 @@ public class ManifestConverter implements Converter {
 
 
     private boolean updateValues(Manifest manifest, EESpecProfile profile) {
-        boolean result = false;
-        result = result | updateValues(manifest.getMainAttributes(), profile);
+        boolean result = updateValues(manifest.getMainAttributes(), profile);
         for (Attributes attributes : manifest.getEntries().values()) {
             result = result | updateValues(attributes, profile);
         }
@@ -112,7 +107,7 @@ public class ManifestConverter implements Converter {
         if (attributes.containsKey(Attributes.Name.IMPLEMENTATION_VERSION)) {
             String newValue = attributes.get(Attributes.Name.IMPLEMENTATION_VERSION) + "-" + Info.getVersion();
             attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
-            result = true;
+            // Purposefully avoid setting result
         }
         // Update package names in values
         for (Entry<Object,Object> entry : attributes.entrySet()) {

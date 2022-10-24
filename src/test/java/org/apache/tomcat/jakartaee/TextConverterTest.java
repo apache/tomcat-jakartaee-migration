@@ -22,7 +22,7 @@ public class TextConverterTest {
 		TextConverter converter = new TextConverter();
 		ByteArrayInputStream in = new ByteArrayInputStream(INPUT.getBytes(StandardCharsets.ISO_8859_1));
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		EESpecProfile profile = EESpecProfile.EE;
+		EESpecProfile profile = EESpecProfiles.EE;
 
 		// test
 		converter.convert(TEST_FILENAME, in, out, profile);

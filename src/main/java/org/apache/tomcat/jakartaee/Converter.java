@@ -34,6 +34,7 @@ public interface Converter {
      * @param profile   The profile that defines the conversion required
      *
      * @throws IOException  If the conversion fails
+     * @return true if the converter made a conversion to the file
      */
-    void convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException;
+    boolean convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException;
 }

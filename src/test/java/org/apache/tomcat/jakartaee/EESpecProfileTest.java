@@ -25,7 +25,7 @@ public class EESpecProfileTest {
 
     @Test
     public void testProfileTomcat() {
-        EESpecProfile profile = EESpecProfile.TOMCAT;
+        EESpecProfile profile = EESpecProfiles.TOMCAT;
 
         assertEquals("jakarta.annotation", profile.convert("javax.annotation"));
         assertEquals("jakarta.ejb", profile.convert("javax.ejb"));
@@ -75,7 +75,7 @@ public class EESpecProfileTest {
 
     @Test
     public void testProfileEE() {
-        EESpecProfile profile = EESpecProfile.EE;
+        EESpecProfile profile = EESpecProfiles.EE;
 
         assertEquals("jakarta.activation", profile.convert("javax.activation"));
         assertEquals("jakarta.annotation", profile.convert("javax.annotation"));

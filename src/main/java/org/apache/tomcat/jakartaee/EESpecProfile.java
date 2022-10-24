@@ -14,100 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tomcat.jakartaee;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Specification profile defining the replacements performed.
- */
-public enum EESpecProfile {
-
-    TOMCAT("javax", "jakarta",
-            "javax([/\\.](annotation(?![/\\.]processing)" +
-            "|ejb" +
-            "|el" +
-            "|mail" +
-            "|persistence" +
-            "|security[/\\.]auth[/\\.]message" +
-            "|servlet" +
-            "|transaction(?![/\\.]xa)" +
-            "|websocket))"),
-
-    EE("javax", "jakarta",
-            "javax([/\\.](activation" +
-            "|annotation(?![/\\.]processing)" +
-            "|batch" +
-            "|decorator" +
-            "|ejb" +
-            "|el" +
-            "|enterprise" +
-            "|faces" +
-            "|jms" +
-            "|json" +
-            "|jws" +
-            "|interceptor" +
-            "|inject" +
-            "|mail" +
-            "|management[/\\.]j2ee" +
-            "|persistence" +
-            "|resource" +
-            "|security[/\\.](auth[/\\.]message|enterprise|jacc)" +
-            "|servlet" +
-            "|transaction(?![/\\.]xa)" +
-            "|validation" +
-            "|websocket" +
-            "|ws[/\\.]rs" +
-            "|xml[/\\.](bind|soap|ws)))"),
-    JEE8("jakarta", "javax",
-            "jakarta([/\\.](activation" +
-            "|annotation(?![/\\.]processing)" +
-            "|batch" +
-            "|decorator" +
-            "|ejb" +
-            "|el" +
-            "|enterprise" +
-            "|faces" +
-            "|jms" +
-            "|json" +
-            "|jws" +
-            "|interceptor" +
-            "|inject" +
-            "|mail" +
-            "|management[/\\.]j2ee" +
-            "|persistence" +
-            "|resource" +
-            "|security[/\\.](auth[/\\.]message|enterprise|jacc)" +
-            "|servlet" +
-            "|transaction(?![/\\.]xa)" +
-            "|validation" +
-            "|websocket" +
-            "|ws[/\\.]rs" +
-            "|xml[/\\.](bind|soap|ws)))");
-
-    private String source;
-    private String target;
-    private Pattern pattern;
-
-    EESpecProfile(String source, String target, String pattern) {
-        this.source = source;
-        this.target = target;
-        this.pattern = Pattern.compile(pattern);
+public interface EESpecProfile {
+    default String convert(String name) {
+        Matcher m = getPattern().matcher(name);
+        return m.replaceAll(getTarget() + "$1");
     }
 
-    public String convert(String name) {
-        Matcher m = pattern.matcher(name);
-        return m.replaceAll(target + "$1");
-    }
+    String getSource();
 
-    public String getSource()
-    {
-        return source;
-    }
+    String getTarget();
 
-    public String getTarget()
-    {
-        return target;
-    }
+    Pattern getPattern();
 }
+
