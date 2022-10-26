@@ -16,6 +16,7 @@
  */
 package org.apache.tomcat.jakartaee;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,6 +29,8 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.commons.io.IOUtils;
 
 /**
  * Updates Manifests.
@@ -49,20 +52,27 @@ public class ManifestConverter implements Converter {
 
     @Override
     public boolean convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
-        Manifest srcManifest = new Manifest(src);
+        byte[] srcBytes = IOUtils.toByteArray(src);
+        Manifest srcManifest = new Manifest(new ByteArrayInputStream(srcBytes));
         Manifest destManifest = new Manifest(srcManifest);
 
-        boolean result = removeSignatures(destManifest);
-        result = result | updateValues(destManifest, profile);
+        // Only consider profile conversions, allowing Migration.hasConverted to be true only when there are actual
+        // conversions made
+        boolean converted = updateValues(destManifest, profile);
+        removeSignatures(destManifest);
 
-        destManifest.write(dest);
+        if (srcManifest.equals(destManifest)) {
+            IOUtils.writeChunked(srcBytes, dest);
+        } else {
+            destManifest.write(dest);
+        }
 
-        return result;
+        return converted;
     }
 
 
-    private boolean removeSignatures(Manifest manifest) {
-        boolean removedSignatures = manifest.getMainAttributes().remove(Attributes.Name.SIGNATURE_VERSION) != null;
+    private void removeSignatures(Manifest manifest) {
+        manifest.getMainAttributes().remove(Attributes.Name.SIGNATURE_VERSION);
         List<String> signatureEntries = new ArrayList<>();
         Map<String, Attributes> manifestAttributeEntries = manifest.getEntries();
         for (Entry<String, Attributes> entry : manifestAttributeEntries.entrySet()) {
@@ -70,15 +80,12 @@ public class ManifestConverter implements Converter {
                 String entryName = entry.getKey();
                 signatureEntries.add(entryName);
                 logger.log(Level.FINE, sm.getString("migration.removeSignature", entryName));
-                removedSignatures = true;
             }
         }
 
         for (String entry : signatureEntries) {
             manifestAttributeEntries.remove(entry);
         }
-
-        return removedSignatures;
     }
 
 
@@ -93,16 +100,16 @@ public class ManifestConverter implements Converter {
 
 
     private boolean updateValues(Manifest manifest, EESpecProfile profile) {
-        boolean result = updateValues(manifest.getMainAttributes(), profile);
+        boolean converted = updateValues(manifest.getMainAttributes(), profile);
         for (Attributes attributes : manifest.getEntries().values()) {
-            result = result | updateValues(attributes, profile);
+            converted = converted | updateValues(attributes, profile);
         }
-        return result;
+        return converted;
     }
 
 
     private boolean updateValues(Attributes attributes, EESpecProfile profile) {
-        boolean result = false;
+        boolean converted = false;
         // Update version info
         if (attributes.containsKey(Attributes.Name.IMPLEMENTATION_VERSION)) {
             String newValue = attributes.get(Attributes.Name.IMPLEMENTATION_VERSION) + "-" + Info.getVersion();
@@ -115,9 +122,9 @@ public class ManifestConverter implements Converter {
             // Object comparison is deliberate
             if (newValue != entry.getValue()) {
                 entry.setValue(newValue);
-                result = true;
+                converted = true;
             }
         }
-        return result;
+        return converted;
     }
 }
