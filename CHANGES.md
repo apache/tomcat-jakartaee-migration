@@ -2,7 +2,9 @@
 
 ## 1.0.5
 
-- TBD
+- Improve manifest handling to remain the key ordering when unchanged manifests. PR [#36](https://github.com/apache/tomcat-jakartaee-migration/pull/36) provided by Danny Thomas (lihan)
+- Improve the performance of conversion by avoiding `JavaClass.dump` when there are no changes. PR [#36](https://github.com/apache/tomcat-jakartaee-migration/pull/36) provided by Danny Thomas (lihan)
+- Improve composability of the migration tool when using from other tools. PR [#36](https://github.com/apache/tomcat-jakartaee-migration/pull/36) provided by Danny Thomas (lihan)
 
 ## 1.0.4
 

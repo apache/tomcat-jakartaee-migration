@@ -161,6 +161,12 @@ public class Migration {
     }
 
 
+    /**
+     * <b>NOTE</b>:<br/>
+     * this method is not to indicate that no changes were made,
+     * but that the source can be used and satisfy the selected profile.
+     * @return true if converted occurs
+     */
     public boolean hasConverted() {
         if (state != State.COMPLETE) {
             throw new IllegalStateException(sm.getString("migration.notCompleted"));
