@@ -17,15 +17,15 @@
 
 package org.apache.tomcat.jakartaee;
 
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 /**
  * Specification profile defining the replacements performed.
  */
 public enum EESpecProfiles implements EESpecProfile {
-
     TOMCAT("javax", "jakarta",
-            "javax([/\\.](annotation(?![/\\.]processing)" +
+            "javax([/\\.](annotation[/\\.](" + Patterns.ANNOTATION_CLASSES + ")" +
                     "|ejb" +
                     "|el" +
                     "|mail" +
@@ -37,7 +37,7 @@ public enum EESpecProfiles implements EESpecProfile {
 
     EE("javax", "jakarta",
             "javax([/\\.](activation" +
-                    "|annotation(?![/\\.]processing)" +
+                    "|annotation[/\\.](" + Patterns.ANNOTATION_CLASSES + ")" +
                     "|batch" +
                     "|decorator" +
                     "|ejb" +
@@ -60,9 +60,10 @@ public enum EESpecProfiles implements EESpecProfile {
                     "|websocket" +
                     "|ws[/\\.]rs" +
                     "|xml[/\\.](bind|soap|ws)))"),
+
     JEE8("jakarta", "javax",
             "jakarta([/\\.](activation" +
-                    "|annotation(?![/\\.]processing)" +
+                    "|annotation[/\\.](" + Patterns.ANNOTATION_CLASSES + ")" +
                     "|batch" +
                     "|decorator" +
                     "|ejb" +
@@ -85,6 +86,31 @@ public enum EESpecProfiles implements EESpecProfile {
                     "|websocket" +
                     "|ws[/\\.]rs" +
                     "|xml[/\\.](bind|soap|ws)))");
+
+    private static final class Patterns {
+        /*
+         * Prefixes of classes provided by tomcat-annotations-api 8.5. Nullable and Notnull are present in later
+         * versions but the Findbugs JSR-305 implementation also has checkers that can't be satisfied by other
+         * implementations, so we avoid migrating those.
+         */
+        static final String ANNOTATION_CLASSES = String.join("|",
+                Arrays.asList(
+                        "Generated",
+                        "ManagedBean",
+                        "PostConstruct",
+                        "PreDestroy",
+                        "Priority",
+                        "Resource",
+                        "Resources",
+                        "security/DeclareRoles",
+                        "security/DenyAll",
+                        "security/PermitAll",
+                        "security/RolesAllowed",
+                        "security/RunAs",
+                        "sql/DataSourceDefinition"
+                ));
+    }
+
     private String source;
     private String target;
     private Pattern pattern;

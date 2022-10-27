@@ -162,6 +162,8 @@ public class MigrationTest {
             assertNotEquals("Implementation-Version manifest attribute not changed", "1.2.3", implementationVersion);
             assertTrue("Implementation-Version manifest attribute doesn't match the expected pattern", implementationVersion.matches("1\\.2\\.3-migrated-[\\d\\.]+.*"));
         }
+
+        assertTrue("hasConverted should be true", migration.hasConverted());
     }
 
     @Test

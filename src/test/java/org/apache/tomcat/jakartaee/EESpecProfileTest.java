@@ -27,7 +27,6 @@ public class EESpecProfileTest {
     public void testProfileTomcat() {
         EESpecProfile profile = EESpecProfiles.TOMCAT;
 
-        assertEquals("jakarta.annotation", profile.convert("javax.annotation"));
         assertEquals("jakarta.ejb", profile.convert("javax.ejb"));
         assertEquals("jakarta.el", profile.convert("javax.el"));
         assertEquals("jakarta.mail", profile.convert("javax.mail"));
@@ -61,7 +60,7 @@ public class EESpecProfileTest {
         assertEquals("javax.xml.ws", profile.convert("javax.xml.ws"));
 
         // non EE javax packages
-        assertEquals("javax.annotation.processing", profile.convert("javax.annotation.processing"));
+        assertEquals("javax.annotation", profile.convert("javax.annotation"));
         assertEquals("javax.management", profile.convert("javax.management"));
         assertEquals("javax.security", profile.convert("javax.security"));
         assertEquals("javax.security.auth", profile.convert("javax.security.auth"));
@@ -71,14 +70,22 @@ public class EESpecProfileTest {
         assertEquals("javax.xml.namespace", profile.convert("javax.xml.namespace"));
         assertEquals("javax.xml.xpath.XPathConstants", profile.convert("javax.xml.xpath.XPathConstants"));
         assertEquals("javax.xml.XMLConstants", profile.convert("javax.xml.XMLConstants"));
+
+        // Findbugs JSR-305 packages and classes
+        assertEquals("javax.annotation.concurrent", profile.convert("javax.annotation.concurrent"));
+        assertEquals("javax.annotation.meta", profile.convert("javax.annotation.meta"));
+        assertEquals("javax.annotation.PropertyKey", profile.convert("javax.annotation.PropertyKey"));
+
+        // Annotation classes that overlap between earlier and later annotations implementations
+        assertEquals("javax.annotation.Nonnull", profile.convert("javax.annotation.Nonnull"));
+        assertEquals("javax.annotation.Nullable", profile.convert("javax.annotation.Nullable"));
     }
 
     @Test
     public void testProfileEE() {
         EESpecProfile profile = EESpecProfiles.EE;
 
-        assertEquals("jakarta.activation", profile.convert("javax.activation"));
-        assertEquals("jakarta.annotation", profile.convert("javax.annotation"));
+        assertEquals("jakarta.activation.Generated", profile.convert("javax.activation.Generated"));
         assertEquals("jakarta.batch", profile.convert("javax.batch"));
         assertEquals("jakarta.decorator", profile.convert("javax.decorator"));
         assertEquals("jakarta.ejb", profile.convert("javax.ejb"));
@@ -119,6 +126,5 @@ public class EESpecProfileTest {
         assertEquals("javax.xml.rpc", profile.convert("javax.xml.rpc"));
         assertEquals("javax.xml.xpath.XPathConstants", profile.convert("javax.xml.xpath.XPathConstants"));
         assertEquals("javax.xml.XMLConstants", profile.convert("javax.xml.XMLConstants"));
-
     }
 }

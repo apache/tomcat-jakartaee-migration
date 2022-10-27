@@ -201,6 +201,7 @@ public class Migration {
                 throw new IOException(sm.getString("migration.mkdirError", parentDestination.getAbsolutePath()));
             }
         }
+        state = State.COMPLETE;
         logger.log(Level.INFO, sm.getString("migration.done",
                 TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS)));
     }

@@ -63,8 +63,11 @@ public class ManifestConverter implements Converter {
 
         if (srcManifest.equals(destManifest)) {
             IOUtils.writeChunked(srcBytes, dest);
+            logger.log(Level.FINEST, sm.getString("manifestConverter.noConversion", path));
         } else {
             destManifest.write(dest);
+            String key = converted ? "manifestConverter.converted" : "manifestConverter.updated";
+            logger.log(Level.FINE, sm.getString(key, path));
         }
 
         return converted;
@@ -79,7 +82,7 @@ public class ManifestConverter implements Converter {
             if (isCryptoSignatureEntry(entry.getValue())) {
                 String entryName = entry.getKey();
                 signatureEntries.add(entryName);
-                logger.log(Level.FINE, sm.getString("migration.removeSignature", entryName));
+                logger.log(Level.FINE, sm.getString("manifestConverter.removeSignature", entryName));
             }
         }
 
@@ -114,6 +117,7 @@ public class ManifestConverter implements Converter {
         if (attributes.containsKey(Attributes.Name.IMPLEMENTATION_VERSION)) {
             String newValue = attributes.get(Attributes.Name.IMPLEMENTATION_VERSION) + "-" + Info.getVersion();
             attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
+            logger.log(Level.FINE, sm.getString("manifestConverter.updatedVersion", newValue));
             // Purposefully avoid setting result
         }
         // Update package names in values
