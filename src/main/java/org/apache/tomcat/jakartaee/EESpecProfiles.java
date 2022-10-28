@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
  * Specification profile defining the replacements performed.
  */
 public enum EESpecProfiles implements EESpecProfile {
+
     TOMCAT("javax", "jakarta",
             "javax([/\\.](annotation[/\\.](" + Patterns.ANNOTATION_CLASSES + ")" +
                     "|ejb" +
@@ -35,57 +36,9 @@ public enum EESpecProfiles implements EESpecProfile {
                     "|transaction(?![/\\.]xa)" +
                     "|websocket))"),
 
-    EE("javax", "jakarta",
-            "javax([/\\.](activation" +
-                    "|annotation[/\\.](" + Patterns.ANNOTATION_CLASSES + ")" +
-                    "|batch" +
-                    "|decorator" +
-                    "|ejb" +
-                    "|el" +
-                    "|enterprise" +
-                    "|faces" +
-                    "|jms" +
-                    "|json" +
-                    "|jws" +
-                    "|interceptor" +
-                    "|inject" +
-                    "|mail" +
-                    "|management[/\\.]j2ee" +
-                    "|persistence" +
-                    "|resource" +
-                    "|security[/\\.](auth[/\\.]message|enterprise|jacc)" +
-                    "|servlet" +
-                    "|transaction(?![/\\.]xa)" +
-                    "|validation" +
-                    "|websocket" +
-                    "|ws[/\\.]rs" +
-                    "|xml[/\\.](bind|soap|ws)))"),
+    EE("javax", "jakarta", "javax" + Patterns.EE),
 
-    JEE8("jakarta", "javax",
-            "jakarta([/\\.](activation" +
-                    "|annotation[/\\.](" + Patterns.ANNOTATION_CLASSES + ")" +
-                    "|batch" +
-                    "|decorator" +
-                    "|ejb" +
-                    "|el" +
-                    "|enterprise" +
-                    "|faces" +
-                    "|jms" +
-                    "|json" +
-                    "|jws" +
-                    "|interceptor" +
-                    "|inject" +
-                    "|mail" +
-                    "|management[/\\.]j2ee" +
-                    "|persistence" +
-                    "|resource" +
-                    "|security[/\\.](auth[/\\.]message|enterprise|jacc)" +
-                    "|servlet" +
-                    "|transaction(?![/\\.]xa)" +
-                    "|validation" +
-                    "|websocket" +
-                    "|ws[/\\.]rs" +
-                    "|xml[/\\.](bind|soap|ws)))");
+    JEE8("jakarta", "javax", "jakarta" + Patterns.EE);
 
     private static final class Patterns {
         /*
@@ -108,6 +61,33 @@ public enum EESpecProfiles implements EESpecProfile {
                         "security/RolesAllowed",
                         "security/RunAs",
                         "sql/DataSourceDefinition"
+                ));
+        static final String EE = String.join("|",
+                Arrays.asList(
+                        "([/\\.](activation",
+                        "annotation(" + ANNOTATION_CLASSES + ")",
+                        "batch",
+                        "decorator",
+                        "ejb",
+                        "el",
+                        "enterprise",
+                        "faces",
+                        "jms",
+                        "json",
+                        "jws",
+                        "interceptor",
+                        "inject",
+                        "mail",
+                        "management[/\\.]j2ee",
+                        "persistence",
+                        "resource",
+                        "security[/\\.](auth[/\\.]message|enterprise|jacc)",
+                        "servlet",
+                        "transaction(?![/\\.]xa)",
+                        "validation",
+                        "websocket",
+                        "ws[/\\.]rs",
+                        "xml[/\\.](bind|soap|ws)))"
                 ));
     }
 
