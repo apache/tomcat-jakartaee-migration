@@ -1,5 +1,9 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
+## 1.0.6
+
+- TBD
+
 ## 1.0.5
 
 - Improve manifest handling to remain the key ordering when unchanged manifests. PR [#36](https://github.com/apache/tomcat-jakartaee-migration/pull/36) provided by Danny Thomas (lihan)
