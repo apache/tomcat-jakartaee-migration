@@ -6,6 +6,7 @@
 - Improve the performance of conversion by avoiding `JavaClass.dump` when there are no changes. PR [#36](https://github.com/apache/tomcat-jakartaee-migration/pull/36) provided by Danny Thomas (lihan)
 - Improve composability of the migration tool when using from other tools. PR [#36](https://github.com/apache/tomcat-jakartaee-migration/pull/36) provided by Danny Thomas (lihan)
 - Avoid converting many classes from javax.annotation. PR [#37](https://github.com/apache/tomcat-jakartaee-migration/pull/37) provided by Danny Thomas (remm)
+- Update Apache BCEL to 6.6.0. (markt)
 
 ## 1.0.4
 
