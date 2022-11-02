@@ -25,6 +25,7 @@ import java.util.jar.JarFile;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,14 +33,25 @@ import static org.junit.Assert.*;
 
 public class MigrationTest {
 
+    private boolean securityManagerAvailable = true;
+
     @Before
     public void setUp() {
-        System.setSecurityManager(new NoExitSecurityManager());
+        try {
+            System.setSecurityManager(new NoExitSecurityManager());
+        } catch (Throwable t) {
+            // Throws exception by default on newer Java versions
+            securityManagerAvailable = false;
+        }
     }
 
     @After
     public void tearDown() {
-        System.setSecurityManager(null);
+        try {
+            System.setSecurityManager(null);
+        } catch (Throwable t) {
+            // Throws exception by default on newer Java versions
+        }
     }
 
     @Test
@@ -83,6 +95,7 @@ public class MigrationTest {
 
     @Test
     public void testInvalidOption() throws Exception {
+        Assume.assumeTrue(securityManagerAvailable);
         File sourceFile = new File("target/test-classes/HelloServlet.java");
         File migratedFile = new File("target/test-classes/HelloServlet.migrated.java");
 
@@ -96,6 +109,7 @@ public class MigrationTest {
 
     @Test
     public void testInvalidProfile() throws Exception {
+        Assume.assumeTrue(securityManagerAvailable);
         File sourceFile = new File("target/test-classes/HelloServlet.java");
         File migratedFile = new File("target/test-classes/HelloServlet.migrated.java");
 
