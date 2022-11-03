@@ -156,21 +156,27 @@ public class MigrationTest {
 
     @Test
     public void testMigrateJarFile() throws Exception {
+        testMigrateJarFileInternal(false);
+    }
+
+    private void testMigrateJarFileInternal(boolean zipInMemory) throws Exception {
         File jarFile = new File("target/test-classes/hellocgi.jar");
+        File jarFileTarget = new File("target/test-classes/hellocgi-target.jar");
 
         Migration migration = new Migration();
         migration.setSource(jarFile);
-        migration.setDestination(jarFile);
+        migration.setDestination(jarFileTarget);
+        migration.setZipInMemory(zipInMemory);
         migration.execute();
 
         File cgiapiFile = new File("target/test-classes/cgi-api.jar");
-        URLClassLoader classloader = new URLClassLoader(new URL[]{jarFile.toURI().toURL(), cgiapiFile.toURI().toURL()},ClassLoader.getSystemClassLoader().getParent());
+        URLClassLoader classloader = new URLClassLoader(new URL[]{jarFileTarget.toURI().toURL(), cgiapiFile.toURI().toURL()},ClassLoader.getSystemClassLoader().getParent());
 
         Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader);
         assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
 
         // check the modification of the Implementation-Version manifest attribute
-        try (JarFile jar = new JarFile(jarFile)) {
+        try (JarFile jar = new JarFile(jarFileTarget)) {
             String implementationVersion = jar.getManifest().getMainAttributes().getValue("Implementation-Version");
             assertNotNull("Missing Implementation-Version manifest attribute", implementationVersion);
             assertNotEquals("Implementation-Version manifest attribute not changed", "1.2.3", implementationVersion);
@@ -178,6 +184,11 @@ public class MigrationTest {
         }
 
         assertTrue("hasConverted should be true", migration.hasConverted());
+    }
+
+    @Test
+    public void testMigrateJarFileInMemory() throws Exception {
+        testMigrateJarFileInternal(true);
     }
 
     @Test
