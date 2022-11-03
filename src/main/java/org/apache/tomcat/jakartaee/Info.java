@@ -19,6 +19,9 @@ package org.apache.tomcat.jakartaee;
 import java.io.IOException;
 import java.util.Properties;
 
+/**
+ * Manifest version decorator.
+ */
 public class Info {
 
     private static final String VERSION;
@@ -43,6 +46,10 @@ public class Info {
         }
     }
 
+    /**
+     * Get the configured version.
+     * @return the version
+     */
     public static String getVersion() {
         return VERSION;
     }

@@ -20,8 +20,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/**
+ * The main Converter interface, used for package prefix conversion.
+ */
 public interface Converter {
 
+    /**
+     * Check if the file can be processed by this converter.
+     * @param filename the file name
+     * @return true if the converter will process this file
+     */
     boolean accepts(String filename);
 
     /**

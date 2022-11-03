@@ -40,6 +40,11 @@ public class ManifestConverter implements Converter {
     private static final Logger logger = Logger.getLogger(ManifestConverter.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(ManifestConverter.class);
 
+    /**
+     * Manifest converter constructor.
+     */
+    public ManifestConverter() {}
+
     @Override
     public boolean accepts(String filename) {
         if (filename.equals(JarFile.MANIFEST_NAME) || filename.endsWith("/" + JarFile.MANIFEST_NAME)) {

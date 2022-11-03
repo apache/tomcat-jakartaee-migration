@@ -25,6 +25,9 @@ import java.util.regex.Pattern;
  */
 public enum EESpecProfiles implements EESpecProfile {
 
+    /**
+     * Specification profile matching the packages provided with Tomcat.
+     */
     TOMCAT("javax", "jakarta",
             "javax([/\\.](annotation[/\\.](" + Patterns.ANNOTATION_CLASSES + ")" +
                     "|ejb" +
@@ -36,8 +39,14 @@ public enum EESpecProfiles implements EESpecProfile {
                     "|transaction(?![/\\.]xa)" +
                     "|websocket))"),
 
+    /**
+     * Specification profile for the full EE.
+     */
     EE("javax", "jakarta", "javax" + Patterns.EE),
 
+    /**
+     * Specification profile for the full EE, to convert from Jakarta to EE 8.
+     */
     JEE8("jakarta", "javax", "jakarta" + Patterns.EE);
 
     private static final class Patterns {

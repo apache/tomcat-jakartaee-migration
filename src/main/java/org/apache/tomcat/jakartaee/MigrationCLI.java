@@ -26,6 +26,9 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Command line interface wrapper for the migration tool.
+ */
 public class MigrationCLI {
 
     private static final StringManager sm = StringManager.getManager(MigrationCLI.class);
@@ -35,6 +38,16 @@ public class MigrationCLI {
     private static final String PROFILE_ARG = "-profile=";
     private static final String ZIPINMEMORY_ARG = "-zipInMemory";
 
+    /**
+     * Build the migration tool CLI instance.
+     */
+    public MigrationCLI() {}
+
+    /**
+     * Main method for the CLI tool.
+     * @param args the command line arguments
+     * @throws IOException when an exception occurs
+     */
     public static void main(String[] args) throws IOException {
 
         // Defaults

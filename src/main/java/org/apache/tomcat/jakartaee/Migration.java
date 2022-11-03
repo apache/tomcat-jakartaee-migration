@@ -45,6 +45,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.output.CloseShieldOutputStream;
 
+/**
+ * The main class for the Migration tool.
+ */
 public class Migration {
 
     private static final Logger logger = Logger.getLogger(Migration.class.getCanonicalName());
@@ -99,6 +102,9 @@ public class Migration {
     private final List<Converter> converters;
     private final Set<String> excludes = new HashSet<>();
 
+    /**
+     * Construct a new migration tool instance.
+     */
     public Migration() {
         // Initialise the converters
         converters = new ArrayList<>();
@@ -111,9 +117,21 @@ public class Migration {
         converters.add(new PassThroughConverter());
     }
 
+    /**
+     * The tool state.
+     */
     public enum State {
+        /**
+         * Migration not started yet.
+         */
         NOT_STARTED,
+        /**
+         * Migration in progress.
+         */
         RUNNING,
+        /**
+         * Migration complete.
+         */
         COMPLETE
     }
 
@@ -135,18 +153,34 @@ public class Migration {
         return profile;
     }
 
+    /**
+     * Enable the default exclusion list for the tool.
+     * @param enableDefaultExcludes true to enable the default
+     */
     public void setEnableDefaultExcludes(boolean enableDefaultExcludes) {
         this.enableDefaultExcludes = enableDefaultExcludes;
     }
 
+    /**
+     * Buffer all conversion operations for compressed archives in memory.
+     * @param zipInMemory true to buffer in memory
+     */
     public void setZipInMemory(boolean zipInMemory) {
         this.zipInMemory = zipInMemory;
     }
 
+    /**
+     * Add specified resource exclusion.
+     * @param exclude the exclude to add
+     */
     public void addExclude(String exclude) {
         this.excludes.add(exclude);
     }
 
+    /**
+     * Set source file.
+     * @param source the source file
+     */
     public void setSource(File source) {
         if (!source.canRead()) {
             throw new IllegalArgumentException(sm.getString("migration.cannotReadSource",
@@ -155,7 +189,10 @@ public class Migration {
         this.source = source;
     }
 
-
+    /**
+     * Set destination file.
+     * @param destination the destination file
+     */
     public void setDestination(File destination) {
         this.destination = destination;
     }
@@ -175,6 +212,10 @@ public class Migration {
     }
 
 
+    /**
+     * Execute migration operation.
+     * @throws IOException when an exception occurs
+     */
     public void execute() throws IOException {
         if (state == State.RUNNING) {
             throw new IllegalStateException(sm.getString("migration.alreadyRunning"));

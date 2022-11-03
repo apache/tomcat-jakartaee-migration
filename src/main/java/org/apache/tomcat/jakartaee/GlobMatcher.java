@@ -29,6 +29,13 @@ import java.util.Set;
  */
 public final class GlobMatcher {
 
+
+    /**
+     * Construct the matcher.
+     */
+    public GlobMatcher() {}
+
+
     /**
      * Tests whether or not a given file name matches any file name pattern in
      * the given set. The match is performed case-sensitively.

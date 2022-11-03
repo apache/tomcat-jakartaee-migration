@@ -20,16 +20,36 @@ package org.apache.tomcat.jakartaee;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Used to represent a specification profile.
+ */
 public interface EESpecProfile {
+    /**
+     * Convert the specified name to the target namespace.
+     * @param name the name to convert
+     * @return the converted name
+     */
     default String convert(String name) {
         Matcher m = getPattern().matcher(name);
         return m.replaceAll(getTarget() + "$1");
     }
 
+    /**
+     * The source namespace.
+     * @return the source namespace
+     */
     String getSource();
 
+    /**
+     * The target namespace.
+     * @return the target namespace
+     */
     String getTarget();
 
+    /**
+     * The pattern used for conversion.
+     * @return the pattern
+     */
     Pattern getPattern();
 }
 

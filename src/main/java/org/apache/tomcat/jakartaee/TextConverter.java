@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Converter for text resources.
+ */
 public class TextConverter implements Converter {
 
     private static final Logger logger = Logger.getLogger(TextConverter.class.getCanonicalName());
@@ -48,6 +51,10 @@ public class TextConverter implements Converter {
         supportedExtensions.add("groovy");
     }
 
+    /**
+     * Default constructor.
+     */
+    public TextConverter() {}
 
     @Override
     public boolean accepts(String filename) {

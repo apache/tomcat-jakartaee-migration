@@ -33,15 +33,30 @@ import org.apache.bcel.classfile.ConstantUtf8;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.commons.io.IOUtils;
 
+/**
+ * Class converter and transformer.
+ */
 public class ClassConverter implements Converter, ClassFileTransformer {
 
     private static final Logger logger = Logger.getLogger(ClassConverter.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(ClassConverter.class);
 
+    /**
+     * The configured spec profile.
+     */
     protected final EESpecProfile profile;
+
+    /**
+     * Create a class converter with the default TOMCAT profile.
+     */
     public ClassConverter() {
         this(EESpecProfiles.TOMCAT);
     }
+
+    /**
+     * Create a class converter with the specified spec profile.
+     * @param profile the specification profile to use for conversion
+     */
     public ClassConverter(EESpecProfile profile) {
         this.profile = profile;
     }
@@ -79,6 +94,16 @@ public class ClassConverter implements Converter, ClassFileTransformer {
     }
 
 
+    /**
+     * Convert specified class bytecode.
+     * @param path the path
+     * @param src the source byte stream
+     * @param dest the output byte stream
+     * @param profile the specification profile to use
+     * @param loader the class loader
+     * @return true if conversion occurred
+     * @throws IOException rethrow on byte read or write
+     */
     protected boolean convertInternal(String path, InputStream src, OutputStream dest, EESpecProfile profile, ClassLoader loader)
             throws IOException {
         byte[] classBytes = IOUtils.toByteArray(src);

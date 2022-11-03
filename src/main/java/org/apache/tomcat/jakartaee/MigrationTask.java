@@ -29,24 +29,45 @@ import org.apache.tools.ant.Task;
  */
 public class MigrationTask extends Task {
 
+    /**
+     * Default constructor.
+     */
+    public MigrationTask() {}
+
     private File src;
     private File dest;
     private String profile = EESpecProfiles.TOMCAT.toString();
     private boolean zipInMemory = false;
     private String excludes;
 
+    /**
+     * Set the source file.
+     * @param src the source file
+     */
     public void setSrc(File src) {
         this.src = src;
     }
 
+    /**
+     * Set the destination file.
+     * @param dest the destination file
+     */
     public void setDest(File dest) {
         this.dest = dest;
     }
 
+    /**
+     * Set the profile that should be used.
+     * @param profile the profile to be used
+     */
     public void setProfile(String profile) {
         this.profile = profile;
     }
 
+    /**
+     * Set the option to handle compressed archive entries in memory.
+     * @param zipInMemory true to buffer in memory
+     */
     public void setZipInMemory(boolean zipInMemory) {
         this.zipInMemory = zipInMemory;
     }

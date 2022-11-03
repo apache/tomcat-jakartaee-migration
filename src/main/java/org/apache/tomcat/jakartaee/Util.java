@@ -23,6 +23,9 @@ import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.Locale;
 
+/**
+ * Utility methods.
+ */
 public class Util {
 
     /**
@@ -41,6 +44,12 @@ public class Util {
         return filename.substring(lastPeriod + 1).toLowerCase(Locale.ENGLISH);
     }
 
+    /**
+     * Buffered copy.
+     * @param is the input
+     * @param os the output
+     * @throws IOException if an exception occurs
+     */
     public static void copy(InputStream is, OutputStream os) throws IOException {
         byte[] buf = new byte[8192];
         int numRead;
@@ -49,6 +58,13 @@ public class Util {
         }
     }
 
+    /**
+     * Convert the input bytes as a string.
+     * @param is the input byte stream
+     * @param charset the charset to use
+     * @return the converted string
+     * @throws IOException if an exception occurs
+     */
     public static String toString(InputStream is, Charset charset) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Util.copy(is, baos);

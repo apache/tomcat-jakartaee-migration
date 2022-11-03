@@ -22,10 +22,18 @@ import java.io.OutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * No conversion.
+ */
 public class PassThroughConverter implements Converter {
 
     private static final Logger logger = Logger.getLogger(PassThroughConverter.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(PassThroughConverter.class);
+
+    /**
+     * Default constructor.
+     */
+    public PassThroughConverter() {}
 
     @Override
     public boolean accepts(String filename) {
