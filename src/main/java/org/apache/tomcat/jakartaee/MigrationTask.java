@@ -39,6 +39,7 @@ public class MigrationTask extends Task {
     private String profile = EESpecProfiles.TOMCAT.toString();
     private boolean zipInMemory = false;
     private String excludes;
+    private boolean matchExcludesAgainstPathName;
 
     /**
      * Set the source file.
@@ -82,6 +83,14 @@ public class MigrationTask extends Task {
         this.excludes = excludes;
     }
 
+    /**
+     * Enable exclude matching against the path name.
+     * @param matchExcludesAgainstPathName true to match excludes against the path name instead of the file name
+     */
+    public void setMatchExcludesAgainstPathName(boolean matchExcludesAgainstPathName) {
+        this.matchExcludesAgainstPathName = matchExcludesAgainstPathName;
+    }
+
     @Override
     public void execute() throws BuildException {
         // redirect the log messages to Ant
@@ -105,6 +114,7 @@ public class MigrationTask extends Task {
         migration.setDestination(dest);
         migration.setEESpecProfile(profile);
         migration.setZipInMemory(zipInMemory);
+        migration.setMatchExcludesAgainstPathName(matchExcludesAgainstPathName);
         if (this.excludes != null) {
             String[] excludes= this.excludes.split(",");
             for (String exclude : excludes) {
