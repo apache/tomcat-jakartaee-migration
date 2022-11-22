@@ -94,6 +94,7 @@ public class Migration {
     private EESpecProfile profile = EESpecProfiles.TOMCAT;
 
     private boolean enableDefaultExcludes = true;
+    private boolean matchExcludesAgainstPathName;
     private boolean zipInMemory;
     private boolean converted;
     private State state = State.NOT_STARTED;
@@ -159,6 +160,14 @@ public class Migration {
      */
     public void setEnableDefaultExcludes(boolean enableDefaultExcludes) {
         this.enableDefaultExcludes = enableDefaultExcludes;
+    }
+
+    /**
+     * Enable exclude matching against the path name.
+     * @param matchExcludesAgainstPathName true to match excludes against the path name instead of the file name
+     */
+    public void setMatchExcludesAgainstPathName(boolean matchExcludesAgainstPathName) {
+        this.matchExcludesAgainstPathName = matchExcludesAgainstPathName;
     }
 
     /**
@@ -404,7 +413,10 @@ public class Migration {
             return true;
         }
 
-        if (GlobMatcher.matchName(excludes, filename, true)) {
+        if (!matchExcludesAgainstPathName && GlobMatcher.matchName(excludes, filename, true)) {
+            return true;
+        }
+        if (matchExcludesAgainstPathName && GlobMatcher.matchName(excludes, name, true)) {
             return true;
         }
 
