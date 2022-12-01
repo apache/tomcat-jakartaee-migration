@@ -27,6 +27,8 @@ public class EESpecProfileTest {
     public void testProfileTomcat() {
         EESpecProfile profile = EESpecProfiles.TOMCAT;
 
+        assertEquals("jakarta.annotation.PostConstruct", profile.convert("javax.annotation.PostConstruct"));
+        assertEquals("jakarta.annotation.security.DeclareRoles", profile.convert("javax.annotation.security.DeclareRoles"));
         assertEquals("jakarta.ejb", profile.convert("javax.ejb"));
         assertEquals("jakarta.el", profile.convert("javax.el"));
         assertEquals("jakarta.mail", profile.convert("javax.mail"));
@@ -86,6 +88,8 @@ public class EESpecProfileTest {
         EESpecProfile profile = EESpecProfiles.EE;
 
         assertEquals("jakarta.activation.Generated", profile.convert("javax.activation.Generated"));
+        assertEquals("jakarta.annotation.PostConstruct", profile.convert("javax.annotation.PostConstruct"));
+        assertEquals("jakarta.annotation.security.DeclareRoles", profile.convert("javax.annotation.security.DeclareRoles"));
         assertEquals("jakarta.batch", profile.convert("javax.batch"));
         assertEquals("jakarta.decorator", profile.convert("javax.decorator"));
         assertEquals("jakarta.ejb", profile.convert("javax.ejb"));
