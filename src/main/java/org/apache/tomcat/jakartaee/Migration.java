@@ -244,7 +244,7 @@ public class Migration {
         }
         state = State.COMPLETE;
         logger.log(Level.INFO, sm.getString("migration.done",
-                TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS)));
+                Long.valueOf(TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS))));
     }
 
     private void migrateDirectory(File src, File dest) throws IOException {
