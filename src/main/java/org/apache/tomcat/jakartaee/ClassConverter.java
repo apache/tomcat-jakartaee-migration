@@ -31,12 +31,18 @@ import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.Constant;
 import org.apache.bcel.classfile.ConstantUtf8;
 import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.util.SyntheticRepository;
 import org.apache.commons.io.IOUtils;
 
 /**
  * Class converter and transformer.
  */
 public class ClassConverter implements Converter, ClassFileTransformer {
+
+    static {
+        // Avoid ConcurrentModificationException from SyntheticRepository when migrations are run concurrently
+        SyntheticRepository.getInstance();
+    }
 
     private static final Logger logger = Logger.getLogger(ClassConverter.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(ClassConverter.class);

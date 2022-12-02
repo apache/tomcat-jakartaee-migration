@@ -3,6 +3,7 @@
 ## 1.0.6
 
 - Fix handling of javax.annotation package in 1.0.5. PR [#40](https://github.com/apache/tomcat-jakartaee-migration/pull/40) provided by Danny Thomas (remm)
+- Allow parallel use of ClassConverter. PR [#41](https://github.com/apache/tomcat-jakartaee-migration/pull/41) provided by Danny Thomas (remm)
 
 ## 1.0.5
 
