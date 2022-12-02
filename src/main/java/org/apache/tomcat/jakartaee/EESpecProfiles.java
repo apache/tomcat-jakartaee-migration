@@ -64,17 +64,17 @@ public enum EESpecProfiles implements EESpecProfile {
                         "Priority",
                         "Resource",
                         "Resources",
-                        "security/DeclareRoles",
-                        "security/DenyAll",
-                        "security/PermitAll",
-                        "security/RolesAllowed",
-                        "security/RunAs",
-                        "sql/DataSourceDefinition"
+                        "security[/\\.]DeclareRoles",
+                        "security[/\\.]DenyAll",
+                        "security[/\\.]PermitAll",
+                        "security[/\\.]RolesAllowed",
+                        "security[/\\.]RunAs",
+                        "sql[/\\.]DataSourceDefinition"
                 ));
         static final String EE = String.join("|",
                 Arrays.asList(
                         "([/\\.](activation",
-                        "annotation(" + ANNOTATION_CLASSES + ")",
+                        "annotation[/\\.](" + ANNOTATION_CLASSES + ")",
                         "batch",
                         "decorator",
                         "ejb",
