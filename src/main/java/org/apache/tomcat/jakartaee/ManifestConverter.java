@@ -29,6 +29,8 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 
@@ -128,6 +130,7 @@ public class ManifestConverter implements Converter {
         // Update package names in values
         for (Entry<Object,Object> entry : attributes.entrySet()) {
             String newValue = profile.convert((String) entry.getValue());
+            newValue = replaceVersion(newValue);            
             // Object comparison is deliberate
             if (newValue != entry.getValue()) {
                 entry.setValue(newValue);
@@ -135,5 +138,18 @@ public class ManifestConverter implements Converter {
             }
         }
         return converted;
+    }
+    
+    private String replaceVersion(String entryValue) {
+        if (entryValue.contains("jakarta.servlet")) {
+            StringBuilder builder = new StringBuilder();
+            Matcher matcher = Pattern.compile("jakarta.servlet([^,]*);version=\"(.*?)\"").matcher(entryValue);
+            while (matcher.find()) {
+                matcher.appendReplacement(builder, "jakarta.servlet$1;version=\"[5.0.0,7.0.0)\"");
+            }
+            matcher.appendTail(builder);    
+            return builder.toString();
+        }
+        return entryValue;
     }
 }
