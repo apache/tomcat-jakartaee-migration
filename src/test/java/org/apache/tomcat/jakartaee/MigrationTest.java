@@ -144,7 +144,7 @@ public class MigrationTest {
         assertTrue("SPI file has not been migrated by renaming", migratedSpiFile.exists());
 
         String migratedSpiSource = FileUtils.readFileToString(migratedSpiFile, StandardCharsets.UTF_8);
-        assertTrue("SPI file copied with content", migratedSpiSource.contains("some.class.Reference"));
+        assertTrue("SPI file not copied with content", migratedSpiSource.contains("some.class.Reference"));
     }
 
     @Test
@@ -168,10 +168,10 @@ public class MigrationTest {
         assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
 
         File migratedSpiFile = new File(destinationDirectory, "jakarta.enterprise.inject.spi.Extension");
-        assertTrue("SPI file migrated by renaming", migratedSpiFile.exists());
+        assertTrue("SPI file not migrated by renaming", migratedSpiFile.exists());
 
         String migratedSpiSource = FileUtils.readFileToString(migratedSpiFile, StandardCharsets.UTF_8);
-        assertTrue("SPI file copied with content", migratedSpiSource.contains("some.class.Reference"));
+        assertTrue("SPI file not copied with content", migratedSpiSource.contains("some.class.Reference"));
     }
 
     @Test
