@@ -1,5 +1,9 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
+## 1.0.7
+
+- When converting directories, rename files according to the chosen profile. (fschumacher)
+
 ## 1.0.6
 
 - Fix handling of javax.annotation package in 1.0.5. PR [#40](https://github.com/apache/tomcat-jakartaee-migration/pull/40) provided by Danny Thomas (remm)

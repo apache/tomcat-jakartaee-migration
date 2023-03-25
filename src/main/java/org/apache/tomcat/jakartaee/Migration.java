@@ -252,7 +252,7 @@ public class Migration {
         String[] files = src.list();
         for (String file : files) {
             File srcFile = new File(src, file);
-            File destFile = new File(dest, file);
+            File destFile = new File(dest, profile.convert(file));
             if (srcFile.isDirectory()) {
                 if ((destFile.exists() && destFile.isDirectory()) || destFile.mkdir()) {
                     migrateDirectory(srcFile, destFile);
@@ -264,7 +264,6 @@ public class Migration {
             }
         }
     }
-
 
     private void migrateFile(File src, File dest) throws IOException {
         boolean inplace = src.equals(dest);

@@ -139,6 +139,39 @@ public class MigrationTest {
         String migratedSource = FileUtils.readFileToString(migratedFile, StandardCharsets.UTF_8);
         assertFalse("Imports not migrated", migratedSource.contains("import javax.servlet"));
         assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
+
+        File migratedSpiFile = new File("target/test-classes/migration/javax.enterprise.inject.spi.Extension");
+        assertTrue("SPI file has not been migrated by renaming", migratedSpiFile.exists());
+
+        String migratedSpiSource = FileUtils.readFileToString(migratedSpiFile, StandardCharsets.UTF_8);
+        assertTrue("SPI file copied with content", migratedSpiSource.contains("some.class.Reference"));
+    }
+
+    @Test
+    public void testMigrateDirectoryWithEeProfile() throws Exception {
+        File sourceDirectory = new File("src/test/resources");
+        File destinationDirectory = new File("target/test-classes/migration-ee");
+
+        Migration migration = new Migration();
+        migration.setEESpecProfile(EESpecProfiles.EE);
+        migration.setSource(sourceDirectory);
+        migration.setDestination(destinationDirectory);
+        migration.execute();
+
+        assertTrue("Destination directory not found", destinationDirectory.exists());
+
+        File migratedFile = new File(destinationDirectory, "HelloServlet.java");
+        assertTrue("Migrated file not found", migratedFile.exists());
+
+        String migratedSource = FileUtils.readFileToString(migratedFile, StandardCharsets.UTF_8);
+        assertFalse("Imports not migrated", migratedSource.contains("import javax.servlet"));
+        assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
+
+        File migratedSpiFile = new File(destinationDirectory, "jakarta.enterprise.inject.spi.Extension");
+        assertTrue("SPI file migrated by renaming", migratedSpiFile.exists());
+
+        String migratedSpiSource = FileUtils.readFileToString(migratedSpiFile, StandardCharsets.UTF_8);
+        assertTrue("SPI file copied with content", migratedSpiSource.contains("some.class.Reference"));
     }
 
     @Test
