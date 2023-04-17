@@ -37,6 +37,7 @@ public class MigrationCLI {
     private static final String LOGLEVEL_ARG = "-logLevel=";
     private static final String PROFILE_ARG = "-profile=";
     private static final String ZIPINMEMORY_ARG = "-zipInMemory";
+    private static final String MATCHEXCLUDESPATH_ARG ="-matchExcludesAgainstPathName";
 
     /**
      * Build the migration tool CLI instance.
@@ -91,6 +92,9 @@ public class MigrationCLI {
             } else if (argument.equals(ZIPINMEMORY_ARG)) {
                 iter.remove();
                 migration.setZipInMemory(true);
+            } else if (argument.equals(MATCHEXCLUDESPATH_ARG)) {
+                iter.remove();
+                migration.setMatchExcludesAgainstPathName(true);
             }
         }
 
