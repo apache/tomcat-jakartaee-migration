@@ -3,6 +3,7 @@
 ## 1.0.7
 
 - When converting directories, rename files according to the chosen profile. (fschumacher)
+- Update OSGI servlet specification versions if present in manifest file. PR[#42](https://github.com/apache/tomcat-jakartaee-migration/pull/42) provided by Ivan Furnadjiev (markt)
 
 ## 1.0.6
 
