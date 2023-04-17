@@ -3,7 +3,9 @@
 ## 1.0.7
 
 - When converting directories, rename files according to the chosen profile. (fschumacher)
+- Add configuration option, `matchExcludesAgainstPathName` that can be used to configure exclusions base don path name rather than just file name.  PR[#38](https://github.com/apache/tomcat-jakartaee-migration/pull/38) provided by Réda Housni Alaoui (markt)
 - Update OSGI servlet specification versions if present in manifest file. PR[#42](https://github.com/apache/tomcat-jakartaee-migration/pull/42) provided by Ivan Furnadjiev (markt)
+
 
 ## 1.0.6
 
