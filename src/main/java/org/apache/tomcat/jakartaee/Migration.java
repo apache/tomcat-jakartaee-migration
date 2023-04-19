@@ -40,6 +40,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.compress.archivers.zip.ZipShort;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -54,6 +55,9 @@ public class Migration {
     private static final StringManager sm = StringManager.getManager(Migration.class);
 
     private static final Set<String> DEFAULT_EXCLUDES = new HashSet<>();
+
+    private static final ZipShort EXTRA_FIELD_ZIP64 = new ZipShort(1);
+    private static final long ZIP64_THRESHOLD_LENGTH = 0xFFFFFFFFL;
 
     static {
         // Apache Commons
@@ -305,6 +309,15 @@ public class Migration {
                 if (isSignatureFile(srcName)) {
                     logger.log(Level.WARNING, sm.getString("migration.skipSignatureFile", srcName));
                     continue;
+                }
+                if (srcZipEntry.getSize() > ZIP64_THRESHOLD_LENGTH ||
+                        srcZipEntry.getCompressedSize() > ZIP64_THRESHOLD_LENGTH) {
+                    logger.log(Level.WARNING, sm.getString("migration.jdk8303866", srcName));
+                } else {
+                    // Avoid JDK bug - https://bugs.openjdk.org/browse/JDK-8303866
+                    if (srcZipEntry.getExtraField(EXTRA_FIELD_ZIP64) != null) {
+                        srcZipEntry.removeExtraField(EXTRA_FIELD_ZIP64);
+                    }
                 }
                 String destName = profile.convert(srcName);
                 if (srcZipEntry.getMethod() == ZipEntry.STORED) {

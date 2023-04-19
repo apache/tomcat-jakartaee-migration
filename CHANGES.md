@@ -7,6 +7,7 @@
 - Update OSGI servlet specification versions if present in manifest file. PR[#42](https://github.com/apache/tomcat-jakartaee-migration/pull/42) provided by Ivan Furnadjiev. (markt)
 - Update Commons BCEL to 6.7.0. (markt)
 - Update Commons Compress to 1.23.0. (markt)
+- Provided workaround for the known JDK bug identified as the cause of migration failures in issue [#46](https://github.com/apache/tomcat-jakartaee-migration/issues/46). (markt/ebourg)
 
 
 ## 1.0.6
