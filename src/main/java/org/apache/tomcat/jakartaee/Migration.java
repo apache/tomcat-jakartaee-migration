@@ -413,7 +413,8 @@ public class Migration {
     }
 
     private boolean isArchive(String fileName) {
-        return fileName.endsWith(".jar") || fileName.endsWith(".war") || fileName.endsWith(".ear") || fileName.endsWith(".zip");
+        return fileName.endsWith(".jar") || fileName.endsWith(".war") || fileName.endsWith(".ear") ||
+                fileName.endsWith(".zip");
     }
 
 
