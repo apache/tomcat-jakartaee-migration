@@ -2,6 +2,10 @@
 
 ## 1.0.8
 - Include `.ear` files in list of recognised archives. PR[#50](https://github.com/apache/tomcat-jakartaee-migration/pull/50) provided by Sammy Chu. (markt)
+- Update Commons BCEL to 6.8.1. (markt)
+- Update Commons Compress to 1.25.0. (markt)
+- Update Commons IO to 2.15.1. (markt)
+- Update Ant to 1.10.14. (markt)
 
 
 ## 1.0.7
