@@ -40,8 +40,10 @@ public class TextConverter implements Converter {
         supportedExtensions = new ArrayList<>();
         supportedExtensions.add("java");
         supportedExtensions.add("jsp");
+        supportedExtensions.add("jspf");
         supportedExtensions.add("jspx");
         supportedExtensions.add("tag");
+        supportedExtensions.add("tagf");
         supportedExtensions.add("tagx");
         supportedExtensions.add("tld");
         supportedExtensions.add("txt");

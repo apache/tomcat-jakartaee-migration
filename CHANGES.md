@@ -6,6 +6,7 @@
 - Update Commons Compress to 1.25.0. (markt)
 - Update Commons IO to 2.15.1. (markt)
 - Update Ant to 1.10.14. (markt)
+- Include `.jspf` and `.tagf` files in the conversion process. (markt)
 
 
 ## 1.0.7
