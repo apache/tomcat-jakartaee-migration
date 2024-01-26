@@ -304,7 +304,7 @@ public class Migration {
                 ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(CloseShieldOutputStream.wrap(dest))) {
             ZipArchiveEntry srcZipEntry;
             CRC32 crc32 = new CRC32();
-            while ((srcZipEntry = srcZipStream.getNextZipEntry()) != null) {
+            while ((srcZipEntry = srcZipStream.getNextEntry()) != null) {
                 String srcName = srcZipEntry.getName();
                 if (isSignatureFile(srcName)) {
                     logger.log(Level.WARNING, sm.getString("migration.skipSignatureFile", srcName));
