@@ -26,7 +26,7 @@
 
   <groupId>org.apache.tomcat</groupId>
   <artifactId>jakartaee-migration</artifactId>
-  <version>1.0.8</version>
+  <version>1.0.9-SNAPSHOT</version>
   <name>Apache Tomcat Migration Tool for Jakarta EE</name>
 
   <description>The aim of the tool is to take a web application written for Java EE 8 that
@@ -62,7 +62,7 @@
   <scm>
     <connection>scm:git:https://gitbox.apache.org/repos/asf/tomcat-jakartaee-migration.git</connection>
     <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/tomcat-jakartaee-migration.git</developerConnection>
-    <tag>1.0.8</tag>
+    <tag>1.0.6</tag>
     <url>https://gitbox.apache.org/repos/asf?p=tomcat-jakartaee-migration.git</url>
   </scm>
 
