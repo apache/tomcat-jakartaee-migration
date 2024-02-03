@@ -1,5 +1,8 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
+## 1.0.9
+- Update the JaCoCo Maven plugin to 0.8.11. (markt)
+
 ## 1.0.8
 - Include `.ear` files in list of recognised archives. PR[#50](https://github.com/apache/tomcat-jakartaee-migration/pull/50) provided by Sammy Chu. (markt)
 - Update Commons BCEL to 6.8.1. (markt)
