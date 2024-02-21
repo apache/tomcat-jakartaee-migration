@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Version: 1.0.0.qualifier
+Bundle-SymbolicName: org.apache.tomcat.jakartaee.test
+Import-Package: javax.servlet;version="[2.0.0,5.0.0)",
+ javax.servlet.http;resolution:=optional;version="[2.0.0,5.0.0)"
+Export-Package: javax.servlet;uses:="org.eclipse.core.runtime";version="4.0.0",
+ javax.servlet.http;uses:="javax.servlet";version="4.0.0",
+ org.apache.tomcat.jakartaee.test;uses:="javax.servlet";version="1.0.0"
