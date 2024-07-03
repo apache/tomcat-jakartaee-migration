@@ -23,6 +23,9 @@ import javax.servlet.GenericServlet;
 
 public class HelloServlet extends GenericServlet {
 
+    private static final long serialVersionUID = 1L;
+
+    @Override
     public void service(ServletRequest request, ServletResponse response) throws IOException, ServletException {
         response.setContentType("text/plain");
         response.getWriter().print("Hello JakartaEE!");
