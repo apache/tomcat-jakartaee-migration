@@ -353,7 +353,7 @@ public class Migration {
         // Create the destination in memory
         SeekableInMemoryByteChannel destByteChannel = new SeekableInMemoryByteChannel();
 
-        try (ZipFile srcZipFile = new ZipFile(srcByteChannel);
+        try (ZipFile srcZipFile = ZipFile.builder().setSeekableByteChannel(srcByteChannel).get();
                 ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(destByteChannel)) {
             Enumeration<ZipArchiveEntry> entries = srcZipFile.getEntries();
             while (entries.hasMoreElements()) {
