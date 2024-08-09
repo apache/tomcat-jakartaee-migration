@@ -26,6 +26,12 @@ import java.util.regex.Pattern;
 public enum EESpecProfiles implements EESpecProfile {
 
     /**
+     * Specification profile matching the Jakarta Servlet API only.
+     */
+    SERVLET("javax", "jakarta",
+          "javax([/\\.](servlet))"),
+
+    /**
      * Specification profile matching the packages provided with Tomcat.
      */
     TOMCAT("javax", "jakarta",
