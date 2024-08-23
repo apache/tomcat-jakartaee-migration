@@ -75,6 +75,7 @@ public class ManifestConverter implements Converter {
             destManifest.write(dest);
             String key = converted ? "manifestConverter.converted" : "manifestConverter.updated";
             logger.log(Level.FINE, sm.getString(key, path));
+            converted = true;
         }
 
         return converted;

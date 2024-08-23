@@ -289,7 +289,9 @@ public class Migration {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream((int) (src.length() * 1.05));
 
             try (InputStream is = new FileInputStream(src)) {
-                migrateStream(src.getAbsolutePath(), is, buffer);
+                if (!migrateStream(src.getAbsolutePath(), is, buffer)) {
+                    return;
+                }
             }
 
             try (OutputStream os = new FileOutputStream(dest)) {
@@ -299,7 +301,8 @@ public class Migration {
     }
 
 
-    private void migrateArchiveStreaming(InputStream src, OutputStream dest) throws IOException {
+    private boolean migrateArchiveStreaming(InputStream src, OutputStream dest) throws IOException {
+        boolean convertedArchive = false;
         try (ZipArchiveInputStream srcZipStream = new ZipArchiveInputStream(CloseShieldInputStream.wrap(src));
                 ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(CloseShieldOutputStream.wrap(dest))) {
             ZipArchiveEntry srcZipEntry;
@@ -322,7 +325,7 @@ public class Migration {
                 String destName = profile.convert(srcName);
                 if (srcZipEntry.getMethod() == ZipEntry.STORED) {
                     ByteArrayOutputStream tempBuffer = new ByteArrayOutputStream((int) (srcZipEntry.getSize() * 1.05));
-                    migrateStream(srcName, srcZipStream, tempBuffer);
+                    convertedArchive = convertedArchive | migrateStream(srcName, srcZipStream, tempBuffer);
                     crc32.update(tempBuffer.toByteArray(), 0, tempBuffer.size());
                     MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
                     destZipEntry.setName(destName);
@@ -336,15 +339,17 @@ public class Migration {
                     MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
                     destZipEntry.setName(destName);
                     destZipStream.putArchiveEntry(destZipEntry);
-                    migrateStream(srcName, srcZipStream, destZipStream);
+                    convertedArchive = convertedArchive | migrateStream(srcName, srcZipStream, destZipStream);
                     destZipStream.closeArchiveEntry();
                 }
             }
         }
+        return convertedArchive;
     }
 
 
-    private void migrateArchiveInMemory(InputStream src, OutputStream dest) throws IOException {
+    private boolean migrateArchiveInMemory(InputStream src, OutputStream dest) throws IOException {
+        boolean convertedArchive = false;
         // Read the source into memory
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         IOUtils.copy(src, baos);
@@ -367,7 +372,7 @@ public class Migration {
                 MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
                 destZipEntry.setName(destName);
                 destZipStream.putArchiveEntry(destZipEntry);
-                migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
+                convertedArchive = convertedArchive | migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
                 destZipStream.closeArchiveEntry();
             }
         }
@@ -375,6 +380,8 @@ public class Migration {
         // Write the destination back to the stream
         ByteArrayInputStream bais = new ByteArrayInputStream(destByteChannel.array(), 0, (int) destByteChannel.size());
         IOUtils.copy(bais, dest);
+
+        return convertedArchive;
     }
 
 
@@ -388,28 +395,31 @@ public class Migration {
     }
 
 
-    private void migrateStream(String name, InputStream src, OutputStream dest) throws IOException {
+    private boolean migrateStream(String name, InputStream src, OutputStream dest) throws IOException {
+        boolean convertedStream = false;
         if (isExcluded(name)) {
             Util.copy(src, dest);
             logger.log(Level.INFO, sm.getString("migration.skip", name));
         } else if (isArchive(name)) {
             if (zipInMemory) {
                 logger.log(Level.INFO, sm.getString("migration.archive.memory", name));
-                migrateArchiveInMemory(src, dest);
+                convertedStream = migrateArchiveInMemory(src, dest);
                 logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
             } else {
                 logger.log(Level.INFO, sm.getString("migration.archive.stream", name));
-                migrateArchiveStreaming(src, dest);
+                convertedStream = migrateArchiveStreaming(src, dest);
                 logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
             }
         } else {
             for (Converter converter : converters) {
                 if (converter.accepts(name)) {
-                    converted = converted | converter.convert(name, src, dest, profile);
+                    convertedStream = converter.convert(name, src, dest, profile);
                     break;
                 }
             }
         }
+        converted = converted | convertedStream;
+        return convertedStream;
     }
 
     private boolean isArchive(String fileName) {
