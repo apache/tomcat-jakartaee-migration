@@ -1,10 +1,11 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
 ## 1.0.9
-- Update the JaCoCo Maven plugin to 0.8.11. (markt)
-- Update Commons BCEL to 6.9.0. (markt)
-- Update Commons Compress to 1.26.2. (markt)
-- Update Commons IO to 2.16.1. (markt)
+- Update the JaCoCo Maven plugin to 0.8.12. (dependabot/markt)
+- Update Commons BCEL to 6.10.0. (dependabot/markt)
+- Update Commons Compress to 1.27.1. (dependabot/markt)
+- Update Commons IO to 2.18.0. (dependabot/markt)
+- Update Ant to 1.10.15. (dependabot/markt)
 - Fix issue that `matchExcludesAgainstPathName` didn't work for files. Part of PR[#60](https://github.com/apache/tomcat-jakartaee-migration/pull/42) provided by Semiao Marco. (markt)
 
 ## 1.0.8
