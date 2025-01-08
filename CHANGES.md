@@ -5,6 +5,7 @@
 - Update Commons BCEL to 6.9.0. (markt)
 - Update Commons Compress to 1.26.2. (markt)
 - Update Commons IO to 2.16.1. (markt)
+- Fix issue that `matchExcludesAgainstPathName` didn't work for files. Part of PR[#60](https://github.com/apache/tomcat-jakartaee-migration/pull/42) provided by Semiao Marco. (markt)
 
 ## 1.0.8
 - Include `.ear` files in list of recognised archives. PR[#50](https://github.com/apache/tomcat-jakartaee-migration/pull/50) provided by Sammy Chu. (markt)

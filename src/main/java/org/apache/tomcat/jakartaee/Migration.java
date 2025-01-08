@@ -283,13 +283,13 @@ public class Migration {
         if (!inplace) {
             try (InputStream is = new FileInputStream(src);
                     OutputStream os = new FileOutputStream(dest)) {
-                migrateStream(src.getName(), is, os);
+                migrateStream(src.getAbsolutePath(), is, os);
             }
         } else {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream((int) (src.length() * 1.05));
 
             try (InputStream is = new FileInputStream(src)) {
-                migrateStream(src.getName(), is, buffer);
+                migrateStream(src.getAbsolutePath(), is, buffer);
             }
 
             try (OutputStream os = new FileOutputStream(dest)) {
