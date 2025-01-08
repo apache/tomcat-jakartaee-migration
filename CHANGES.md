@@ -8,6 +8,7 @@
 - Update Ant to 1.10.15. (dependabot/markt)
 - Fix issue that `matchExcludesAgainstPathName` didn't work for files. Part of PR[#60](https://github.com/apache/tomcat-jakartaee-migration/pull/42) provided by Semiao Marco. (markt)
 - Update ASF parent POM to 33. (markt)
+- Added a new profile, `SERVLET` that only migrates the `javax.servlet` package and sub-packages. PR[#57](https://github.com/apache/tomcat-jakartaee-migration/pull/57) provided by Ralf Wiebicke. (markt)
 
 ## 1.0.8
 - Include `.ear` files in list of recognised archives. PR[#50](https://github.com/apache/tomcat-jakartaee-migration/pull/50) provided by Sammy Chu. (markt)
