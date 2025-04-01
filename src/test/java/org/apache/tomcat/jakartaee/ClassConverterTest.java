@@ -65,8 +65,8 @@ public class ClassConverterTest {
         }
 
         // Transform
-        ClassConverter convertor = new ClassConverter(EESpecProfiles.TOMCAT);
-        transformed = convertor.transform(this.getClass().getClassLoader(),
+        ClassConverter converter = new ClassConverter(EESpecProfiles.TOMCAT);
+        transformed = converter.transform(this.getClass().getClassLoader(),
                 "org.apache.tomcat.jakartaee.TesterConstants", null, null, original);
 
         // Extract strings
