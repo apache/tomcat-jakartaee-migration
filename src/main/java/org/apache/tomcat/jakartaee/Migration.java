@@ -382,8 +382,12 @@ public class Migration {
                 MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
                 destZipEntry.setName(destName);
                 destZipStream.putArchiveEntry(destZipEntry);
-                convertedArchive = convertedArchive | migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
+                boolean convertedStream = migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
+                if (convertedStream) {
+                    destZipEntry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
+                }
                 destZipStream.closeArchiveEntry();
+                convertedArchive = convertedArchive | convertedStream;
             }
         }
 
