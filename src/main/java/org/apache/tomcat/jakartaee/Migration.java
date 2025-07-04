@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -298,6 +299,7 @@ public class Migration {
                 os.write(buffer.toByteArray());
             }
         }
+        converted = true;
     }
 
 
@@ -308,6 +310,7 @@ public class Migration {
             ZipArchiveEntry srcZipEntry;
             CRC32 crc32 = new CRC32();
             while ((srcZipEntry = srcZipStream.getNextEntry()) != null) {
+                boolean convertedStream = false;
                 String srcName = srcZipEntry.getName();
                 if (isSignatureFile(srcName)) {
                     logger.log(Level.WARNING, sm.getString("migration.skipSignatureFile", srcName));
@@ -325,12 +328,15 @@ public class Migration {
                 String destName = profile.convert(srcName);
                 if (srcZipEntry.getMethod() == ZipEntry.STORED) {
                     ByteArrayOutputStream tempBuffer = new ByteArrayOutputStream((int) (srcZipEntry.getSize() * 1.05));
-                    convertedArchive = convertedArchive | migrateStream(srcName, srcZipStream, tempBuffer);
+                    convertedStream = migrateStream(srcName, srcZipStream, tempBuffer);
                     crc32.update(tempBuffer.toByteArray(), 0, tempBuffer.size());
                     MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
                     destZipEntry.setName(destName);
                     destZipEntry.setSize(tempBuffer.size());
                     destZipEntry.setCrc(crc32.getValue());
+                    if (convertedStream) {
+                        destZipEntry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
+                    }
                     destZipStream.putArchiveEntry(destZipEntry);
                     tempBuffer.writeTo(destZipStream);
                     destZipStream.closeArchiveEntry();
@@ -339,9 +345,13 @@ public class Migration {
                     MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
                     destZipEntry.setName(destName);
                     destZipStream.putArchiveEntry(destZipEntry);
-                    convertedArchive = convertedArchive | migrateStream(srcName, srcZipStream, destZipStream);
+                    convertedStream = migrateStream(srcName, srcZipStream, destZipStream);
+                    if (convertedStream) {
+                        destZipEntry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
+                    }
                     destZipStream.closeArchiveEntry();
                 }
+                convertedArchive = convertedArchive | convertedStream;
             }
         }
         return convertedArchive;
@@ -418,7 +428,6 @@ public class Migration {
                 }
             }
         }
-        converted = converted | convertedStream;
         return convertedStream;
     }
 
