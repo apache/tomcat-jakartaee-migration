@@ -215,10 +215,11 @@ public class Migration {
     /**
      * Set the cache directory for storing pre-converted archives.
      * @param cacheDir the cache directory (null to disable caching)
+     * @param retentionDays the number of days to retain cached files
      * @throws IOException if the cache directory cannot be created
      */
-    public void setCache(File cacheDir) throws IOException {
-        this.cache = new MigrationCache(cacheDir);
+    public void setCache(File cacheDir, int retentionDays) throws IOException {
+        this.cache = new MigrationCache(cacheDir, retentionDays);
     }
 
 
@@ -267,6 +268,12 @@ public class Migration {
             }
         }
         state = State.COMPLETE;
+
+        // Finalize cache operations (save metadata and prune expired entries)
+        if (cache != null && cache.isEnabled()) {
+            cache.finalizeCacheOperations();
+        }
+
         logger.log(Level.INFO, sm.getString("migration.done",
                 Long.valueOf(TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS))));
     }

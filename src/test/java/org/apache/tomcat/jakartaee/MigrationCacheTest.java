@@ -51,13 +51,13 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheDisabledWhenNull() throws Exception {
-        MigrationCache cache = new MigrationCache(null);
+        MigrationCache cache = new MigrationCache(null, 30);
         assertFalse("Cache should be disabled", cache.isEnabled());
     }
 
     @Test
     public void testCacheEnabledWithValidDirectory() throws Exception {
-        MigrationCache cache = new MigrationCache(tempCacheDir);
+        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
         assertTrue("Cache should be enabled", cache.isEnabled());
         assertTrue("Cache directory should exist", tempCacheDir.exists());
     }
@@ -67,14 +67,14 @@ public class MigrationCacheTest {
         File newCacheDir = new File(tempCacheDir, "new-cache");
         assertFalse("Cache directory should not exist yet", newCacheDir.exists());
 
-        MigrationCache cache = new MigrationCache(newCacheDir);
+        MigrationCache cache = new MigrationCache(newCacheDir, 30);
         assertTrue("Cache should be enabled", cache.isEnabled());
         assertTrue("Cache directory should be created", newCacheDir.exists());
     }
 
     @Test
     public void testCacheMiss() throws Exception {
-        MigrationCache cache = new MigrationCache(tempCacheDir);
+        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
         byte[] sourceData = "test source content".getBytes(StandardCharsets.UTF_8);
         ByteArrayInputStream sourceInput = new ByteArrayInputStream(sourceData);
@@ -88,7 +88,7 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheHit() throws Exception {
-        MigrationCache cache = new MigrationCache(tempCacheDir);
+        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
         byte[] sourceData = "test source content".getBytes(StandardCharsets.UTF_8);
         byte[] convertedData = "converted content".getBytes(StandardCharsets.UTF_8);
@@ -108,7 +108,7 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheStoresAndRetrieves() throws Exception {
-        MigrationCache cache = new MigrationCache(tempCacheDir);
+        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
         byte[] sourceData = "original jar content".getBytes(StandardCharsets.UTF_8);
         byte[] convertedData = "migrated jar content".getBytes(StandardCharsets.UTF_8);
@@ -128,7 +128,7 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheDifferentContent() throws Exception {
-        MigrationCache cache = new MigrationCache(tempCacheDir);
+        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
         byte[] sourceData1 = "content 1".getBytes(StandardCharsets.UTF_8);
         byte[] convertedData1 = "converted 1".getBytes(StandardCharsets.UTF_8);
@@ -148,7 +148,7 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheClear() throws Exception {
-        MigrationCache cache = new MigrationCache(tempCacheDir);
+        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
         byte[] sourceData = "test content".getBytes(StandardCharsets.UTF_8);
         byte[] convertedData = "converted content".getBytes(StandardCharsets.UTF_8);
@@ -174,7 +174,7 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheStats() throws Exception {
-        MigrationCache cache = new MigrationCache(tempCacheDir);
+        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
         String stats = cache.getStats();
         assertNotNull("Stats should not be null", stats);
@@ -183,7 +183,7 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheStatsDisabled() throws Exception {
-        MigrationCache cache = new MigrationCache(null);
+        MigrationCache cache = new MigrationCache(null, 30);
 
         String stats = cache.getStats();
         assertNotNull("Stats should not be null", stats);
@@ -192,7 +192,7 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheWithLargeContent() throws Exception {
-        MigrationCache cache = new MigrationCache(tempCacheDir);
+        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
         // Create large content (1MB)
         byte[] sourceData = new byte[1024 * 1024];
@@ -218,7 +218,7 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheWithMultipleEntries() throws Exception {
-        MigrationCache cache = new MigrationCache(tempCacheDir);
+        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
         // Store multiple different entries
         for (int i = 0; i < 5; i++) {
@@ -244,7 +244,7 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheDisabledNoOperations() throws Exception {
-        MigrationCache cache = new MigrationCache(null);
+        MigrationCache cache = new MigrationCache(null, 30);
 
         byte[] sourceData = "test content".getBytes(StandardCharsets.UTF_8);
         byte[] convertedData = "converted content".getBytes(StandardCharsets.UTF_8);
