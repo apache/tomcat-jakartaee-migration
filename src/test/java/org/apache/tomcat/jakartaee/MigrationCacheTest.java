@@ -17,10 +17,9 @@
 
 package org.apache.tomcat.jakartaee;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
@@ -77,13 +76,11 @@ public class MigrationCacheTest {
         MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
         byte[] sourceData = "test source content".getBytes(StandardCharsets.UTF_8);
-        ByteArrayInputStream sourceInput = new ByteArrayInputStream(sourceData);
-        ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
 
-        // First access should be a cache miss
-        InputStream result = cache.checkCache("test.jar", sourceInput, destOutput);
-        assertNotNull("Should return source stream on cache miss", result);
-        assertEquals("Destination should be empty on cache miss", 0, destOutput.size());
+        // Get cache entry - should not exist
+        CacheEntry entry = cache.getCacheEntry(sourceData);
+        assertFalse("Cache entry should not exist", entry.exists());
+        assertNotNull("Hash should be computed", entry.getHash());
     }
 
     @Test
@@ -94,15 +91,21 @@ public class MigrationCacheTest {
         byte[] convertedData = "converted content".getBytes(StandardCharsets.UTF_8);
 
         // Store in cache
-        cache.storeCachedResult(sourceData, convertedData);
+        CacheEntry entry1 = cache.getCacheEntry(sourceData);
+        assertFalse("Entry should not exist initially", entry1.exists());
+
+        try (OutputStream os = entry1.beginStore()) {
+            os.write(convertedData);
+        }
+        entry1.commitStore();
 
         // Now check for cache hit
-        ByteArrayInputStream sourceInput = new ByteArrayInputStream(sourceData);
-        ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
+        CacheEntry entry2 = cache.getCacheEntry(sourceData);
+        assertTrue("Entry should exist now", entry2.exists());
 
-        InputStream result = cache.checkCache("test.jar", sourceInput, destOutput);
-        assertNull("Should return null on cache hit", result);
-        assertArrayEquals("Cached content should be written to destination",
+        ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
+        entry2.copyToDestination(destOutput);
+        assertArrayEquals("Cached content should match",
                 convertedData, destOutput.toByteArray());
     }
 
@@ -114,14 +117,18 @@ public class MigrationCacheTest {
         byte[] convertedData = "migrated jar content".getBytes(StandardCharsets.UTF_8);
 
         // Store the conversion result
-        cache.storeCachedResult(sourceData, convertedData);
+        CacheEntry entry1 = cache.getCacheEntry(sourceData);
+        try (OutputStream os = entry1.beginStore()) {
+            os.write(convertedData);
+        }
+        entry1.commitStore();
 
         // Verify it was stored by trying to retrieve it
-        ByteArrayInputStream sourceInput = new ByteArrayInputStream(sourceData);
-        ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
+        CacheEntry entry2 = cache.getCacheEntry(sourceData);
+        assertTrue("Should be cached", entry2.exists());
 
-        InputStream result = cache.checkCache("test.jar", sourceInput, destOutput);
-        assertNull("Should be a cache hit", result);
+        ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
+        entry2.copyToDestination(destOutput);
         assertArrayEquals("Retrieved content should match stored content",
                 convertedData, destOutput.toByteArray());
     }
@@ -135,15 +142,15 @@ public class MigrationCacheTest {
         byte[] sourceData2 = "content 2".getBytes(StandardCharsets.UTF_8);
 
         // Store first conversion
-        cache.storeCachedResult(sourceData1, convertedData1);
+        CacheEntry entry1 = cache.getCacheEntry(sourceData1);
+        try (OutputStream os = entry1.beginStore()) {
+            os.write(convertedData1);
+        }
+        entry1.commitStore();
 
         // Check with different source content
-        ByteArrayInputStream sourceInput = new ByteArrayInputStream(sourceData2);
-        ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
-
-        InputStream result = cache.checkCache("test.jar", sourceInput, destOutput);
-        assertNotNull("Should be cache miss for different content", result);
-        assertEquals("Destination should be empty", 0, destOutput.size());
+        CacheEntry entry2 = cache.getCacheEntry(sourceData2);
+        assertFalse("Should be cache miss for different content", entry2.exists());
     }
 
     @Test
@@ -154,22 +161,22 @@ public class MigrationCacheTest {
         byte[] convertedData = "converted content".getBytes(StandardCharsets.UTF_8);
 
         // Store in cache
-        cache.storeCachedResult(sourceData, convertedData);
+        CacheEntry entry1 = cache.getCacheEntry(sourceData);
+        try (OutputStream os = entry1.beginStore()) {
+            os.write(convertedData);
+        }
+        entry1.commitStore();
 
         // Verify it's cached
-        ByteArrayInputStream sourceInput1 = new ByteArrayInputStream(sourceData);
-        ByteArrayOutputStream destOutput1 = new ByteArrayOutputStream();
-        InputStream result1 = cache.checkCache("test.jar", sourceInput1, destOutput1);
-        assertNull("Should be cache hit before clear", result1);
+        CacheEntry entry2 = cache.getCacheEntry(sourceData);
+        assertTrue("Should be cache hit before clear", entry2.exists());
 
         // Clear the cache
         cache.clear();
 
         // Verify it's no longer cached
-        ByteArrayInputStream sourceInput2 = new ByteArrayInputStream(sourceData);
-        ByteArrayOutputStream destOutput2 = new ByteArrayOutputStream();
-        InputStream result2 = cache.checkCache("test.jar", sourceInput2, destOutput2);
-        assertNotNull("Should be cache miss after clear", result2);
+        CacheEntry entry3 = cache.getCacheEntry(sourceData);
+        assertFalse("Should be cache miss after clear", entry3.exists());
     }
 
     @Test
@@ -205,13 +212,17 @@ public class MigrationCacheTest {
         }
 
         // Store and retrieve
-        cache.storeCachedResult(sourceData, convertedData);
+        CacheEntry entry1 = cache.getCacheEntry(sourceData);
+        try (OutputStream os = entry1.beginStore()) {
+            os.write(convertedData);
+        }
+        entry1.commitStore();
 
-        ByteArrayInputStream sourceInput = new ByteArrayInputStream(sourceData);
+        CacheEntry entry2 = cache.getCacheEntry(sourceData);
+        assertTrue("Should be cache hit for large content", entry2.exists());
+
         ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
-
-        InputStream result = cache.checkCache("large.jar", sourceInput, destOutput);
-        assertNull("Should be cache hit for large content", result);
+        entry2.copyToDestination(destOutput);
         assertArrayEquals("Large content should be retrieved correctly",
                 convertedData, destOutput.toByteArray());
     }
@@ -224,7 +235,12 @@ public class MigrationCacheTest {
         for (int i = 0; i < 5; i++) {
             byte[] sourceData = ("source " + i).getBytes(StandardCharsets.UTF_8);
             byte[] convertedData = ("converted " + i).getBytes(StandardCharsets.UTF_8);
-            cache.storeCachedResult(sourceData, convertedData);
+
+            CacheEntry entry = cache.getCacheEntry(sourceData);
+            try (OutputStream os = entry.beginStore()) {
+                os.write(convertedData);
+            }
+            entry.commitStore();
         }
 
         // Verify all can be retrieved
@@ -232,11 +248,11 @@ public class MigrationCacheTest {
             byte[] sourceData = ("source " + i).getBytes(StandardCharsets.UTF_8);
             byte[] expectedConverted = ("converted " + i).getBytes(StandardCharsets.UTF_8);
 
-            ByteArrayInputStream sourceInput = new ByteArrayInputStream(sourceData);
-            ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
+            CacheEntry entry = cache.getCacheEntry(sourceData);
+            assertTrue("Should be cache hit for entry " + i, entry.exists());
 
-            InputStream result = cache.checkCache("test" + i + ".jar", sourceInput, destOutput);
-            assertNull("Should be cache hit for entry " + i, result);
+            ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
+            entry.copyToDestination(destOutput);
             assertArrayEquals("Content should match for entry " + i,
                     expectedConverted, destOutput.toByteArray());
         }
@@ -247,17 +263,15 @@ public class MigrationCacheTest {
         MigrationCache cache = new MigrationCache(null, 30);
 
         byte[] sourceData = "test content".getBytes(StandardCharsets.UTF_8);
-        byte[] convertedData = "converted content".getBytes(StandardCharsets.UTF_8);
 
-        // Store should be no-op
-        cache.storeCachedResult(sourceData, convertedData);
-
-        // Check should return source stream as-is
-        ByteArrayInputStream sourceInput = new ByteArrayInputStream(sourceData);
-        ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
-
-        InputStream result = cache.checkCache("test.jar", sourceInput, destOutput);
-        assertSame("Should return original stream when disabled", sourceInput, result);
-        assertEquals("Destination should be empty when disabled", 0, destOutput.size());
+        // getCacheEntry should throw exception when cache is disabled
+        try {
+            cache.getCacheEntry(sourceData);
+            fail("Should throw exception when cache is disabled");
+        } catch (IllegalStateException e) {
+            // Expected
+            assertTrue("Error message should mention cache not enabled",
+                    e.getMessage().contains("not enabled"));
+        }
     }
 }

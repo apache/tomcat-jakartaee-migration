@@ -18,16 +18,10 @@ package org.apache.tomcat.jakartaee;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -38,10 +32,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.apache.commons.io.IOUtils;
 
 /**
  * Cache for storing and retrieving pre-converted archive files.
@@ -196,170 +189,34 @@ public class MigrationCache {
     }
 
     /**
-     * Process an archive with caching support.
-     * This method will:
-     * 1. Hash the pre-conversion content
-     * 2. Check if a cached post-conversion version exists
-     * 3. If yes: copy cached result to output and return true
-     * 4. If no: return false (caller should perform conversion and call storeCachedResult)
+     * Get a cache entry for the given source bytes.
+     * This computes the hash, checks if cached, and marks the entry as accessed.
      *
-     * @param name the archive name (for logging)
-     * @param src the source input stream (will be consumed to compute hash)
-     * @param dest the destination output stream
-     * @return an InputStream containing the original source data, or null if cache hit
+     * @param sourceBytes the pre-conversion content
+     * @return a CacheEntry object with all operations for this entry
      * @throws IOException if an I/O error occurs
      */
-    public InputStream checkCache(String name, InputStream src, OutputStream dest) throws IOException {
+    public CacheEntry getCacheEntry(byte[] sourceBytes) throws IOException {
         if (!enabled) {
-            return src;
+            throw new IllegalStateException("Cache is not enabled");
         }
 
-        // Read source into memory so we can hash it and potentially reuse it
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        IOUtils.copy(src, buffer);
-        byte[] sourceBytes = buffer.toByteArray();
-
-        // Compute hash of pre-conversion content
+        // Compute hash once
         String hash = computeHash(sourceBytes);
 
-        // Check if cached version exists
+        // Get cache file location
         File cachedFile = getCacheFile(hash);
-        if (cachedFile.exists()) {
-            // Cache hit! Copy cached (post-conversion) result to output
-            logger.log(Level.INFO, sm.getString("cache.hit", name, hash));
-            try (FileInputStream cachedInput = new FileInputStream(cachedFile)) {
-                IOUtils.copy(cachedInput, dest);
-            }
-            // Update access time for this cache entry
-            updateAccessTime(hash);
-            return null; // Signal cache hit
-        } else {
-            // Cache miss - return source data for processing
-            logger.log(Level.FINE, sm.getString("cache.miss", name, hash));
-            return new ByteArrayInputStream(sourceBytes);
-        }
-    }
+        boolean exists = cachedFile.exists();
 
-    /**
-     * Store the result of a conversion in the cache.
-     * This should be called after a successful conversion when checkCache returned false.
-     *
-     * @param sourceBytes the pre-conversion content (for hash computation)
-     * @param convertedBytes the post-conversion content to cache
-     * @throws IOException if an I/O error occurs
-     */
-    public void storeCachedResult(byte[] sourceBytes, byte[] convertedBytes) throws IOException {
-        if (!enabled) {
-            return;
-        }
+        // Create temp file for storing
+        File tempFile = new File(cacheDir, "temp-" + UUID.randomUUID() + ".tmp");
 
-        String hash = computeHash(sourceBytes);
-        File cachedFile = getCacheFile(hash);
-
-        // Write converted content to cache
-        try (FileOutputStream fos = new FileOutputStream(cachedFile)) {
-            fos.write(convertedBytes);
-        }
-
-        // Update access time for this newly stored cache entry
+        // Mark as accessed now
         updateAccessTime(hash);
 
-        logger.log(Level.FINE, sm.getString("cache.store", hash, cachedFile.length()));
+        return new CacheEntry(hash, exists, cachedFile, tempFile);
     }
 
-    /**
-     * Check cache at file level for better performance.
-     * This hashes the source file directly and checks for a cached result.
-     *
-     * @param sourceFile the source file to check
-     * @param destFile the destination file to write to if cache hit
-     * @return true if cache hit and file was written, false if cache miss
-     * @throws IOException if an I/O error occurs
-     */
-    public boolean checkFileCache(File sourceFile, File destFile) throws IOException {
-        if (!enabled) {
-            return false;
-        }
-
-        // Compute hash of source file
-        String hash = computeFileHash(sourceFile);
-
-        // Check if cached version exists
-        File cachedFile = getCacheFile(hash);
-        if (cachedFile.exists()) {
-            // Cache hit! Copy cached result to destination
-            logger.log(Level.INFO, sm.getString("cache.hit", sourceFile.getName(), hash));
-            try (FileInputStream cachedInput = new FileInputStream(cachedFile);
-                    FileOutputStream destOutput = new FileOutputStream(destFile)) {
-                IOUtils.copy(cachedInput, destOutput);
-            }
-            // Update access time for this cache entry
-            updateAccessTime(hash);
-            return true;
-        } else {
-            logger.log(Level.FINE, sm.getString("cache.miss", sourceFile.getName(), hash));
-            return false;
-        }
-    }
-
-    /**
-     * Store a file-level cache entry.
-     * This hashes the source file and stores the destination file in the cache.
-     *
-     * @param sourceFile the source file (for hash computation)
-     * @param destFile the converted destination file to cache
-     * @throws IOException if an I/O error occurs
-     */
-    public void storeFileCache(File sourceFile, File destFile) throws IOException {
-        if (!enabled) {
-            return;
-        }
-
-        // Compute hash of source file
-        String hash = computeFileHash(sourceFile);
-        File cachedFile = getCacheFile(hash);
-
-        // Copy destination file to cache
-        try (FileInputStream destInput = new FileInputStream(destFile);
-                FileOutputStream cachedOutput = new FileOutputStream(cachedFile)) {
-            IOUtils.copy(destInput, cachedOutput);
-        }
-
-        // Update access time for this newly stored cache entry
-        updateAccessTime(hash);
-
-        logger.log(Level.FINE, sm.getString("cache.store", hash, cachedFile.length()));
-    }
-
-    /**
-     * Compute SHA-256 hash of a file efficiently using streaming.
-     *
-     * @param file the file to hash
-     * @return the hash as a hex string
-     * @throws IOException if hashing fails
-     */
-    private String computeFileHash(File file) throws IOException {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            try (FileInputStream fis = new FileInputStream(file)) {
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = fis.read(buffer)) != -1) {
-                    digest.update(buffer, 0, bytesRead);
-                }
-            }
-            byte[] hashBytes = digest.digest();
-
-            // Convert to hex string
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new IOException(sm.getString("cache.hashError"), e);
-        }
-    }
 
     /**
      * Get the cache file for a given hash.
