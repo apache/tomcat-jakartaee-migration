@@ -3,6 +3,7 @@
 ## 1.0.10
 - When migrating files in place, don't replace the original file if no conversion has taken place. Based on PR[#78] by Semiao Marco.
 - When converting a file in an archive, update the last modified time for that archive entry.  Based on PR[#78] by Semiao Marco.
+- Correctly handle OSGi headers. PR[#54] by Kyle Smith.
 - Update ASF parent POM 34. (dependabot/markt)
 - Update Commons BCEL to 6.11.0. (dependabot/remm)
 - Update Commons Compress to 1.28.0. (dependabot/remm)

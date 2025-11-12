@@ -95,6 +95,11 @@
       <version>1.10.15</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+        <groupId>org.eclipse.platform</groupId>
+        <artifactId>org.eclipse.osgi</artifactId>
+        <version>3.18.600</version>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
@@ -103,6 +108,7 @@
       <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
+    
   </dependencies>
 
   <profiles>
@@ -280,6 +286,13 @@
                   <artifact>commons-io:*</artifact>
                   <excludes>
                     <exclude>META-INF/**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>org.eclipse.platform:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/**</exclude>
+                    <exclude>module-info.class</exclude>
                   </excludes>
                 </filter>
               </filters>
