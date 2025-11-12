@@ -279,13 +279,7 @@ public class Migration {
     }
 
     private void migrateFile(File src, File dest) throws IOException {
-        boolean inplace = src.equals(dest);
-        if (!inplace) {
-            try (InputStream is = new FileInputStream(src);
-                    OutputStream os = new FileOutputStream(dest)) {
-                converted = migrateStream(src.getAbsolutePath(), is, os);
-            }
-        } else {
+        if (src.equals(dest)) {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream((int) (src.length() * 1.05));
 
             try (InputStream is = new FileInputStream(src)) {
@@ -298,6 +292,11 @@ public class Migration {
 
             try (OutputStream os = new FileOutputStream(dest)) {
                 os.write(buffer.toByteArray());
+            }
+        } else {
+            try (InputStream is = new FileInputStream(src);
+                    OutputStream os = new FileOutputStream(dest)) {
+                converted = migrateStream(src.getAbsolutePath(), is, os);
             }
         }
     }
