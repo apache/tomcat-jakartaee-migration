@@ -450,7 +450,7 @@ public class Migration {
                     // Cache hit! Copy cached result to dest and return
                     logger.log(Level.INFO, sm.getString("cache.hit", name, cacheEntry.getHash()));
                     cacheEntry.copyToDestination(dest);
-                    return;
+                    return true;
                 }
 
                 // Cache miss - use buffered source for conversion
