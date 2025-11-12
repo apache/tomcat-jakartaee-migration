@@ -1,5 +1,8 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
+## 1.0.10
+- When migrating files in place, don't replace the original file if no conversion has taken place. Based on PR[#78] by Semiao Marco.
+
 ## 1.0.9
 - Update the JaCoCo Maven plugin to 0.8.12. (dependabot/markt)
 - Update Commons BCEL to 6.10.0. (dependabot/markt)
