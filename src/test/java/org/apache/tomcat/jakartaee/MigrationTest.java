@@ -21,6 +21,7 @@ import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.jar.JarFile;
 
 import org.apache.commons.io.FileUtils;
@@ -233,31 +234,59 @@ public class MigrationTest {
 
     @Test
     public void testMigrateSignedJarFileRSA() throws Exception {
-        testMigrateSignedJarFile("rsa");
+        testMigrateSignedJarFile("rsa", EESpecProfiles.TOMCAT);
     }
 
     @Test
     public void testMigrateSignedJarFileDSA() throws Exception {
-        testMigrateSignedJarFile("dsa");
+        testMigrateSignedJarFile("dsa", EESpecProfiles.TOMCAT);
     }
 
     @Test
     public void testMigrateSignedJarFileEC() throws Exception {
-        testMigrateSignedJarFile("ec");
+        testMigrateSignedJarFile("ec", EESpecProfiles.TOMCAT);
     }
 
-    private void testMigrateSignedJarFile(String algorithm) throws Exception {
-        File jarFile = new File("target/test-classes/hellocgi-signed-" + algorithm + ".jar");
+    @Test
+    public void testNoopSignedJarFileRSA() throws Exception {
+        testMigrateSignedJarFile("rsa", EESpecProfiles.JEE8);
+    }
+
+    @Test
+    public void testNoopSignedJarFileDSA() throws Exception {
+        testMigrateSignedJarFile("dsa", EESpecProfiles.JEE8);
+    }
+
+    @Test
+    public void testNoopSignedJarFileEC() throws Exception {
+        testMigrateSignedJarFile("ec", EESpecProfiles.JEE8);
+    }
+
+    private void testMigrateSignedJarFile(String algorithm, EESpecProfile profile) throws Exception {
+        File jarFileSrc = new File("target/test-classes/hellocgi-signed-" + algorithm + ".jar");
+        File jarFileTmp = new File("target/test-classes/hellocgi-signed-" + algorithm + "-tmp.jar");
+        Files.copy(jarFileSrc.toPath(), jarFileTmp.toPath());
 
         Migration migration = new Migration();
-        migration.setSource(jarFile);
-        migration.setDestination(jarFile);
+        migration.setEESpecProfile(profile);
+        migration.setSource(jarFileTmp);
+        migration.setDestination(jarFileTmp);
         migration.execute();
 
-        try (JarFile jar = new JarFile(jarFile)) {
-            assertNull("Digest not removed from the manifest", jar.getManifest().getAttributes("org/apache/tomcat/jakartaee/HelloCGI.class"));
-            assertNull("Signature key not removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + "." + algorithm.toUpperCase()));
-            assertNull("Signed manifest not removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + ".SF"));
+        try (JarFile jar = new JarFile(jarFileTmp)) {
+            if (profile == EESpecProfiles.JEE8) {
+                assertNotNull("Digest removed from the manifest", jar.getManifest().getAttributes("org/apache/tomcat/jakartaee/HelloCGI.class"));
+                assertNotNull("Signature key removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + "." + algorithm.toUpperCase()));
+                assertNotNull("Signed manifest removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + ".SF"));
+                assertFalse("The JAR was converted", migration.hasConverted());
+            } else {
+                assertNull("Digest not removed from the manifest", jar.getManifest().getAttributes("org/apache/tomcat/jakartaee/HelloCGI.class"));
+                assertNull("Signature key not removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + "." + algorithm.toUpperCase()));
+                assertNull("Signed manifest not removed", jar.getEntry("META-INF/" + algorithm.toUpperCase() + ".SF"));
+                assertTrue("The JAR was not converted", migration.hasConverted());
+            }
+        } finally {
+            assertTrue("Unable to delete " + jarFileTmp.getAbsolutePath(), jarFileTmp.delete());
         }
     }
 }
