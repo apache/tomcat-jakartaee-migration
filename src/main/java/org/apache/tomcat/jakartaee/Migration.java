@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -333,6 +334,9 @@ public class Migration {
                     destZipEntry.setName(destName);
                     destZipEntry.setSize(tempBuffer.size());
                     destZipEntry.setCrc(crc32.getValue());
+                    if (convertedStream) {
+                        destZipEntry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
+                    }
                     destZipStream.putArchiveEntry(destZipEntry);
                     tempBuffer.writeTo(destZipStream);
                     destZipStream.closeArchiveEntry();
@@ -342,6 +346,9 @@ public class Migration {
                     destZipEntry.setName(destName);
                     destZipStream.putArchiveEntry(destZipEntry);
                     convertedStream = migrateStream(srcName, srcZipStream, destZipStream);
+                    if (convertedStream) {
+                        destZipEntry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
+                    }
                     destZipStream.closeArchiveEntry();
                 }
                 convertedArchive = convertedArchive || convertedStream;
@@ -376,8 +383,11 @@ public class Migration {
                 destZipEntry.setName(destName);
                 destZipStream.putArchiveEntry(destZipEntry);
                 boolean convertedStream = migrateStream(srcName, srcZipFile.getInputStream(srcZipEntry), destZipStream);
-                convertedArchive = convertedArchive || convertedStream;
+                if (convertedStream) {
+                    destZipEntry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
+                }
                 destZipStream.closeArchiveEntry();
+                convertedArchive = convertedArchive || convertedStream;
             }
         }
 
