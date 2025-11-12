@@ -38,6 +38,8 @@ public class MigrationCLI {
     private static final String PROFILE_ARG = "-profile=";
     private static final String ZIPINMEMORY_ARG = "-zipInMemory";
     private static final String MATCHEXCLUDESPATH_ARG ="-matchExcludesAgainstPathName";
+    private static final String CACHE_ARG = "-cache=";
+    private static final String NOCACHE_ARG = "-noCache";
 
     /**
      * Build the migration tool CLI instance.
@@ -55,7 +57,12 @@ public class MigrationCLI {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
         Migration migration = new Migration();
 
-        // Process arguments
+        // Default cache directory (use user home/.migration-cache)
+        File defaultCacheDir = new File(System.getProperty("user.home"), ".migration-cache");
+        File cacheDir = defaultCacheDir;
+        boolean useCacheExplicit = false;
+
+        // Process argumnets
         List<String> arguments = new ArrayList<>(Arrays.asList(args));
 
         // Process the custom log level if present
@@ -95,6 +102,15 @@ public class MigrationCLI {
             } else if (argument.equals(MATCHEXCLUDESPATH_ARG)) {
                 iter.remove();
                 migration.setMatchExcludesAgainstPathName(true);
+            } else if (argument.startsWith(CACHE_ARG)) {
+                iter.remove();
+                String cachePath = argument.substring(CACHE_ARG.length());
+                cacheDir = new File(cachePath);
+                useCacheExplicit = true;
+            } else if (argument.equals(NOCACHE_ARG)) {
+                iter.remove();
+                cacheDir = null;
+                useCacheExplicit = true;
             }
         }
 
@@ -107,6 +123,11 @@ public class MigrationCLI {
 
         migration.setSource(new File(source));
         migration.setDestination(new File(dest));
+
+        // Enable cache by default, unless explicitly disabled
+        if (!useCacheExplicit || cacheDir != null) {
+            migration.setCache(cacheDir);
+        }
 
         migration.execute();
     }

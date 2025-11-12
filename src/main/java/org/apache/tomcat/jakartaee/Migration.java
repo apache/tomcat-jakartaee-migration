@@ -107,6 +107,7 @@ public class Migration {
     private File destination;
     private final List<Converter> converters;
     private final Set<String> excludes = new HashSet<>();
+    private MigrationCache cache;
 
     /**
      * Construct a new migration tool instance.
@@ -209,6 +210,15 @@ public class Migration {
      */
     public void setDestination(File destination) {
         this.destination = destination;
+    }
+
+    /**
+     * Set the cache directory for storing pre-converted archives.
+     * @param cacheDir the cache directory (null to disable caching)
+     * @throws IOException if the cache directory cannot be created
+     */
+    public void setCache(File cacheDir) throws IOException {
+        this.cache = new MigrationCache(cacheDir);
     }
 
 
@@ -415,14 +425,43 @@ public class Migration {
             Util.copy(src, dest);
             logger.log(Level.INFO, sm.getString("migration.skip", name));
         } else if (isArchive(name)) {
+            // Only cache nested archives (e.g., JARs inside WARs), not top-level files
+            // Top-level files will have absolute paths starting with "/"
+            boolean isNestedArchive = !name.startsWith("/") && !name.startsWith("\\");
+
+            if (isNestedArchive && cache != null && cache.isEnabled()) {
+                InputStream sourceStream = cache.checkCache(name, src, dest);
+                if (sourceStream == null) {
+                    // Cache hit - already written to dest
+                    return;
+                }
+                // Cache miss - proceed with conversion using buffered source
+                src = sourceStream;
+            }
+
+            // Process archive - buffering for cache if needed
+            ByteArrayOutputStream conversionBuffer = new ByteArrayOutputStream();
             if (zipInMemory) {
                 logger.log(Level.INFO, sm.getString("migration.archive.memory", name));
-                convertedStream = migrateArchiveInMemory(src, dest);
+                convertedStream = migrateArchiveInMemory(src, conversionBuffer);
                 logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
             } else {
                 logger.log(Level.INFO, sm.getString("migration.archive.stream", name));
-                convertedStream = migrateArchiveStreaming(src, dest);
+                convertedStream = migrateArchiveStreaming(src, conversionBuffer);
                 logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
+            }
+
+            // Write converted content to destination
+            byte[] convertedBytes = conversionBuffer.toByteArray();
+            dest.write(convertedBytes);
+
+            // Store in cache if this is a nested archive and source was buffered from cache check
+            if (isNestedArchive && cache != null && cache.isEnabled() && src instanceof ByteArrayInputStream) {
+                // Get original source bytes for hash computation
+                ByteArrayInputStream bais = (ByteArrayInputStream) src;
+                bais.reset();
+                byte[] sourceBytes = IOUtils.toByteArray(bais);
+                cache.storeCachedResult(sourceBytes, convertedBytes);
             }
         } else {
             for (Converter converter : converters) {
