@@ -271,6 +271,12 @@
                   </excludes>
                 </filter>
                 <filter>
+                  <artifact>commons-codec:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
                   <artifact>commons-io:*</artifact>
                   <excludes>
                     <exclude>META-INF/**</exclude>
