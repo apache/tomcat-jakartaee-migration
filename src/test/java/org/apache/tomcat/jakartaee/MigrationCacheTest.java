@@ -78,7 +78,7 @@ public class MigrationCacheTest {
         byte[] sourceData = "test source content".getBytes(StandardCharsets.UTF_8);
 
         // Get cache entry - should not exist
-        CacheEntry entry = cache.getCacheEntry(sourceData);
+        CacheEntry entry = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         assertFalse("Cache entry should not exist", entry.exists());
         assertNotNull("Hash should be computed", entry.getHash());
     }
@@ -91,7 +91,7 @@ public class MigrationCacheTest {
         byte[] convertedData = "converted content".getBytes(StandardCharsets.UTF_8);
 
         // Store in cache
-        CacheEntry entry1 = cache.getCacheEntry(sourceData);
+        CacheEntry entry1 = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         assertFalse("Entry should not exist initially", entry1.exists());
 
         try (OutputStream os = entry1.beginStore()) {
@@ -100,7 +100,7 @@ public class MigrationCacheTest {
         entry1.commitStore();
 
         // Now check for cache hit
-        CacheEntry entry2 = cache.getCacheEntry(sourceData);
+        CacheEntry entry2 = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         assertTrue("Entry should exist now", entry2.exists());
 
         ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
@@ -117,14 +117,14 @@ public class MigrationCacheTest {
         byte[] convertedData = "migrated jar content".getBytes(StandardCharsets.UTF_8);
 
         // Store the conversion result
-        CacheEntry entry1 = cache.getCacheEntry(sourceData);
+        CacheEntry entry1 = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         try (OutputStream os = entry1.beginStore()) {
             os.write(convertedData);
         }
         entry1.commitStore();
 
         // Verify it was stored by trying to retrieve it
-        CacheEntry entry2 = cache.getCacheEntry(sourceData);
+        CacheEntry entry2 = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         assertTrue("Should be cached", entry2.exists());
 
         ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
@@ -142,14 +142,14 @@ public class MigrationCacheTest {
         byte[] sourceData2 = "content 2".getBytes(StandardCharsets.UTF_8);
 
         // Store first conversion
-        CacheEntry entry1 = cache.getCacheEntry(sourceData1);
+        CacheEntry entry1 = cache.getCacheEntry(sourceData1, EESpecProfiles.TOMCAT);
         try (OutputStream os = entry1.beginStore()) {
             os.write(convertedData1);
         }
         entry1.commitStore();
 
         // Check with different source content
-        CacheEntry entry2 = cache.getCacheEntry(sourceData2);
+        CacheEntry entry2 = cache.getCacheEntry(sourceData2, EESpecProfiles.TOMCAT);
         assertFalse("Should be cache miss for different content", entry2.exists());
     }
 
@@ -161,21 +161,21 @@ public class MigrationCacheTest {
         byte[] convertedData = "converted content".getBytes(StandardCharsets.UTF_8);
 
         // Store in cache
-        CacheEntry entry1 = cache.getCacheEntry(sourceData);
+        CacheEntry entry1 = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         try (OutputStream os = entry1.beginStore()) {
             os.write(convertedData);
         }
         entry1.commitStore();
 
         // Verify it's cached
-        CacheEntry entry2 = cache.getCacheEntry(sourceData);
+        CacheEntry entry2 = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         assertTrue("Should be cache hit before clear", entry2.exists());
 
         // Clear the cache
         cache.clear();
 
         // Verify it's no longer cached
-        CacheEntry entry3 = cache.getCacheEntry(sourceData);
+        CacheEntry entry3 = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         assertFalse("Should be cache miss after clear", entry3.exists());
     }
 
@@ -212,13 +212,13 @@ public class MigrationCacheTest {
         }
 
         // Store and retrieve
-        CacheEntry entry1 = cache.getCacheEntry(sourceData);
+        CacheEntry entry1 = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         try (OutputStream os = entry1.beginStore()) {
             os.write(convertedData);
         }
         entry1.commitStore();
 
-        CacheEntry entry2 = cache.getCacheEntry(sourceData);
+        CacheEntry entry2 = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         assertTrue("Should be cache hit for large content", entry2.exists());
 
         ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
@@ -236,7 +236,7 @@ public class MigrationCacheTest {
             byte[] sourceData = ("source " + i).getBytes(StandardCharsets.UTF_8);
             byte[] convertedData = ("converted " + i).getBytes(StandardCharsets.UTF_8);
 
-            CacheEntry entry = cache.getCacheEntry(sourceData);
+            CacheEntry entry = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
             try (OutputStream os = entry.beginStore()) {
                 os.write(convertedData);
             }
@@ -248,7 +248,7 @@ public class MigrationCacheTest {
             byte[] sourceData = ("source " + i).getBytes(StandardCharsets.UTF_8);
             byte[] expectedConverted = ("converted " + i).getBytes(StandardCharsets.UTF_8);
 
-            CacheEntry entry = cache.getCacheEntry(sourceData);
+            CacheEntry entry = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
             assertTrue("Should be cache hit for entry " + i, entry.exists());
 
             ByteArrayOutputStream destOutput = new ByteArrayOutputStream();
@@ -266,7 +266,7 @@ public class MigrationCacheTest {
 
         // getCacheEntry should throw exception when cache is disabled
         try {
-            cache.getCacheEntry(sourceData);
+            cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
             fail("Should throw exception when cache is disabled");
         } catch (IllegalStateException e) {
             // Expected

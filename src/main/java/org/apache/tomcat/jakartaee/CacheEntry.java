@@ -100,6 +100,14 @@ class CacheEntry {
     }
 
     /**
+     * Get the size of the cached file in bytes.
+     * @return the file size in bytes
+     */
+    public long getFileSize() {
+        return cacheFile.length();
+    }
+
+    /**
      * Rollback the store operation - delete temp file.
      */
     public void rollbackStore() {

@@ -213,13 +213,11 @@ public class Migration {
     }
 
     /**
-     * Set the cache directory for storing pre-converted archives.
-     * @param cacheDir the cache directory (null to disable caching)
-     * @param retentionDays the number of days to retain cached files
-     * @throws IOException if the cache directory cannot be created
+     * Set the migration cache for storing pre-converted archives.
+     * @param cache the migration cache instance (null to disable caching)
      */
-    public void setCache(File cacheDir, int retentionDays) throws IOException {
-        this.cache = new MigrationCache(cacheDir, retentionDays);
+    public void setCache(MigrationCache cache) {
+        this.cache = cache;
     }
 
 
@@ -444,7 +442,7 @@ public class Migration {
                 byte[] sourceBytes = buffer.toByteArray();
 
                 // Get cache entry (computes hash and marks as accessed)
-                cacheEntry = cache.getCacheEntry(sourceBytes);
+                cacheEntry = cache.getCacheEntry(sourceBytes, profile);
 
                 if (cacheEntry.exists()) {
                     // Cache hit! Copy cached result to dest and return
@@ -479,7 +477,8 @@ public class Migration {
                 // Commit to cache on success
                 if (cacheEntry != null) {
                     cacheEntry.commitStore();
-                    logger.log(Level.FINE, sm.getString("cache.store", cacheEntry.getHash(), 0));
+                    logger.log(Level.FINE, sm.getString("cache.store", cacheEntry.getHash(),
+                            Long.valueOf(cacheEntry.getFileSize())));
                 }
             } catch (IOException e) {
                 // Rollback cache on error

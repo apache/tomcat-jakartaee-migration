@@ -139,8 +139,9 @@ public class MigrationCLI {
         migration.setDestination(new File(dest));
 
         // Only enable cache if -cache argument was provided
-        if (enableCache && cacheDir != null) {
-            migration.setCache(cacheDir, cacheRetentionDays);
+        if (enableCache) {
+            MigrationCache migrationCache = new MigrationCache(cacheDir, cacheRetentionDays);
+            migration.setCache(migrationCache);
         }
 
         migration.execute();

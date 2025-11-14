@@ -38,7 +38,39 @@ import java.util.logging.Logger;
 
 /**
  * Cache for storing and retrieving pre-converted archive files.
- * Uses SHA-256 hashing of the pre-conversion content to identify files.
+ *
+ * <h2>Cache Structure</h2>
+ * <p>The cache organizes files in a directory structure based on hash values:</p>
+ * <pre>
+ * {cacheDir}/
+ *   ├── cache-metadata.txt      # Metadata file tracking access times
+ *   ├── {XX}/                    # Subdirectory named by first 2 chars of hash
+ *   │   └── {hash}.jar          # Cached converted archive (full SHA-256 hash)
+ *   ├── {YY}/
+ *   │   └── {hash}.jar
+ *   └── temp-{uuid}.tmp          # Temporary files during conversion
+ * </pre>
+ *
+ * <h2>Cache Key</h2>
+ * <p>Each cache entry is keyed by a SHA-256 hash computed from:</p>
+ * <ul>
+ *   <li>The migration profile name (e.g., "TOMCAT", "EE")</li>
+ *   <li>The pre-conversion archive content (as bytes)</li>
+ * </ul>
+ * <p>This ensures that the same archive converted with different profiles
+ * produces different cache entries.</p>
+ *
+ * <h2>Metadata Format</h2>
+ * <p>The {@code cache-metadata.txt} file tracks access times for cache pruning:</p>
+ * <pre>
+ * # Migration cache metadata - hash|last_access_date
+ * {hash}|{YYYY-MM-DD}
+ * {hash}|{YYYY-MM-DD}
+ * </pre>
+ *
+ * <h2>Temporary Files</h2>
+ * <p>During conversion, output is written to temporary files named {@code temp-{uuid}.tmp}.
+ * These files are cleaned up on startup to handle crashes or unexpected shutdowns.</p>
  */
 public class MigrationCache {
 
@@ -88,7 +120,34 @@ public class MigrationCache {
             // Load existing metadata
             loadMetadata();
 
+            // Clean up any orphaned temp files from previous crashes
+            cleanupTempFiles();
+
             logger.log(Level.INFO, sm.getString("cache.enabled", cacheDir.getAbsolutePath(), retentionDays));
+        }
+    }
+
+    /**
+     * Clean up any temporary files left over from previous crashes or unexpected shutdowns.
+     * Scans the cache directory for temp-*.tmp files and deletes them.
+     */
+    private void cleanupTempFiles() {
+        File[] files = cacheDir.listFiles();
+        if (files != null) {
+            int cleanedCount = 0;
+            for (File file : files) {
+                if (file.isFile() && file.getName().startsWith("temp-") && file.getName().endsWith(".tmp")) {
+                    if (file.delete()) {
+                        cleanedCount++;
+                        logger.log(Level.FINE, sm.getString("cache.tempfile.cleaned", file.getName()));
+                    } else {
+                        logger.log(Level.WARNING, sm.getString("cache.tempfile.cleanFailed", file.getName()));
+                    }
+                }
+            }
+            if (cleanedCount > 0) {
+                logger.log(Level.INFO, sm.getString("cache.tempfiles.cleaned", cleanedCount));
+            }
         }
     }
 
@@ -159,7 +218,7 @@ public class MigrationCache {
         File[] subdirs = cacheDir.listFiles();
         if (subdirs != null) {
             for (File subdir : subdirs) {
-                if (subdir.isDirectory() && !subdir.getName().equals(".")) {
+                if (subdir.isDirectory()) {
                     File[] files = subdir.listFiles();
                     if (files != null) {
                         for (File file : files) {
@@ -189,20 +248,21 @@ public class MigrationCache {
     }
 
     /**
-     * Get a cache entry for the given source bytes.
+     * Get a cache entry for the given source bytes and profile.
      * This computes the hash, checks if cached, and marks the entry as accessed.
      *
      * @param sourceBytes the pre-conversion content
+     * @param profile the migration profile being used
      * @return a CacheEntry object with all operations for this entry
      * @throws IOException if an I/O error occurs
      */
-    public CacheEntry getCacheEntry(byte[] sourceBytes) throws IOException {
+    public CacheEntry getCacheEntry(byte[] sourceBytes, EESpecProfile profile) throws IOException {
         if (!enabled) {
             throw new IllegalStateException("Cache is not enabled");
         }
 
-        // Compute hash once
-        String hash = computeHash(sourceBytes);
+        // Compute hash once (includes profile)
+        String hash = computeHash(sourceBytes, profile);
 
         // Get cache file location
         File cachedFile = getCacheFile(hash);
@@ -235,16 +295,21 @@ public class MigrationCache {
     }
 
     /**
-     * Compute SHA-256 hash of the given bytes.
+     * Compute SHA-256 hash of the given bytes combined with the profile name.
+     * The profile is included to ensure different profiles produce different cache entries.
      *
      * @param bytes the bytes to hash
+     * @param profile the migration profile
      * @return the hash as a hex string
      * @throws IOException if hashing fails
      */
-    private String computeHash(byte[] bytes) throws IOException {
+    private String computeHash(byte[] bytes, EESpecProfile profile) throws IOException {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(bytes);
+            // Include profile name in hash to differentiate between profiles
+            digest.update(profile.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            digest.update(bytes);
+            byte[] hashBytes = digest.digest();
 
             // Convert to hex string
             StringBuilder sb = new StringBuilder();
@@ -287,7 +352,9 @@ public class MigrationCache {
                 }
             }
         }
-        Files.deleteIfExists(dir.toPath());
+        if (!Files.deleteIfExists(dir.toPath()) && dir.exists()) {
+            throw new IOException(sm.getString("cache.deleteFailed", dir.getAbsolutePath()));
+        }
     }
 
     /**

@@ -306,7 +306,7 @@ public class MigrationTest {
             Migration migration1 = new Migration();
             migration1.setSource(jarFile);
             migration1.setDestination(jarFileTarget);
-            migration1.setCache(cacheDir, 30);
+            migration1.setCache(new MigrationCache(cacheDir, 30));
             long startTime1 = System.currentTimeMillis();
             migration1.execute();
             long duration1 = System.currentTimeMillis() - startTime1;
@@ -329,7 +329,7 @@ public class MigrationTest {
             Migration migration2 = new Migration();
             migration2.setSource(jarFile);
             migration2.setDestination(jarFileTarget);
-            migration2.setCache(cacheDir, 30);
+            migration2.setCache(new MigrationCache(cacheDir, 30));
             long startTime2 = System.currentTimeMillis();
             migration2.execute();
             long duration2 = System.currentTimeMillis() - startTime2;
