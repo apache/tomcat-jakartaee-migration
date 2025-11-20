@@ -97,26 +97,29 @@ public class MigrationCache {
         this.cacheDir = cacheDir;
         this.metadataFile = cacheDir == null ? null : new File(cacheDir, METADATA_FILE);
 
-        if (cacheDir != null) {
-            // Create cache directory if it doesn't exist
-            if (!cacheDir.exists()) {
-                if (!cacheDir.mkdirs()) {
-                    throw new IOException(sm.getString("cache.cannotCreate", cacheDir.getAbsolutePath()));
-                }
-            }
-
-            if (!cacheDir.isDirectory()) {
-                throw new IOException(sm.getString("cache.notDirectory", cacheDir.getAbsolutePath()));
-            }
-
-            // Load existing metadata
-            loadMetadata();
-
-            // Clean up any orphaned temp files from previous crashes
-            cleanupTempFiles();
-
-            logger.log(Level.INFO, sm.getString("cache.enabled", cacheDir.getAbsolutePath(), retentionDays));
+        if (cacheDir == null) {
+            throw new IllegalStateException(sm.getString("cache.nullDirectory"));
         }
+
+        // Create cache directory if it doesn't exist
+        if (!cacheDir.exists()) {
+            if (!cacheDir.mkdirs()) {
+                throw new IOException(sm.getString("cache.cannotCreate", cacheDir.getAbsolutePath()));
+            }
+        }
+
+        if (!cacheDir.isDirectory()) {
+            throw new IOException(sm.getString("cache.notDirectory", cacheDir.getAbsolutePath()));
+        }
+
+        // Load existing metadata
+        loadMetadata();
+
+        // Clean up any orphaned temp files from previous crashes
+        cleanupTempFiles();
+
+        logger.log(Level.INFO,
+                sm.getString("cache.enabled", cacheDir.getAbsolutePath(), Integer.valueOf(retentionDays)));
     }
 
     /**
@@ -138,7 +141,7 @@ public class MigrationCache {
                 }
             }
             if (cleanedCount > 0) {
-                logger.log(Level.INFO, sm.getString("cache.tempfiles.cleaned", cleanedCount));
+                logger.log(Level.INFO, sm.getString("cache.tempfiles.cleaned", Integer.valueOf(cleanedCount)));
             }
         }
     }
@@ -188,7 +191,7 @@ public class MigrationCache {
                 }
             }
 
-            logger.log(Level.FINE, sm.getString("cache.metadata.loaded", cacheMetadata.size()));
+            logger.log(Level.FINE, sm.getString("cache.metadata.loaded", Integer.valueOf(cacheMetadata.size())));
         } catch (IOException e) {
             // Corrupt or unreadable - assume all cached files accessed today
             logger.log(Level.WARNING, sm.getString("cache.metadata.loadError"), e);
@@ -240,10 +243,6 @@ public class MigrationCache {
      * @throws IOException if an I/O error occurs
      */
     public CacheEntry getCacheEntry(byte[] sourceBytes, EESpecProfile profile) throws IOException {
-        if (cacheDir == null) {
-            throw new IllegalStateException("Cache is not enabled");
-        }
-
         // Compute hash once (includes profile)
         String hash = computeHash(sourceBytes, profile);
 
@@ -297,7 +296,7 @@ public class MigrationCache {
             // Convert to hex string
             StringBuilder sb = new StringBuilder();
             for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
+                sb.append(String.format("%02x", Byte.valueOf(b)));
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException e) {
@@ -311,10 +310,6 @@ public class MigrationCache {
      * @throws IOException if an I/O error occurs
      */
     public void clear() throws IOException {
-        if (cacheDir == null) {
-            return;
-        }
-
         deleteDirectory(cacheDir);
         cacheDir.mkdirs();
         logger.log(Level.INFO, sm.getString("cache.cleared"));
@@ -356,10 +351,6 @@ public class MigrationCache {
      * @throws IOException if an I/O error occurs
      */
     private void saveMetadata() throws IOException {
-        if (cacheDir == null) {
-            return;
-        }
-
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(metadataFile))) {
             writer.write("# Migration cache metadata - hash|last_access_date\n");
             for (Map.Entry<String, LocalDate> entry : cacheMetadata.entrySet()) {
@@ -370,7 +361,7 @@ public class MigrationCache {
             }
         }
 
-        logger.log(Level.FINE, sm.getString("cache.metadata.saved", cacheMetadata.size()));
+        logger.log(Level.FINE, sm.getString("cache.metadata.saved", Integer.valueOf(cacheMetadata.size())));
     }
 
     /**
@@ -380,10 +371,6 @@ public class MigrationCache {
      * @throws IOException if an I/O error occurs
      */
     public void pruneCache() throws IOException {
-        if (cacheDir == null) {
-            return;
-        }
-
         LocalDate cutoffDate = LocalDate.now().minusDays(retentionDays);
         int prunedCount = 0;
         long prunedSize = 0;
@@ -422,9 +409,10 @@ public class MigrationCache {
         saveMetadata();
 
         if (prunedCount > 0) {
-            logger.log(Level.INFO, sm.getString("cache.pruned.summary", prunedCount, prunedSize / 1024 / 1024, retentionDays));
+            logger.log(Level.INFO, sm.getString("cache.pruned.summary", Integer.valueOf(prunedCount),
+                    Long.valueOf(prunedSize / 1024 / 1024), Integer.valueOf(retentionDays)));
         } else {
-            logger.log(Level.FINE, sm.getString("cache.pruned.none", retentionDays));
+            logger.log(Level.FINE, sm.getString("cache.pruned.none", Integer.valueOf(retentionDays)));
         }
     }
 
@@ -435,10 +423,6 @@ public class MigrationCache {
      * @throws IOException if an I/O error occurs
      */
     public void finalizeCacheOperations() throws IOException {
-        if (cacheDir == null) {
-            return;
-        }
-
         // Save updated metadata
         saveMetadata();
 
@@ -452,10 +436,6 @@ public class MigrationCache {
      * @return a string describing cache size and entry count
      */
     public String getStats() {
-        if (cacheDir == null) {
-            return sm.getString("cache.disabled");
-        }
-
         long totalSize = 0;
         int entryCount = 0;
 
@@ -476,6 +456,6 @@ public class MigrationCache {
             }
         }
 
-        return sm.getString("cache.stats", entryCount, totalSize / 1024 / 1024);
+        return sm.getString("cache.stats", Integer.valueOf(entryCount), Long.valueOf(totalSize / 1024 / 1024));
     }
 }

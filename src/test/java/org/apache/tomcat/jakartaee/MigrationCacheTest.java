@@ -50,7 +50,8 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheEnabledWithValidDirectory() throws Exception {
-        new MigrationCache(tempCacheDir, 30);
+        @SuppressWarnings("unused")
+        MigrationCache unused = new MigrationCache(tempCacheDir, 30);
         assertTrue("Cache directory should exist", tempCacheDir.exists());
     }
 
@@ -59,7 +60,8 @@ public class MigrationCacheTest {
         File newCacheDir = new File(tempCacheDir, "new-cache");
         assertFalse("Cache directory should not exist yet", newCacheDir.exists());
 
-        new MigrationCache(newCacheDir, 30);
+        @SuppressWarnings("unused")
+        MigrationCache unused = new MigrationCache(newCacheDir, 30);
         assertTrue("Cache directory should be created", newCacheDir.exists());
     }
 
@@ -181,15 +183,6 @@ public class MigrationCacheTest {
     }
 
     @Test
-    public void testCacheStatsDisabled() throws Exception {
-        MigrationCache cache = new MigrationCache(null, 30);
-
-        String stats = cache.getStats();
-        assertNotNull("Stats should not be null", stats);
-        assertTrue("Stats should indicate cache is disabled", stats.toLowerCase().contains("disabled"));
-    }
-
-    @Test
     public void testCacheWithLargeContent() throws Exception {
         MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
@@ -247,23 +240,6 @@ public class MigrationCacheTest {
             entry.copyToDestination(destOutput);
             assertArrayEquals("Content should match for entry " + i,
                     expectedConverted, destOutput.toByteArray());
-        }
-    }
-
-    @Test
-    public void testCacheDisabledNoOperations() throws Exception {
-        MigrationCache cache = new MigrationCache(null, 30);
-
-        byte[] sourceData = "test content".getBytes(StandardCharsets.UTF_8);
-
-        // getCacheEntry should throw exception when cache is disabled
-        try {
-            cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
-            fail("Should throw exception when cache is disabled");
-        } catch (IllegalStateException e) {
-            // Expected
-            assertTrue("Error message should mention cache not enabled",
-                    e.getMessage().contains("not enabled"));
         }
     }
 }

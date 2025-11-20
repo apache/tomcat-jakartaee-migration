@@ -58,12 +58,12 @@ public class MigrationCLI {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
         Migration migration = new Migration();
 
-        // Cache settings - opt-in by default is false
+        // Cache settings - disabled by default
         File cacheDir = null;
         boolean enableCache = false;
         int cacheRetentionDays = 30; // Default retention period
 
-        // Process argumnets
+        // Process arguments
         List<String> arguments = new ArrayList<>(Arrays.asList(args));
 
         // Process the custom log level if present
@@ -112,6 +112,7 @@ public class MigrationCLI {
                 }
             } else if (argument.startsWith(CACHE_LOCATION_ARG)) {
                 iter.remove();
+                enableCache = true;
                 String cachePath = argument.substring(CACHE_LOCATION_ARG.length());
                 cacheDir = new File(cachePath);
             } else if (argument.startsWith(CACHE_RETENTION_ARG)) {
@@ -138,7 +139,6 @@ public class MigrationCLI {
         migration.setSource(new File(source));
         migration.setDestination(new File(dest));
 
-        // Only enable cache if -cache argument was provided
         if (enableCache) {
             MigrationCache migrationCache = new MigrationCache(cacheDir, cacheRetentionDays);
             migration.setCache(migrationCache);

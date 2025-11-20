@@ -29,6 +29,9 @@ import org.apache.commons.io.IOUtils;
  * Package-private - only created by MigrationCache.
  */
 class CacheEntry {
+
+    private static final StringManager sm = StringManager.getManager(CacheEntry.class);
+
     private final String hash;
     private final boolean exists;
     private final File cacheFile;
@@ -64,7 +67,7 @@ class CacheEntry {
      */
     public void copyToDestination(OutputStream dest) throws IOException {
         if (!exists) {
-            throw new IllegalStateException("Cannot copy - cache entry does not exist");
+            throw new IllegalStateException(sm.getString("cacheEntry.copyNotExist"));
         }
         try (FileInputStream fis = new FileInputStream(cacheFile)) {
             IOUtils.copy(fis, dest);
@@ -86,7 +89,7 @@ class CacheEntry {
      */
     public void commitStore() throws IOException {
         if (!tempFile.exists()) {
-            throw new IOException("Temp file does not exist: " + tempFile);
+            throw new IOException(sm.getString("cacheEntry.tempNotExist", tempFile));
         }
         // Ensure parent directory exists
         File parentDir = cacheFile.getParentFile();
@@ -95,7 +98,7 @@ class CacheEntry {
         }
         // Atomic rename
         if (!tempFile.renameTo(cacheFile)) {
-            throw new IOException("Failed to rename temp file to cache file: " + tempFile + " -> " + cacheFile);
+            throw new IOException(sm.getString("cacheEntry.tempRenameFail", tempFile, cacheFile));
         }
     }
 
