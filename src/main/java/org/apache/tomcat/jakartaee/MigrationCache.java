@@ -80,7 +80,6 @@ public class MigrationCache {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 
     private final File cacheDir;
-    private final boolean enabled;
     private final int retentionDays;
     private final Map<String, LocalDate> cacheMetadata;
     private final File metadataFile;
@@ -93,19 +92,12 @@ public class MigrationCache {
      * @throws IOException if the cache directory cannot be created
      */
     public MigrationCache(File cacheDir, int retentionDays) throws IOException {
-        if (cacheDir == null) {
-            this.cacheDir = null;
-            this.enabled = false;
-            this.retentionDays = 0;
-            this.cacheMetadata = new HashMap<>();
-            this.metadataFile = null;
-        } else {
-            this.cacheDir = cacheDir;
-            this.enabled = true;
-            this.retentionDays = retentionDays;
-            this.cacheMetadata = new HashMap<>();
-            this.metadataFile = new File(cacheDir, METADATA_FILE);
+        this.retentionDays = retentionDays;
+        this.cacheMetadata = new HashMap<>();
+        this.cacheDir = cacheDir;
+        this.metadataFile = cacheDir == null ? null : new File(cacheDir, METADATA_FILE);
 
+        if (cacheDir != null) {
             // Create cache directory if it doesn't exist
             if (!cacheDir.exists()) {
                 if (!cacheDir.mkdirs()) {
@@ -239,15 +231,6 @@ public class MigrationCache {
     }
 
     /**
-     * Check if caching is enabled.
-     *
-     * @return true if caching is enabled
-     */
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    /**
      * Get a cache entry for the given source bytes and profile.
      * This computes the hash, checks if cached, and marks the entry as accessed.
      *
@@ -257,7 +240,7 @@ public class MigrationCache {
      * @throws IOException if an I/O error occurs
      */
     public CacheEntry getCacheEntry(byte[] sourceBytes, EESpecProfile profile) throws IOException {
-        if (!enabled) {
+        if (cacheDir == null) {
             throw new IllegalStateException("Cache is not enabled");
         }
 
@@ -328,7 +311,7 @@ public class MigrationCache {
      * @throws IOException if an I/O error occurs
      */
     public void clear() throws IOException {
-        if (!enabled) {
+        if (cacheDir == null) {
             return;
         }
 
@@ -373,7 +356,7 @@ public class MigrationCache {
      * @throws IOException if an I/O error occurs
      */
     private void saveMetadata() throws IOException {
-        if (!enabled) {
+        if (cacheDir == null) {
             return;
         }
 
@@ -397,7 +380,7 @@ public class MigrationCache {
      * @throws IOException if an I/O error occurs
      */
     public void pruneCache() throws IOException {
-        if (!enabled) {
+        if (cacheDir == null) {
             return;
         }
 
@@ -452,7 +435,7 @@ public class MigrationCache {
      * @throws IOException if an I/O error occurs
      */
     public void finalizeCacheOperations() throws IOException {
-        if (!enabled) {
+        if (cacheDir == null) {
             return;
         }
 
@@ -469,7 +452,7 @@ public class MigrationCache {
      * @return a string describing cache size and entry count
      */
     public String getStats() {
-        if (!enabled) {
+        if (cacheDir == null) {
             return sm.getString("cache.disabled");
         }
 

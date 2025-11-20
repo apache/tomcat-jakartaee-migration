@@ -268,7 +268,7 @@ public class Migration {
         state = State.COMPLETE;
 
         // Finalize cache operations (save metadata and prune expired entries)
-        if (cache != null && cache.isEnabled()) {
+        if (cache != null) {
             cache.finalizeCacheOperations();
         }
 
@@ -435,7 +435,7 @@ public class Migration {
             boolean isNestedArchive = !name.startsWith("/") && !name.startsWith("\\");
 
             CacheEntry cacheEntry = null;
-            if (isNestedArchive && cache != null && cache.isEnabled()) {
+            if (isNestedArchive && cache != null) {
                 // Buffer source to compute hash and check cache
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                 IOUtils.copy(src, buffer);

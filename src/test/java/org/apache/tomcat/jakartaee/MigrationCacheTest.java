@@ -49,15 +49,8 @@ public class MigrationCacheTest {
     }
 
     @Test
-    public void testCacheDisabledWhenNull() throws Exception {
-        MigrationCache cache = new MigrationCache(null, 30);
-        assertFalse("Cache should be disabled", cache.isEnabled());
-    }
-
-    @Test
     public void testCacheEnabledWithValidDirectory() throws Exception {
-        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
-        assertTrue("Cache should be enabled", cache.isEnabled());
+        new MigrationCache(tempCacheDir, 30);
         assertTrue("Cache directory should exist", tempCacheDir.exists());
     }
 
@@ -66,8 +59,7 @@ public class MigrationCacheTest {
         File newCacheDir = new File(tempCacheDir, "new-cache");
         assertFalse("Cache directory should not exist yet", newCacheDir.exists());
 
-        MigrationCache cache = new MigrationCache(newCacheDir, 30);
-        assertTrue("Cache should be enabled", cache.isEnabled());
+        new MigrationCache(newCacheDir, 30);
         assertTrue("Cache directory should be created", newCacheDir.exists());
     }
 
