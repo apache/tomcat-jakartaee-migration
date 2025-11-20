@@ -107,6 +107,7 @@ public class Migration {
     private File destination;
     private final List<Converter> converters;
     private final Set<String> excludes = new HashSet<>();
+    private MigrationCache cache;
 
     /**
      * Construct a new migration tool instance.
@@ -211,6 +212,14 @@ public class Migration {
         this.destination = destination;
     }
 
+    /**
+     * Set the migration cache for storing pre-converted archives.
+     * @param cache the migration cache instance (null to disable caching)
+     */
+    public void setCache(MigrationCache cache) {
+        this.cache = cache;
+    }
+
 
     /**
      * <b>NOTE</b>:
@@ -257,6 +266,12 @@ public class Migration {
             }
         }
         state = State.COMPLETE;
+
+        // Finalize cache operations (save metadata and prune expired entries)
+        if (cache != null) {
+            cache.finalizeCacheOperations();
+        }
+
         logger.log(Level.INFO, sm.getString("migration.done",
                 Long.valueOf(TimeUnit.MILLISECONDS.convert(System.nanoTime() - t1, TimeUnit.NANOSECONDS))));
     }
@@ -415,14 +430,62 @@ public class Migration {
             Util.copy(src, dest);
             logger.log(Level.INFO, sm.getString("migration.skip", name));
         } else if (isArchive(name)) {
-            if (zipInMemory) {
-                logger.log(Level.INFO, sm.getString("migration.archive.memory", name));
-                convertedStream = migrateArchiveInMemory(src, dest);
-                logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
-            } else {
-                logger.log(Level.INFO, sm.getString("migration.archive.stream", name));
-                convertedStream = migrateArchiveStreaming(src, dest);
-                logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
+            // Only cache nested archives (e.g., JARs inside WARs), not top-level files
+            // Top-level files will have absolute paths starting with "/"
+            boolean isNestedArchive = !name.startsWith("/") && !name.startsWith("\\");
+
+            CacheEntry cacheEntry = null;
+            if (isNestedArchive && cache != null) {
+                // Buffer source to compute hash and check cache
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                IOUtils.copy(src, buffer);
+                byte[] sourceBytes = buffer.toByteArray();
+
+                // Get cache entry (computes hash and marks as accessed)
+                cacheEntry = cache.getCacheEntry(sourceBytes, profile);
+
+                if (cacheEntry.exists()) {
+                    // Cache hit! Copy cached result to dest and return
+                    logger.log(Level.INFO, sm.getString("cache.hit", name, cacheEntry.getHash()));
+                    cacheEntry.copyToDestination(dest);
+                    return true;
+                }
+
+                // Cache miss - use buffered source for conversion
+                logger.log(Level.FINE, sm.getString("cache.miss", name, cacheEntry.getHash()));
+                src = new ByteArrayInputStream(sourceBytes);
+            }
+
+            // Process archive - stream directly to destination (and cache if needed)
+            OutputStream targetOutputStream = dest;
+            if (cacheEntry != null) {
+                // Tee output to both destination and cache temp file
+                targetOutputStream = new org.apache.commons.io.output.TeeOutputStream(dest, cacheEntry.beginStore());
+            }
+
+            try {
+                if (zipInMemory) {
+                    logger.log(Level.INFO, sm.getString("migration.archive.memory", name));
+                    convertedStream = migrateArchiveInMemory(src, targetOutputStream);
+                    logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
+                } else {
+                    logger.log(Level.INFO, sm.getString("migration.archive.stream", name));
+                    convertedStream = migrateArchiveStreaming(src, targetOutputStream);
+                    logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
+                }
+
+                // Commit to cache on success
+                if (cacheEntry != null) {
+                    cacheEntry.commitStore();
+                    logger.log(Level.FINE, sm.getString("cache.store", cacheEntry.getHash(),
+                            Long.valueOf(cacheEntry.getFileSize())));
+                }
+            } catch (IOException e) {
+                // Rollback cache on error
+                if (cacheEntry != null) {
+                    cacheEntry.rollbackStore();
+                }
+                throw e;
             }
         } else {
             for (Converter converter : converters) {

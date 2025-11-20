@@ -289,4 +289,155 @@ public class MigrationTest {
             assertTrue("Unable to delete " + jarFileTmp.getAbsolutePath(), jarFileTmp.delete());
         }
     }
+
+    @Test
+    public void testMigrateJarWithCache() throws Exception {
+        File jarFile = new File("target/test-classes/hellocgi.jar");
+        File jarFileTarget = new File("target/test-classes/hellocgi-cached.jar");
+        File cacheDir = new File("target/test-classes/cache-test");
+
+        try {
+            // Clean up cache directory
+            if (cacheDir.exists()) {
+                FileUtils.deleteDirectory(cacheDir);
+            }
+
+            // First migration - cache miss
+            Migration migration1 = new Migration();
+            migration1.setSource(jarFile);
+            migration1.setDestination(jarFileTarget);
+            migration1.setCache(new MigrationCache(cacheDir, 30));
+            long startTime1 = System.currentTimeMillis();
+            migration1.execute();
+            long duration1 = System.currentTimeMillis() - startTime1;
+
+            assertTrue("Target JAR should exist after first migration", jarFileTarget.exists());
+            assertTrue("Cache directory should be created", cacheDir.exists());
+
+            // Verify the migrated JAR works
+            File cgiapiFile = new File("target/test-classes/cgi-api.jar");
+            URLClassLoader classloader1 = new URLClassLoader(
+                    new URL[]{jarFileTarget.toURI().toURL(), cgiapiFile.toURI().toURL()},
+                    ClassLoader.getSystemClassLoader().getParent());
+            Class<?> cls1 = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader1);
+            assertEquals("jakarta.servlet.CommonGatewayInterface", cls1.getSuperclass().getName());
+
+            // Delete target and migrate again - cache hit
+            jarFileTarget.delete();
+            assertFalse("Target should be deleted", jarFileTarget.exists());
+
+            Migration migration2 = new Migration();
+            migration2.setSource(jarFile);
+            migration2.setDestination(jarFileTarget);
+            migration2.setCache(new MigrationCache(cacheDir, 30));
+            long startTime2 = System.currentTimeMillis();
+            migration2.execute();
+            long duration2 = System.currentTimeMillis() - startTime2;
+
+            assertTrue("Target JAR should exist after second migration", jarFileTarget.exists());
+
+            // Verify the cached JAR works
+            URLClassLoader classloader2 = new URLClassLoader(
+                    new URL[]{jarFileTarget.toURI().toURL(), cgiapiFile.toURI().toURL()},
+                    ClassLoader.getSystemClassLoader().getParent());
+            Class<?> cls2 = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader2);
+            assertEquals("jakarta.servlet.CommonGatewayInterface", cls2.getSuperclass().getName());
+
+            // Note: We don't assert that duration2 < duration1 because the times are too short
+            // and can vary. The important thing is both migrations work correctly.
+        } finally {
+            // Clean up
+            if (cacheDir.exists()) {
+                FileUtils.deleteDirectory(cacheDir);
+            }
+        }
+    }
+
+    @Test
+    public void testMigrateJarWithCacheDisabled() throws Exception {
+        File jarFile = new File("target/test-classes/hellocgi.jar");
+        File jarFileTarget = new File("target/test-classes/hellocgi-nocache.jar");
+
+        Migration migration = new Migration();
+        migration.setSource(jarFile);
+        migration.setDestination(jarFileTarget);
+        // Don't set cache - should work without caching
+        migration.execute();
+
+        assertTrue("Target JAR should exist", jarFileTarget.exists());
+
+        File cgiapiFile = new File("target/test-classes/cgi-api.jar");
+        URLClassLoader classloader = new URLClassLoader(
+                new URL[]{jarFileTarget.toURI().toURL(), cgiapiFile.toURI().toURL()},
+                ClassLoader.getSystemClassLoader().getParent());
+        Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader);
+        assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+    }
+
+    @Test
+    public void testMigrateCLIWithCacheOption() throws Exception {
+        File sourceFile = new File("target/test-classes/hellocgi.jar");
+        File targetFile = new File("target/test-classes/hellocgi-cli-cached.jar");
+        File cacheDir = new File("target/test-classes/cache-cli-test");
+
+        try {
+            // Clean up
+            if (cacheDir.exists()) {
+                FileUtils.deleteDirectory(cacheDir);
+            }
+            if (targetFile.exists()) {
+                targetFile.delete();
+            }
+
+            // Run with custom cache
+            MigrationCLI.main(new String[] {
+                    "-cache",
+                    "-cacheLocation=" + cacheDir.getAbsolutePath(),
+                    sourceFile.getAbsolutePath(),
+                    targetFile.getAbsolutePath()
+            });
+
+            assertTrue("Target file should exist", targetFile.exists());
+            assertTrue("Cache directory should be created", cacheDir.exists());
+
+            // Verify the migrated JAR works
+            File cgiapiFile = new File("target/test-classes/cgi-api.jar");
+            URLClassLoader classloader = new URLClassLoader(
+                    new URL[]{targetFile.toURI().toURL(), cgiapiFile.toURI().toURL()},
+                    ClassLoader.getSystemClassLoader().getParent());
+            Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader);
+            assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+        } finally {
+            // Clean up
+            if (cacheDir.exists()) {
+                FileUtils.deleteDirectory(cacheDir);
+            }
+        }
+    }
+
+    @Test
+    public void testMigrateCLIWithNoCacheOption() throws Exception {
+        File sourceFile = new File("target/test-classes/hellocgi.jar");
+        File targetFile = new File("target/test-classes/hellocgi-cli-nocache.jar");
+
+        if (targetFile.exists()) {
+            targetFile.delete();
+        }
+
+        // Run without cache (no -cache option)
+        MigrationCLI.main(new String[] {
+                sourceFile.getAbsolutePath(),
+                targetFile.getAbsolutePath()
+        });
+
+        assertTrue("Target file should exist", targetFile.exists());
+
+        // Verify the migrated JAR works
+        File cgiapiFile = new File("target/test-classes/cgi-api.jar");
+        URLClassLoader classloader = new URLClassLoader(
+                new URL[]{targetFile.toURI().toURL(), cgiapiFile.toURI().toURL()},
+                ClassLoader.getSystemClassLoader().getParent());
+        Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader);
+        assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+    }
 }

@@ -38,6 +38,9 @@ public class MigrationCLI {
     private static final String PROFILE_ARG = "-profile=";
     private static final String ZIPINMEMORY_ARG = "-zipInMemory";
     private static final String MATCHEXCLUDESPATH_ARG ="-matchExcludesAgainstPathName";
+    private static final String CACHE_ARG = "-cache";
+    private static final String CACHE_LOCATION_ARG = "-cacheLocation=";
+    private static final String CACHE_RETENTION_ARG = "-cacheRetention=";
 
     /**
      * Build the migration tool CLI instance.
@@ -55,7 +58,12 @@ public class MigrationCLI {
         System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
         Migration migration = new Migration();
 
-        // Process arguments
+        // Cache settings - opt-in by default is false
+        File cacheDir = null;
+        boolean enableCache = false;
+        int cacheRetentionDays = 30; // Default retention period
+
+        // Process argumnets
         List<String> arguments = new ArrayList<>(Arrays.asList(args));
 
         // Process the custom log level if present
@@ -95,6 +103,28 @@ public class MigrationCLI {
             } else if (argument.equals(MATCHEXCLUDESPATH_ARG)) {
                 iter.remove();
                 migration.setMatchExcludesAgainstPathName(true);
+            } else if (argument.equals(CACHE_ARG)) {
+                iter.remove();
+                enableCache = true;
+                // Use default cache directory if not specified via -cacheLocation
+                if (cacheDir == null) {
+                    cacheDir = new File(System.getProperty("user.home"), ".migration-cache");
+                }
+            } else if (argument.startsWith(CACHE_LOCATION_ARG)) {
+                iter.remove();
+                String cachePath = argument.substring(CACHE_LOCATION_ARG.length());
+                cacheDir = new File(cachePath);
+            } else if (argument.startsWith(CACHE_RETENTION_ARG)) {
+                iter.remove();
+                String retentionStr = argument.substring(CACHE_RETENTION_ARG.length());
+                try {
+                    cacheRetentionDays = Integer.parseInt(retentionStr);
+                    if (cacheRetentionDays < 1) {
+                        invalidArguments();
+                    }
+                } catch (NumberFormatException e) {
+                    invalidArguments();
+                }
             }
         }
 
@@ -107,6 +137,12 @@ public class MigrationCLI {
 
         migration.setSource(new File(source));
         migration.setDestination(new File(dest));
+
+        // Only enable cache if -cache argument was provided
+        if (enableCache) {
+            MigrationCache migrationCache = new MigrationCache(cacheDir, cacheRetentionDays);
+            migration.setCache(migrationCache);
+        }
 
         migration.execute();
     }
