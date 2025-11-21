@@ -307,9 +307,7 @@ public class MigrationTest {
             migration1.setSource(jarFile);
             migration1.setDestination(jarFileTarget);
             migration1.setCache(new MigrationCache(cacheDir, 30));
-            long startTime1 = System.currentTimeMillis();
             migration1.execute();
-            long duration1 = System.currentTimeMillis() - startTime1;
 
             assertTrue("Target JAR should exist after first migration", jarFileTarget.exists());
             assertTrue("Cache directory should be created", cacheDir.exists());
@@ -330,9 +328,7 @@ public class MigrationTest {
             migration2.setSource(jarFile);
             migration2.setDestination(jarFileTarget);
             migration2.setCache(new MigrationCache(cacheDir, 30));
-            long startTime2 = System.currentTimeMillis();
             migration2.execute();
-            long duration2 = System.currentTimeMillis() - startTime2;
 
             assertTrue("Target JAR should exist after second migration", jarFileTarget.exists());
 
