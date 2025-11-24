@@ -1,5 +1,8 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
+## 1.0.11
+- Update Eclipse OSGI to 3.23.200. (dependabot/remm)
+
 ## 1.0.10
 - When migrating files in place, don't replace the original file if no conversion has taken place. Based on PR[#78] by Semiao Marco.
 - When converting a file in an archive, update the last modified time for that archive entry.  Based on PR[#78] by Semiao Marco.
@@ -20,7 +23,6 @@
 - Update ASF parent POM to 33. (markt)
 - Added a new profile, `SERVLET` that only migrates the `javax.servlet` package and sub-packages. PR[#57](https://github.com/apache/tomcat-jakartaee-migration/pull/57) provided by Ralf Wiebicke. (markt)
 
-
 ## 1.0.8
 - Include `.ear` files in list of recognised archives. PR[#50](https://github.com/apache/tomcat-jakartaee-migration/pull/50) provided by Sammy Chu. (markt)
 - Update Commons BCEL to 6.8.1. (markt)
@@ -28,7 +30,6 @@
 - Update Commons IO to 2.15.1. (markt)
 - Update Ant to 1.10.14. (markt)
 - Include `.jspf` and `.tagf` files in the conversion process. (markt)
-
 
 ## 1.0.7
 
@@ -38,7 +39,6 @@
 - Update Commons BCEL to 6.7.0. (markt)
 - Update Commons Compress to 1.23.0. (markt)
 - Provided workaround for the known JDK bug identified as the cause of migration failures in issue [#46](https://github.com/apache/tomcat-jakartaee-migration/issues/46). (markt/ebourg)
-
 
 ## 1.0.6
 
