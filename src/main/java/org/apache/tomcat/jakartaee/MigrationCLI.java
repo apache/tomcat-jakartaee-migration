@@ -85,7 +85,9 @@ public class MigrationCLI {
                     invalidArguments();
                 }
                 // Configure the explicit level
-                Logger.getGlobal().getParent().getHandlers()[0].setLevel(level);
+                if (Logger.getGlobal().getParent().getHandlers().length > 0) {
+                    Logger.getGlobal().getParent().getHandlers()[0].setLevel(level);
+                }
                 Logger.getGlobal().getParent().setLevel(level);
             } else if (argument.startsWith(PROFILE_ARG)) {
                 iter.remove();
