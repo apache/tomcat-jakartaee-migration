@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v6
-    - uses: actions/cache@v4.3.0
+    - uses: actions/cache@v5.0.5
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -48,6 +48,6 @@ jobs:
     - name: Build
       run: mvn -V test jacoco:report --file pom.xml --no-transfer-progress
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v6
       with:
         files: ./target/site/jacoco/jacoco.xml

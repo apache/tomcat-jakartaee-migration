@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>35</version>
+    <version>37</version>
   </parent>
 
   <groupId>org.apache.tomcat</groupId>
@@ -77,7 +77,7 @@
     <dependency>
       <groupId>org.apache.bcel</groupId>
       <artifactId>bcel</artifactId>
-      <version>6.11.0</version>
+      <version>6.12.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
@@ -92,13 +92,13 @@
     <dependency>
       <groupId>org.apache.ant</groupId>
       <artifactId>ant</artifactId>
-      <version>1.10.15</version>
+      <version>1.10.17</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
         <groupId>org.eclipse.platform</groupId>
         <artifactId>org.eclipse.osgi</artifactId>
-        <version>3.23.200</version>
+        <version>3.24.100</version>
     </dependency>
 
     <!-- Test dependencies -->
