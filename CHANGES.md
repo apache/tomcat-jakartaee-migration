@@ -2,6 +2,7 @@
 
 ## 1.0.11
 - Update Eclipse OSGI to 3.23.200. (dependabot/remm)
+- [#108](https://github.com/apache/tomcat-jakartaee-migration/issues/108) possible array exception when using the CLI
 
 ## 1.0.10
 - When migrating files in place, don't replace the original file if no conversion has taken place. Based on PR[#78] by Semiao Marco.
