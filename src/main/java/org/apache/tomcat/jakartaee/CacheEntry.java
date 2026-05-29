@@ -36,6 +36,7 @@ class CacheEntry {
     private final boolean exists;
     private final File cacheFile;
     private final File tempFile;
+    private FileOutputStream fos;
 
     CacheEntry(String hash, boolean exists, File cacheFile, File tempFile) {
         this.hash = hash;
@@ -80,7 +81,8 @@ class CacheEntry {
      * @throws IOException if an I/O error occurs
      */
     public OutputStream beginStore() throws IOException {
-        return new FileOutputStream(tempFile);
+        fos = new FileOutputStream(tempFile);
+        return fos;
     }
 
     /**
@@ -88,6 +90,7 @@ class CacheEntry {
      * @throws IOException if an I/O error occurs
      */
     public void commitStore() throws IOException {
+        fos.close();
         if (!tempFile.exists()) {
             throw new IOException(sm.getString("cacheEntry.tempNotExist", tempFile));
         }
@@ -114,6 +117,11 @@ class CacheEntry {
      * Rollback the store operation - delete temp file.
      */
     public void rollbackStore() {
+        try {
+            fos.close();
+        } catch (IOException ioe) {
+            // Ignore
+        }
         if (tempFile.exists()) {
             tempFile.delete();
         }
