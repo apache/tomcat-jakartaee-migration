@@ -51,6 +51,7 @@ jobs:
     - name: Build
       run: mvn -V test jacoco:report --file pom.xml --no-transfer-progress
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v6
+      # Pin to 6.0.1
+      uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354
       with:
         files: ./target/site/jacoco/jacoco.xml
