@@ -128,4 +128,10 @@ public class MigrationTask extends Task {
             throw new BuildException(e, getLocation());
         }
     }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        // Tasks don't need to support clone()
+        throw new CloneNotSupportedException();
+    }
 }
