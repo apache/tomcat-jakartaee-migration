@@ -2,6 +2,7 @@
 
 ## 1.0.12
 - Add Maven Wrapper Plugin to manage the Maven wrapper. (markt)
+- Update the Maven Wrapper and switch to 'only-script' configuration. (markt)
 
 ## 1.0.11
 - Update Eclipse OSGI to 3.23.200. (dependabot/remm)
