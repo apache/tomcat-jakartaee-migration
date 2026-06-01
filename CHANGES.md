@@ -1,5 +1,8 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
+## 1.0.12
+- Add Maven Wrapper Plugin to manage the Maven wrapper. (markt)
+
 ## 1.0.11
 - Update Eclipse OSGI to 3.23.200. (dependabot/remm)
 - [#108](https://github.com/apache/tomcat-jakartaee-migration/issues/108) possible array exception when using the CLI. (remm)
