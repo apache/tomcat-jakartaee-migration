@@ -26,6 +26,7 @@ import java.util.jar.JarFile;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
@@ -178,6 +179,8 @@ public class MigrationTest {
     @Test
     public void testMigrateClassFile() throws Exception {
         File classFile = new File("target/test-classes/org/apache/tomcat/jakartaee/HelloCGI.class");
+        File classFileOriginal = new File("target/test-classes/org/apache/tomcat/jakartaee/HelloCGI-original.class");
+        FileUtils.copyFile(classFile, classFileOriginal);
 
         Migration migration = new Migration();
         migration.setSource(classFile);
@@ -186,6 +189,9 @@ public class MigrationTest {
 
         Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI");
         assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+
+        Assert.assertTrue("Failed to delete migrated class file", classFile.delete());
+        FileUtils.copyFile(classFileOriginal, classFile);
     }
 
     @Test

@@ -161,8 +161,8 @@
             <phase>process-test-classes</phase>
             <configuration>
               <target>
-                <jar basedir="target/test-classes" destfile="target/test-classes/cgi-api.jar" includes="**/CommonGatewayInterface*" />
-                <jar basedir="target/test-classes" destfile="target/test-classes/hellocgi.jar" includes="**/HelloCGI*">
+                <jar basedir="target/test-classes" destfile="target/test-classes/cgi-api.jar" includes="**/CommonGatewayInterface.class" />
+                <jar basedir="target/test-classes" destfile="target/test-classes/hellocgi.jar" includes="**/HelloCGI.class">
                   <manifest>
                     <attribute name="Implementation-Version" value="1.2.3" />
                   </manifest>
