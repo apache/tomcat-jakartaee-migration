@@ -60,10 +60,10 @@ public class StringManager {
 
 
     /**
-     * Creates a new StringManager for a given package. This is a
-     * private method and all access to it is arbitrated by the
-     * static getManager method call so that only one StringManager
-     * per package will be created.
+     * Creates a new StringManager for a given package and locale.
+     * Access is arbitrated by the static {@link #getManager(Class)}
+     * method which caches instances per package/locale combination
+     * using an LRU cache.
      *
      * @param packageName Name of package to create StringManager for.
      */
@@ -75,7 +75,7 @@ public class StringManager {
             // use of the ROOT Locale else incorrect results may be obtained if
             // the system default locale is not English and translations are
             // available for the system default locale.
-            if (locale.getLanguage().equals(Locale.ENGLISH.getLanguage())) {
+            if (Locale.ENGLISH.getLanguage().equals(locale.getLanguage())) {
                 locale = Locale.ROOT;
             }
             bnd = ResourceBundle.getBundle(bundleName, locale);
@@ -167,7 +167,9 @@ public class StringManager {
         }
 
         MessageFormat mf = new MessageFormat(value);
-        mf.setLocale(locale);
+        if (locale != null) {
+            mf.setLocale(locale);
+        }
         return mf.format(args, new StringBuffer(), null).toString();
     }
 

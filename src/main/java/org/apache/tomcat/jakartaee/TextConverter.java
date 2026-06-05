@@ -87,7 +87,7 @@ public class TextConverter implements Converter {
             }
         } else {
             if (logger.isLoggable(Level.FINEST)) {
-                logger.log(Level.FINEST, sm.getString("classConverter.noConversion", path));
+                logger.log(Level.FINEST, sm.getString("textConverter.noConversion", path));
             }
         }
 

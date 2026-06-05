@@ -90,7 +90,9 @@ class CacheEntry {
      * @throws IOException if an I/O error occurs
      */
     public void commitStore() throws IOException {
-        fos.close();
+        if (fos != null) {
+            fos.close();
+        }
         if (!tempFile.exists()) {
             throw new IOException(sm.getString("cacheEntry.tempNotExist", tempFile));
         }
@@ -99,7 +101,7 @@ class CacheEntry {
         if (!parentDir.exists()) {
             parentDir.mkdirs();
         }
-        // Atomic rename
+        // Rename temp file to final cache location (usually atomic)
         if (!tempFile.renameTo(cacheFile)) {
             throw new IOException(sm.getString("cacheEntry.tempRenameFail", tempFile, cacheFile));
         }
@@ -117,10 +119,12 @@ class CacheEntry {
      * Rollback the store operation - delete temp file.
      */
     public void rollbackStore() {
-        try {
-            fos.close();
-        } catch (IOException ioe) {
-            // Ignore
+        if (fos != null) {
+            try {
+                fos.close();
+            } catch (IOException ioe) {
+                // Ignore
+            }
         }
         if (tempFile.exists()) {
             tempFile.delete();

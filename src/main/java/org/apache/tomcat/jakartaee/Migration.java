@@ -162,7 +162,7 @@ public class Migration {
 
     /**
      * Enable the default exclusion list for the tool.
-     * @param enableDefaultExcludes true to enable the default
+     * @param enableDefaultExcludes true to enable the default excludes
      */
     public void setEnableDefaultExcludes(boolean enableDefaultExcludes) {
         this.enableDefaultExcludes = enableDefaultExcludes;
@@ -222,10 +222,12 @@ public class Migration {
 
 
     /**
-     * <b>NOTE</b>:
-     * this method is not to indicate that no changes were made,
-     * but that the source can be used and satisfy the selected profile.
-     * @return true if converted occurs
+     * Returns whether any files were converted during migration.
+     * Note: a return value of {@code false} means the source already
+     * satisfied the selected profile and no changes were necessary.
+     *
+     * @return true if at least one file was converted
+     * @throws IllegalStateException if migration has not completed
      */
     public boolean hasConverted() {
         if (state != State.COMPLETE) {
@@ -238,6 +240,7 @@ public class Migration {
     /**
      * Execute migration operation.
      * @throws IOException when an exception occurs
+     * @throws IllegalStateException if migration is already running
      */
     public void execute() throws IOException {
         if (state == State.RUNNING) {
@@ -296,7 +299,7 @@ public class Migration {
 
     private void migrateFile(File src, File dest) throws IOException {
         if (src.equals(dest)) {
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream((int) (src.length() * 1.05));
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream(Math.toIntExact((long) (src.length() * 1.05)));
 
             try (InputStream is = new FileInputStream(src)) {
                 if (migrateStream(src.getAbsolutePath(), is, buffer)) {
@@ -342,7 +345,8 @@ public class Migration {
                 }
                 String destName = profile.convert(srcName);
                 if (srcZipEntry.getMethod() == ZipEntry.STORED) {
-                    ByteArrayOutputStream tempBuffer = new ByteArrayOutputStream((int) (srcZipEntry.getSize() * 1.05));
+                    ByteArrayOutputStream tempBuffer =
+                            new ByteArrayOutputStream(Math.toIntExact((long) (srcZipEntry.getSize() * 1.05)));
                     convertedStream = migrateStream(srcName, srcZipStream, tempBuffer);
                     crc32.update(tempBuffer.toByteArray(), 0, tempBuffer.size());
                     MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
@@ -407,7 +411,7 @@ public class Migration {
         }
 
         // Write the destination back to the stream
-        ByteArrayInputStream bais = new ByteArrayInputStream(destByteChannel.array(), 0, (int) destByteChannel.size());
+        ByteArrayInputStream bais = new ByteArrayInputStream(destByteChannel.array(), 0, Math.toIntExact(destByteChannel.size()));
         IOUtils.copy(bais, dest);
 
         return convertedArchive;
@@ -448,6 +452,7 @@ public class Migration {
                     // Cache hit! Copy cached result to dest and return
                     logger.log(Level.INFO, sm.getString("cache.hit", name, cacheEntry.getHash()));
                     cacheEntry.copyToDestination(dest);
+                    // Although it is from the cache, this still counts as converting the source
                     return true;
                 }
 

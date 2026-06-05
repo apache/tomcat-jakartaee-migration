@@ -132,7 +132,11 @@ public class ManifestConverter implements Converter {
         }
         // Update package names in values
         for (Entry<Object, Object> entry : attributes.entrySet()) {
-            String newValue = profile.convert((String) entry.getValue());
+            Object value = entry.getValue();
+            if (!(value instanceof String)) {
+                continue;
+            }
+            String newValue = profile.convert((String) value);
             String header = entry.getKey().toString();
             try {
                 // Need to be careful with OSGI headers.

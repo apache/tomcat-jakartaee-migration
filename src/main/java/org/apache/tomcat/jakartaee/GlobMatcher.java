@@ -31,9 +31,9 @@ public final class GlobMatcher {
 
 
     /**
-     * Construct the matcher.
+     * All static.
      */
-    public GlobMatcher() {}
+    private GlobMatcher() {}
 
 
     /**

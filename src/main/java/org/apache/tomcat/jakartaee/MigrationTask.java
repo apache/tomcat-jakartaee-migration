@@ -108,6 +108,12 @@ public class MigrationTask extends Task {
         } catch (IllegalArgumentException e) {
             throw new BuildException("Invalid profile specified: " + this.profile, getLocation()); // todo i18n
         }
+        if (src == null || !src.exists() || !src.canRead()) {
+            throw new BuildException("Invalid or missing source parameter: " + src); // todo i18n
+        }
+        if (dest == null) {
+            throw new BuildException("Missing destination parameter"); // todo i18n
+        }
 
         Migration migration = new Migration();
         migration.setSource(src);
@@ -118,7 +124,7 @@ public class MigrationTask extends Task {
         if (this.excludes != null) {
             String[] excludes= this.excludes.split(",");
             for (String exclude : excludes) {
-                migration.addExclude(exclude);
+                migration.addExclude(exclude.trim());
             }
         }
 
