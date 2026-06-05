@@ -129,18 +129,23 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                 // Object comparison is deliberate
                 if (newString != str) {
                     if (loader != null) {
-                        // Since this is a runtime conversion, the idea is to only convert to
-                        // Jakarta EE specification classes that exist in the container
-                        String[] split = newString.split(";|<");
-                        for (String current : split) {
-                            int pos = current.indexOf(profile.getTarget() + "/");
+                        // Only convert to Jakarta EE classes that actually exist in the
+                        // container. Build the result by processing each fragment
+                        // independently so we never need to revert a conversion.
+                        String[] convertedFragments = newString.split(";|<", -1);
+                        String[] originalFragments = str.split(";|<", -1);
+                        StringBuilder result = new StringBuilder();
+                        for (int fi = 0; fi < convertedFragments.length; fi++) {
+                            String convertedFragment = convertedFragments[fi];
+                            String originalFragment = originalFragments[fi];
+                            int pos = convertedFragment.indexOf(profile.getTarget() + "/");
                             boolean dotMode = false;
                             if (pos < 0) {
-                                pos = current.indexOf(profile.getTarget() + ".");
+                                pos = convertedFragment.indexOf(profile.getTarget() + ".");
                                 dotMode = true;
                             }
                             if (pos >= 0) {
-                                String resourceName = current.substring(pos);
+                                String resourceName = convertedFragment.substring(pos);
                                 if (dotMode) {
                                     resourceName = resourceName.replace('.', '/');
                                 }
@@ -149,19 +154,16 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                                     if (logger.isLoggable(Level.FINE)) {
                                         logger.log(Level.FINE, sm.getString("classConverter.skipName",
                                                 profile.getSource(),
-                                                current.substring(pos).replace('/','.')));
+                                                convertedFragment.substring(pos).replace('/','.')));
                                     }
-                                    // Cancel the replacement as the replacement does not exist
-                                    String originalFragment;
-                                    if (dotMode) {
-                                        originalFragment = current.replace(profile.getTarget() + ".", profile.getSource() + ".");
-                                    } else {
-                                        originalFragment = current.replace(profile.getTarget() + "/", profile.getSource() + "/");
-                                    }
-                                    newString = newString.replace(current, originalFragment);
+                                    // Use the original (unconverted) fragment
+                                    result.append(originalFragment);
+                                    continue;
                                 }
                             }
+                            result.append(convertedFragment);
                         }
+                        newString = result.toString();
                     }
                     c = new ConstantUtf8(newString);
                     constantPool[i] = c;

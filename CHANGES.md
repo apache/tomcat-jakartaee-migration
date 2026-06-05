@@ -1,5 +1,8 @@
 # Tomcat Migration Tool for Jakarta EE - Changelog
 
+## 1.0.13
+- Properly reconstruct the original pool in the ClassConverter transformer if a class is found to be available. (remm)
+
 ## 1.0.12
 - Add Maven Wrapper Plugin to manage the Maven wrapper. (markt)
 - Update the Maven Wrapper and switch to 'only-script' configuration. (markt)
