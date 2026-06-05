@@ -326,7 +326,6 @@ public class Migration {
         try (ZipArchiveInputStream srcZipStream = new ZipArchiveInputStream(CloseShieldInputStream.wrap(src));
                 ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(CloseShieldOutputStream.wrap(dest))) {
             ZipArchiveEntry srcZipEntry;
-            CRC32 crc32 = new CRC32();
             while ((srcZipEntry = srcZipStream.getNextEntry()) != null) {
                 boolean convertedStream = false;
                 String srcName = srcZipEntry.getName();
@@ -345,21 +344,19 @@ public class Migration {
                 }
                 String destName = profile.convert(srcName);
                 if (srcZipEntry.getMethod() == ZipEntry.STORED) {
-                    ByteArrayOutputStream tempBuffer =
-                            new ByteArrayOutputStream(Math.toIntExact((long) (srcZipEntry.getSize() * 1.05)));
-                    convertedStream = migrateStream(srcName, srcZipStream, tempBuffer);
-                    crc32.update(tempBuffer.toByteArray(), 0, tempBuffer.size());
-                    MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
-                    destZipEntry.setName(destName);
-                    destZipEntry.setSize(tempBuffer.size());
-                    destZipEntry.setCrc(crc32.getValue());
-                    if (convertedStream) {
-                        destZipEntry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
+                    try (CrcSizeTrackingOutputStream trackingStream = new CrcSizeTrackingOutputStream()) {
+                        convertedStream = migrateStream(srcName, srcZipStream, trackingStream);
+                        MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
+                        destZipEntry.setName(destName);
+                        destZipEntry.setSize(trackingStream.getSize());
+                        destZipEntry.setCrc(trackingStream.getCrc());
+                        if (convertedStream) {
+                            destZipEntry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
+                        }
+                        destZipStream.putArchiveEntry(destZipEntry);
+                        trackingStream.writeTo(destZipStream);
+                        destZipStream.closeArchiveEntry();
                     }
-                    destZipStream.putArchiveEntry(destZipEntry);
-                    tempBuffer.writeTo(destZipStream);
-                    destZipStream.closeArchiveEntry();
-                    crc32.reset();
                 } else {
                     MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
                     destZipEntry.setName(destName);
@@ -536,6 +533,84 @@ public class Migration {
         @Override
         public void setName(String name) {
             super.setName(name);
+        }
+    }
+
+    private static class CrcSizeTrackingOutputStream extends OutputStream {
+
+        private static final long TEMP_FILE_THRESHOLD = 10L * 1024 * 1024;
+
+        private final CRC32 crc = new CRC32();
+        private long size;
+        private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        private FileOutputStream fileOutput;
+        private File tempFile;
+
+        @Override
+        public void write(int b) throws IOException {
+            if (fileOutput != null) {
+                fileOutput.write(b);
+            } else {
+                buffer.write(b);
+                maybeSwitchToFile();
+            }
+            crc.update(b);
+            size++;
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            if (fileOutput != null) {
+                fileOutput.write(b, off, len);
+            } else {
+                buffer.write(b, off, len);
+                maybeSwitchToFile();
+            }
+            crc.update(b, off, len);
+            size += len;
+        }
+
+        private void maybeSwitchToFile() throws IOException {
+            if (buffer != null && buffer.size() > TEMP_FILE_THRESHOLD && fileOutput == null) {
+                tempFile = File.createTempFile("jakartaee-migration-", ".tmp");
+                tempFile.deleteOnExit();
+                fileOutput = new FileOutputStream(tempFile);
+                buffer.writeTo(fileOutput);
+                fileOutput.flush();
+                buffer = null;
+            }
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public long getCrc() {
+            return crc.getValue();
+        }
+
+        public void writeTo(OutputStream out) throws IOException {
+            if (fileOutput != null) {
+                fileOutput.close();
+                fileOutput = null;
+                try (FileInputStream fis = new FileInputStream(tempFile)) {
+                    IOUtils.copy(fis, out);
+                }
+            } else if (buffer != null) {
+                buffer.writeTo(out);
+            }
+        }
+
+        public void close() throws IOException {
+            if (fileOutput != null) {
+                fileOutput.close();
+                if (tempFile != null && tempFile.exists()) {
+                    tempFile.delete();
+                }
+            }
+            if (buffer != null) {
+                buffer.close();
+            }
         }
     }
 }

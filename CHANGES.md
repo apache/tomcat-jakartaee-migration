@@ -2,6 +2,7 @@
 
 ## 1.0.13
 - Properly reconstruct the original pool in the ClassConverter transformer if a class is found to be available. (remm)
+- Do not buffer very large STORED zip entries when processing them in streaming mode. (remm)
 
 ## 1.0.12
 - Add Maven Wrapper Plugin to manage the Maven wrapper. (markt)
