@@ -296,7 +296,7 @@ public class MigrationCache {
             // Convert to hex string
             StringBuilder sb = new StringBuilder();
             for (byte b : hashBytes) {
-                sb.append(String.format("%02x", Byte.valueOf(b)));
+                sb.append(String.format("%02x", Integer.valueOf(b & 0xFF)));
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException e) {

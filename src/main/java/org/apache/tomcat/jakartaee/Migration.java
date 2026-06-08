@@ -363,7 +363,7 @@ public class Migration {
                 }
                 String destName = profile.convert(srcName);
                 if (srcZipEntry.getMethod() == ZipEntry.STORED) {
-                    try (CrcSizeTrackingOutputStream trackingStream = new CrcSizeTrackingOutputStream()) {
+                    try (CrcSizeTrackingOutputStream trackingStream = new CrcSizeTrackingOutputStream(destZipStream)) {
                         convertedStream = migrateStream(srcName, srcZipStream, trackingStream);
                         MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
                         destZipEntry.setName(destName);
@@ -373,9 +373,8 @@ public class Migration {
                             destZipEntry.setLastModifiedTime(FileTime.fromMillis(System.currentTimeMillis()));
                         }
                         destZipStream.putArchiveEntry(destZipEntry);
-                        trackingStream.writeTo(destZipStream);
-                        destZipStream.closeArchiveEntry();
                     }
+                    destZipStream.closeArchiveEntry();
                 } else {
                     MigrationZipArchiveEntry destZipEntry = new MigrationZipArchiveEntry(srcZipEntry);
                     destZipEntry.setName(destName);
@@ -567,10 +566,20 @@ public class Migration {
 
         private final CRC32 crc = new CRC32();
         private long size;
+        private final OutputStream destStream;
         private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         private FileOutputStream fileOutput;
         private File tempFile;
-        private volatile boolean tempFileDeleted = false;
+
+        /**
+         * Create stream that computes its bytes as CRC while streaming them
+         * to the specified stream on close.
+         * @param destStream the destination stream to write the bytes to
+         */
+        CrcSizeTrackingOutputStream(OutputStream destStream) {
+            super();
+            this.destStream = destStream;
+        }
 
         @Override
         public void write(int b) throws IOException {
@@ -615,31 +624,23 @@ public class Migration {
             return crc.getValue();
         }
 
-        public void writeTo(OutputStream out) throws IOException {
-            if (fileOutput != null) {
-                fileOutput.close();
-                fileOutput = null;
-                try (FileInputStream fis = new FileInputStream(tempFile)) {
-                    IOUtils.copy(fis, out);
-                }
-                if (tempFile != null && tempFile.exists()) {
-                    tempFile.delete();
-                    tempFileDeleted = true;
-                }
-            } else if (buffer != null) {
-                buffer.writeTo(out);
-            }
-        }
-
         public void close() throws IOException {
             if (fileOutput != null) {
-                fileOutput.close();
-                if (!tempFileDeleted && tempFile != null && tempFile.exists()) {
-                    tempFile.delete();
+                try {
+                    fileOutput.close();
+                } finally {
+                    try (FileInputStream fis = new FileInputStream(tempFile)) {
+                        IOUtils.copy(fis, destStream);
+                    } finally {
+                        tempFile.delete();
+                    }
                 }
-            }
-            if (buffer != null) {
-                buffer.close();
+            } else if (buffer != null) {
+                try {
+                    buffer.writeTo(destStream);
+                } finally {
+                    buffer.close();
+                }
             }
         }
     }
