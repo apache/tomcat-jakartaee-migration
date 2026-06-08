@@ -28,11 +28,11 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,25 +87,23 @@ public class MigrationCache {
     /**
      * Construct a new migration cache.
      *
-     * @param cacheDir the directory to store cached files (null to disable caching)
+     * @param cacheDir the directory to store cached files
      * @param retentionDays the number of days to retain cached files
      * @throws IOException if the cache directory cannot be created
      */
     public MigrationCache(File cacheDir, int retentionDays) throws IOException {
-        this.retentionDays = retentionDays;
-        this.cacheMetadata = new HashMap<>();
-        this.cacheDir = cacheDir;
-        this.metadataFile = cacheDir == null ? null : new File(cacheDir, METADATA_FILE);
-
         if (cacheDir == null) {
             throw new IllegalStateException(sm.getString("cache.nullDirectory"));
         }
 
+        this.retentionDays = retentionDays;
+        this.cacheMetadata = new ConcurrentHashMap<>();
+        this.cacheDir = cacheDir;
+        this.metadataFile = new File(cacheDir, METADATA_FILE);
+
         // Create cache directory if it doesn't exist
-        if (!cacheDir.exists()) {
-            if (!cacheDir.mkdirs()) {
-                throw new IOException(sm.getString("cache.cannotCreate", cacheDir.getAbsolutePath()));
-            }
+        if (!cacheDir.mkdirs() && !cacheDir.exists()) {
+            throw new IOException(sm.getString("cache.cannotCreate", cacheDir.getAbsolutePath()));
         }
 
         if (!cacheDir.isDirectory()) {
@@ -265,13 +263,14 @@ public class MigrationCache {
      *
      * @param hash the hash string
      * @return the cache file
+     * @throws IOException if an I/O error occurs
      */
-    private File getCacheFile(String hash) {
+    private File getCacheFile(String hash) throws IOException {
         // Use subdirectories based on first 2 chars of hash to avoid too many files in one directory
         String subdir = hash.substring(0, 2);
         File subdirFile = new File(cacheDir, subdir);
-        if (!subdirFile.exists()) {
-            subdirFile.mkdirs();
+        if (!subdirFile.mkdirs() && !subdirFile.exists()) {
+            throw new IOException(sm.getString("cache.cannotCreate", subdirFile.getAbsolutePath()));
         }
         return new File(subdirFile, hash + ".jar");
     }
@@ -312,7 +311,7 @@ public class MigrationCache {
     public void clear() throws IOException {
         deleteDirectory(cacheDir);
         cacheMetadata.clear();
-        if (!cacheDir.mkdirs()) {
+        if (!cacheDir.mkdirs() && !cacheDir.exists()) {
             throw new IOException(sm.getString("cache.cannotCreate", cacheDir.getAbsolutePath()));
         }
         logger.log(Level.INFO, sm.getString("cache.cleared"));

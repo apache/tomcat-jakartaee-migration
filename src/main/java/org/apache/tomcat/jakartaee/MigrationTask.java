@@ -96,15 +96,8 @@ public class MigrationTask extends Task {
 
     @Override
     public void execute() throws BuildException {
-        // redirect the log messages to Ant
-        Logger logger = Logger.getLogger(Migration.class.getCanonicalName());
-        logger.setUseParentHandlers(false);
-        for (Handler handler : logger.getHandlers()) {
-            logger.removeHandler(handler);
-        }
-        logger.addHandler(new AntHandler(this));
 
-        // check the parameters
+        // Check the parameters
         EESpecProfile profile = null;
         try {
             profile = EESpecProfiles.valueOf(this.profile.toUpperCase(Locale.ENGLISH));
@@ -125,17 +118,34 @@ public class MigrationTask extends Task {
         migration.setZipInMemory(zipInMemory);
         migration.setMatchExcludesAgainstPathName(matchExcludesAgainstPathName);
         if (this.excludes != null) {
-            String[] excludes= this.excludes.split(",");
+            String[] excludes = this.excludes.split(",");
             for (String exclude : excludes) {
                 migration.addExclude(exclude.trim());
             }
         }
 
+        // Redirect the log messages to Ant
+        Logger logger = Logger.getLogger(Migration.class.getCanonicalName());
+        Handler[] originalHandlers = logger.getHandlers();
+        AntHandler antHandler = new AntHandler(this);
+        boolean originalUseParent = logger.getUseParentHandlers();
         try {
+            logger.setUseParentHandlers(false);
+            for (Handler h : logger.getHandlers()) {
+                logger.removeHandler(h);
+            }
+            logger.addHandler(antHandler);
             migration.execute();
         } catch (IOException e) {
             throw new BuildException(e, getLocation());
+        } finally {
+            logger.removeHandler(antHandler);
+            for (Handler h : originalHandlers) {
+                logger.addHandler(h);
+            }
+            logger.setUseParentHandlers(originalUseParent);
         }
+
     }
 
     @Override

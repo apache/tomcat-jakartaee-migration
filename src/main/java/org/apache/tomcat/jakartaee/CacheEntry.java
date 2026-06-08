@@ -21,6 +21,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -94,19 +97,31 @@ class CacheEntry {
      */
     public void commitStore() throws IOException {
         if (fos != null) {
-            fos.close();
+            try {
+                fos.close();
+            } catch (IOException e) {
+                logger.log(Level.WARNING, sm.getString("cacheEntry.closeFail"), e);
+            }
+            fos = null;
         }
         if (!tempFile.exists()) {
             throw new IOException(sm.getString("cacheEntry.tempNotExist", tempFile));
         }
         // Ensure parent directory exists
         File parentDir = cacheFile.getParentFile();
-        if (!parentDir.exists()) {
-            parentDir.mkdirs();
+        if (!parentDir.mkdirs() && !parentDir.exists()) {
+            throw new IOException(sm.getString("cache.cannotCreate", parentDir.getAbsolutePath()));
         }
-        // Rename temp file to final cache location (usually atomic)
-        if (!tempFile.renameTo(cacheFile)) {
-            throw new IOException(sm.getString("cacheEntry.tempRenameFail", tempFile, cacheFile));
+        // Move file to final cache location (atomic if possible)
+        try {
+            try {
+                Files.move(tempFile.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tempFile.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (Exception e) {
+            throw new IOException(sm.getString("cacheEntry.tempRenameFail", tempFile, cacheFile), e);
         }
     }
 

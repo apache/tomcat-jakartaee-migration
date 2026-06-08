@@ -17,6 +17,7 @@
 package org.apache.tomcat.jakartaee;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -27,14 +28,13 @@ public class Info {
     private static final String VERSION;
 
     static {
-        Properties props = new Properties();
-
         String version = null;
-        try {
-            props.load(Info.class.getClassLoader().getResourceAsStream("info.properties"));
-
-            version = props.getProperty("version");
-
+        try (InputStream is = Info.class.getClassLoader().getResourceAsStream("info.properties")) {
+            if (is != null) {
+                Properties props = new Properties();
+                props.load(is);
+                version = props.getProperty("version");
+            }
         } catch (IOException e) {
             // Handled below
         }

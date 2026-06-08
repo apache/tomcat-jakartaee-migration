@@ -53,9 +53,10 @@ public class Util {
     public static void copy(InputStream is, OutputStream os) throws IOException {
         byte[] buf = new byte[8192];
         int numRead;
-        while ( (numRead = is.read(buf) ) >= 0) {
+        while ((numRead = is.read(buf)) >= 0) {
             os.write(buf, 0, numRead);
         }
+        os.flush();
     }
 
     /**

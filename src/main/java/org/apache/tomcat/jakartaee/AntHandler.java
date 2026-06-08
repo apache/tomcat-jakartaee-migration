@@ -17,6 +17,7 @@
 
 package org.apache.tomcat.jakartaee;
 
+import java.text.MessageFormat;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -38,6 +39,10 @@ class AntHandler extends Handler {
     @Override
     public void publish(LogRecord record) {
         String message = record.getMessage();
+        Object[] params = record.getParameters();
+        if (message != null && params != null && params.length > 0) {
+            message = MessageFormat.format(message, params);
+        }
         if (message == null && record.getThrown() != null) {
             message = record.getThrown().toString();
         }

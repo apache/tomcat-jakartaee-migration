@@ -624,11 +624,13 @@ public class Migration {
             return crc.getValue();
         }
 
+        @Override
         public void close() throws IOException {
             if (fileOutput != null) {
                 try {
                     fileOutput.close();
                 } finally {
+                    fileOutput = null;
                     try (FileInputStream fis = new FileInputStream(tempFile)) {
                         IOUtils.copy(fis, destStream);
                     } finally {
@@ -640,6 +642,7 @@ public class Migration {
                     buffer.writeTo(destStream);
                 } finally {
                     buffer.close();
+                    buffer = null;
                 }
             }
         }
