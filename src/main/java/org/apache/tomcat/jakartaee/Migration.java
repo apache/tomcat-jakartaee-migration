@@ -403,6 +403,8 @@ public class Migration {
         // Create the destination in memory
         SeekableInMemoryByteChannel destByteChannel = new SeekableInMemoryByteChannel();
 
+        // In memory can have much simpler processing compared to the streaming version,
+        // including STORED entries processing, due to the use of a seekable channel
         try (ZipFile srcZipFile = ZipFile.builder().setSeekableByteChannel(srcByteChannel).get();
                 ZipArchiveOutputStream destZipStream = new ZipArchiveOutputStream(destByteChannel)) {
             Enumeration<ZipArchiveEntry> entries = srcZipFile.getEntries();
