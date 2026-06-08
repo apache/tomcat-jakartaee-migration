@@ -311,7 +311,10 @@ public class MigrationCache {
      */
     public void clear() throws IOException {
         deleteDirectory(cacheDir);
-        cacheDir.mkdirs();
+        cacheMetadata.clear();
+        if (!cacheDir.mkdirs()) {
+            throw new IOException(sm.getString("cache.cannotCreate", cacheDir.getAbsolutePath()));
+        }
         logger.log(Level.INFO, sm.getString("cache.cleared"));
     }
 
@@ -422,6 +425,7 @@ public class MigrationCache {
      *
      * @throws IOException if an I/O error occurs
      */
+    @Deprecated
     public void finalizeCacheOperations() throws IOException {
         // Save updated metadata
         saveMetadata();

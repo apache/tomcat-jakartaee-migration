@@ -125,9 +125,13 @@ public class ManifestConverter implements Converter {
         boolean converted = false;
         // Update version info
         if (attributes.containsKey(Attributes.Name.IMPLEMENTATION_VERSION)) {
-            String newValue = attributes.get(Attributes.Name.IMPLEMENTATION_VERSION) + "-" + Info.getVersion();
-            attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
-            logger.log(Level.FINE, sm.getString("manifestConverter.updatedVersion", newValue));
+            String currentVersion = (String) attributes.get(Attributes.Name.IMPLEMENTATION_VERSION);
+            String migrationSuffix = "-" + Info.getVersion();
+            if (!currentVersion.endsWith(migrationSuffix)) {
+                String newValue = currentVersion + migrationSuffix;
+                attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
+                logger.log(Level.FINE, sm.getString("manifestConverter.updatedVersion", newValue));
+            }
             // Purposefully avoid setting result
         }
         // Update package names in values
@@ -178,7 +182,12 @@ public class ManifestConverter implements Converter {
             if (element.getValue().startsWith(JAKARTA_SERVLET)) {
                 String oldVersion = element.getAttribute(Constants.VERSION_ATTRIBUTE);
                 if (oldVersion != null) {
-                    packages.add(element.toString().replace(oldVersion, replacement));
+                    // Only replace the version attribute, not occurrences of the version
+                    // string in other attributes or directives
+                    String escaped = Pattern.quote(oldVersion);
+                    String result = element.toString().replaceFirst("(;version=\\\")" + escaped + "(\\\")",
+                            "$1" + replacement + "$2");
+                    packages.add(result);
                 } else {
                     packages.add(element.toString());
                 }

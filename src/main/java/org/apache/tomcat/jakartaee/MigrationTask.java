@@ -18,6 +18,7 @@ package org.apache.tomcat.jakartaee;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
@@ -28,6 +29,8 @@ import org.apache.tools.ant.Task;
  * Ant task for the Jakarta EE migration tool.
  */
 public class MigrationTask extends Task {
+
+    private static final StringManager sm = StringManager.getManager(MigrationTask.class);
 
     /**
      * Default constructor.
@@ -104,15 +107,15 @@ public class MigrationTask extends Task {
         // check the parameters
         EESpecProfile profile = null;
         try {
-            profile = EESpecProfiles.valueOf(this.profile.toUpperCase());
+            profile = EESpecProfiles.valueOf(this.profile.toUpperCase(Locale.ENGLISH));
         } catch (IllegalArgumentException e) {
-            throw new BuildException("Invalid profile specified: " + this.profile, getLocation()); // todo i18n
+            throw new BuildException(sm.getString("migrationTask.invalidProfile", this.profile), getLocation());
         }
         if (src == null || !src.exists() || !src.canRead()) {
-            throw new BuildException("Invalid or missing source parameter: " + src); // todo i18n
+            throw new BuildException(sm.getString("migrationTask.noSource", src));
         }
         if (dest == null) {
-            throw new BuildException("Missing destination parameter"); // todo i18n
+            throw new BuildException(sm.getString("migrationTask.noDest"));
         }
 
         Migration migration = new Migration();

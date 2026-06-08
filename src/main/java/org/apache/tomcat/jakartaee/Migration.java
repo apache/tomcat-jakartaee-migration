@@ -57,6 +57,7 @@ public class Migration {
 
     private static final Set<String> DEFAULT_EXCLUDES = new HashSet<>();
 
+    private static final long TEMP_FILE_THRESHOLD = 10L * 1024 * 1024;
     private static final ZipShort EXTRA_FIELD_ZIP64 = new ZipShort(1);
     private static final long ZIP64_THRESHOLD_LENGTH = 0xFFFFFFFFL;
 
@@ -260,7 +261,7 @@ public class Migration {
                 throw new IOException(sm.getString("migration.mkdirError", destination.getAbsolutePath()));
             }
         } else {
-            // Single file`
+            // Single file
             File parentDestination = destination.getAbsoluteFile().getParentFile();
             if (parentDestination.exists() || parentDestination.mkdirs()) {
                 migrateFile(source, destination);
@@ -272,7 +273,7 @@ public class Migration {
 
         // Finalize cache operations (save metadata and prune expired entries)
         if (cache != null) {
-            cache.finalizeCacheOperations();
+            cache.pruneCache();
         }
 
         logger.log(Level.INFO, sm.getString("migration.done",
@@ -299,18 +300,36 @@ public class Migration {
 
     private void migrateFile(File src, File dest) throws IOException {
         if (src.equals(dest)) {
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream(Math.toIntExact((long) (src.length() * 1.05)));
-
-            try (InputStream is = new FileInputStream(src)) {
-                if (migrateStream(src.getAbsolutePath(), is, buffer)) {
-                    converted = true;
-                } else {
-                    return;
+            if (src.length() > TEMP_FILE_THRESHOLD) {
+                // For very large files, use a temp file instead of memory
+                File tempFile = File.createTempFile("jakartaee-migration-", ".tmp");
+                tempFile.deleteOnExit();
+                try (InputStream is = new FileInputStream(src); OutputStream os = new FileOutputStream(tempFile)) {
+                    if (migrateStream(src.getAbsolutePath(), is, os)) {
+                        converted = true;
+                        try (InputStream tempIs = new FileInputStream(tempFile); OutputStream destOs = new FileOutputStream(dest)) {
+                            Util.copy(tempIs, destOs);
+                        }
+                    } else {
+                        return;
+                    }
+                } finally {
+                    tempFile.delete();
                 }
-            }
+            } else {
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream(Math.toIntExact((long) (src.length() * 1.05)));
 
-            try (OutputStream os = new FileOutputStream(dest)) {
-                os.write(buffer.toByteArray());
+                try (InputStream is = new FileInputStream(src)) {
+                    if (migrateStream(src.getAbsolutePath(), is, buffer)) {
+                        converted = true;
+                    } else {
+                        return;
+                    }
+                }
+
+                try (OutputStream os = new FileOutputStream(dest)) {
+                    os.write(buffer.toByteArray());
+                }
             }
         } else {
             try (InputStream is = new FileInputStream(src);
@@ -432,7 +451,7 @@ public class Migration {
             logger.log(Level.INFO, sm.getString("migration.skip", name));
         } else if (isArchive(name)) {
             // Only cache nested archives (e.g., JARs inside WARs), not top-level files
-            // Top-level files will have absolute paths starting with "/"
+            // Top-level files will have absolute paths starting with a path separator
             boolean isNestedArchive = !name.startsWith("/") && !name.startsWith("\\");
 
             CacheEntry cacheEntry = null;
@@ -536,15 +555,20 @@ public class Migration {
         }
     }
 
+    /**
+     * Output stream that tracks the CRC32 checksum and byte count of written data.
+     * For data exceeding TEMP_FILE_THRESHOLD, automatically switches from an in-memory
+     * buffer to a temporary file to avoid excessive memory usage. Used for computing
+     * CRC and size of STORED zip entries during streaming migration.
+     */
     private static class CrcSizeTrackingOutputStream extends OutputStream {
-
-        private static final long TEMP_FILE_THRESHOLD = 10L * 1024 * 1024;
 
         private final CRC32 crc = new CRC32();
         private long size;
         private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         private FileOutputStream fileOutput;
         private File tempFile;
+        private volatile boolean tempFileDeleted = false;
 
         @Override
         public void write(int b) throws IOException {
@@ -596,6 +620,10 @@ public class Migration {
                 try (FileInputStream fis = new FileInputStream(tempFile)) {
                     IOUtils.copy(fis, out);
                 }
+                if (tempFile != null && tempFile.exists()) {
+                    tempFile.delete();
+                    tempFileDeleted = true;
+                }
             } else if (buffer != null) {
                 buffer.writeTo(out);
             }
@@ -604,7 +632,7 @@ public class Migration {
         public void close() throws IOException {
             if (fileOutput != null) {
                 fileOutput.close();
-                if (tempFile != null && tempFile.exists()) {
+                if (!tempFileDeleted && tempFile != null && tempFile.exists()) {
                     tempFile.delete();
                 }
             }

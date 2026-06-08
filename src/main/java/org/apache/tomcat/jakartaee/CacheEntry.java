@@ -21,6 +21,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 
@@ -30,6 +32,7 @@ import org.apache.commons.io.IOUtils;
  */
 class CacheEntry {
 
+    private static final Logger logger = Logger.getLogger(CacheEntry.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(CacheEntry.class);
 
     private final String hash;
@@ -127,7 +130,9 @@ class CacheEntry {
             }
         }
         if (tempFile.exists()) {
-            tempFile.delete();
+            if (!tempFile.delete()) {
+                logger.log(Level.WARNING, sm.getString("cacheEntry.rollbackDeleteFailed", tempFile));
+            }
         }
     }
 }

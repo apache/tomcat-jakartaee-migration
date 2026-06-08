@@ -37,7 +37,14 @@ class AntHandler extends Handler {
 
     @Override
     public void publish(LogRecord record) {
-        task.log(record.getMessage(), record.getThrown(), toAntLevel(record.getLevel()));
+        String message = record.getMessage();
+        if (message == null && record.getThrown() != null) {
+            message = record.getThrown().toString();
+        }
+        if (message == null) {
+            message = "";
+        }
+        task.log(message, record.getThrown(), toAntLevel(record.getLevel()));
     }
 
     @Override
