@@ -108,30 +108,16 @@ public class MigrationTest {
 
     @Test
     public void testInvalidOption() throws Exception {
-        Assume.assumeTrue(securityManagerAvailable);
         File sourceFile = new File("target/test-classes/HelloServlet.java");
         File migratedFile = new File("target/test-classes/HelloServlet.migrated.java");
-
-        try {
-            MigrationCLI.main(new String[] {"-invalid", sourceFile.getAbsolutePath(), migratedFile.getAbsolutePath()});
-            fail("No error code returned");
-        } catch (SecurityException e) {
-            assertEquals("error code", "1", e.getMessage());
-        }
+        assertCliError("-invalid", sourceFile.getAbsolutePath(), migratedFile.getAbsolutePath());
     }
 
     @Test
     public void testInvalidProfile() throws Exception {
-        Assume.assumeTrue(securityManagerAvailable);
         File sourceFile = new File("target/test-classes/HelloServlet.java");
         File migratedFile = new File("target/test-classes/HelloServlet.migrated.java");
-
-        try {
-            MigrationCLI.main(new String[] {"-profile=JSERV", sourceFile.getAbsolutePath(), migratedFile.getAbsolutePath()});
-            fail("No error code returned");
-        } catch (SecurityException e) {
-            assertEquals("error code", "1", e.getMessage());
-        }
+        assertCliError("-profile=JSERV", sourceFile.getAbsolutePath(), migratedFile.getAbsolutePath());
     }
 
     @Test
@@ -220,11 +206,7 @@ public class MigrationTest {
         migration.setZipInMemory(zipInMemory);
         migration.execute();
 
-        File cgiapiFile = new File("target/test-classes/cgi-api.jar");
-        URLClassLoader classloader = new URLClassLoader(new URL[]{jarFileTarget.toURI().toURL(), cgiapiFile.toURI().toURL()},ClassLoader.getSystemClassLoader().getParent());
-
-        Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader);
-        assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+        verifyHelloCGIMigrated(jarFileTarget);
 
         // check the modification of the Implementation-Version manifest attribute
         try (JarFile jar = new JarFile(jarFileTarget)) {
@@ -330,12 +312,7 @@ public class MigrationTest {
             assertTrue("Cache directory should be created", cacheDir.exists());
 
             // Verify the migrated JAR works
-            File cgiapiFile = new File("target/test-classes/cgi-api.jar");
-            URLClassLoader classloader1 = new URLClassLoader(
-                    new URL[]{jarFileTarget.toURI().toURL(), cgiapiFile.toURI().toURL()},
-                    ClassLoader.getSystemClassLoader().getParent());
-            Class<?> cls1 = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader1);
-            assertEquals("jakarta.servlet.CommonGatewayInterface", cls1.getSuperclass().getName());
+            verifyHelloCGIMigrated(jarFileTarget);
 
             // Delete target and migrate again - cache hit
             jarFileTarget.delete();
@@ -350,11 +327,7 @@ public class MigrationTest {
             assertTrue("Target JAR should exist after second migration", jarFileTarget.exists());
 
             // Verify the cached JAR works
-            URLClassLoader classloader2 = new URLClassLoader(
-                    new URL[]{jarFileTarget.toURI().toURL(), cgiapiFile.toURI().toURL()},
-                    ClassLoader.getSystemClassLoader().getParent());
-            Class<?> cls2 = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader2);
-            assertEquals("jakarta.servlet.CommonGatewayInterface", cls2.getSuperclass().getName());
+            verifyHelloCGIMigrated(jarFileTarget);
 
             // Note: We don't assert that duration2 < duration1 because the times are too short
             // and can vary. The important thing is both migrations work correctly.
@@ -414,12 +387,7 @@ public class MigrationTest {
             assertTrue("Cache directory should be created", cacheDir.exists());
 
             // Verify the migrated JAR works
-            File cgiapiFile = new File("target/test-classes/cgi-api.jar");
-            URLClassLoader classloader = new URLClassLoader(
-                    new URL[]{targetFile.toURI().toURL(), cgiapiFile.toURI().toURL()},
-                    ClassLoader.getSystemClassLoader().getParent());
-            Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader);
-            assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+            verifyHelloCGIMigrated(targetFile);
         } finally {
             // Clean up
             if (cacheDir.exists()) {
@@ -446,12 +414,7 @@ public class MigrationTest {
         assertTrue("Target file should exist", targetFile.exists());
 
         // Verify the migrated JAR works
-        File cgiapiFile = new File("target/test-classes/cgi-api.jar");
-        URLClassLoader classloader = new URLClassLoader(
-                new URL[]{targetFile.toURI().toURL(), cgiapiFile.toURI().toURL()},
-                ClassLoader.getSystemClassLoader().getParent());
-        Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader);
-        assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+        verifyHelloCGIMigrated(targetFile);
     }
 
     @Test
@@ -602,12 +565,7 @@ public class MigrationTest {
 
         assertTrue("Target JAR should exist", jarFileTarget.exists());
 
-        File cgiapiFile = new File("target/test-classes/cgi-api.jar");
-        URLClassLoader classloader = new URLClassLoader(
-                new URL[]{jarFileTarget.toURI().toURL(), cgiapiFile.toURI().toURL()},
-                ClassLoader.getSystemClassLoader().getParent());
-        Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader);
-        assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+        verifyHelloCGIMigrated(jarFileTarget);
     }
 
     @Test
@@ -673,14 +631,7 @@ public class MigrationTest {
             assertNotNull("Large entry should exist in migrated JAR", entry);
             assertEquals("Large entry size should match", largeContent.length, entry.getSize());
 
-            byte[] readContent = new byte[(int) entry.getSize()];
-            try (InputStream is = jar.getInputStream(entry)) {
-                int offset = 0;
-                int count;
-                while (offset < readContent.length && (count = is.read(readContent, offset, readContent.length - offset)) > 0) {
-                    offset += count;
-                }
-            }
+            byte[] readContent = readAllBytes(jar.getInputStream(entry), (int) entry.getSize());
             assertArrayEquals("Large entry content should match", largeContent, readContent);
         }
     }
@@ -712,14 +663,7 @@ public class MigrationTest {
             assertNotNull("Large entry should exist in migrated JAR", entry);
             assertEquals("Large entry size should match", largeContent.length, entry.getSize());
 
-            byte[] readContent = new byte[(int) entry.getSize()];
-            try (InputStream is = jar.getInputStream(entry)) {
-                int offset = 0;
-                int count;
-                while (offset < readContent.length && (count = is.read(readContent, offset, readContent.length - offset)) > 0) {
-                    offset += count;
-                }
-            }
+            byte[] readContent = readAllBytes(jar.getInputStream(entry), (int) entry.getSize());
             assertArrayEquals("Large entry content should match", largeContent, readContent);
         }
     }
@@ -727,22 +671,7 @@ public class MigrationTest {
     @Test
     public void testMigrateNestedArchiveWithCache() throws Exception {
         // Create a nested JAR with javax.servlet references
-        File nestedJar = tempFolder.newFile("nested.jar");
-        byte[] nestedClassData = new byte[1024];
-        for (int i = 0; i < nestedClassData.length; i++) {
-            nestedClassData[i] = (byte) (i % 256);
-        }
-        // Write a text file with javax reference into the nested JAR
-        String nestedContent = "javax.servlet.http.HttpServlet";
-        try (FileOutputStream fos = new FileOutputStream(nestedJar);
-                org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream zos =
-                        new org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream(fos)) {
-            org.apache.commons.compress.archivers.zip.ZipArchiveEntry entry =
-                    new org.apache.commons.compress.archivers.zip.ZipArchiveEntry("nested.txt");
-            zos.putArchiveEntry(entry);
-            zos.write(nestedContent.getBytes(StandardCharsets.ISO_8859_1));
-            zos.closeArchiveEntry();
-        }
+        File nestedJar = createNestedJarWithContent("nested.jar", "nested.txt", "javax.servlet.http.HttpServlet");
 
         // Create a WAR containing the nested JAR
         File warFile = tempFolder.newFile("app.war");
@@ -780,62 +709,13 @@ public class MigrationTest {
         assertTrue("Cache directory should have entries", cacheDir.list().length > 0);
 
         // Verify the nested JAR was migrated
-        try (JarFile war = new JarFile(warTarget)) {
-            JarEntry nestedEntry = war.getJarEntry("WEB-INF/lib/nested.jar");
-            assertNotNull("Nested JAR should exist in WAR", nestedEntry);
-
-            // Read the nested JAR and verify its content was migrated
-            byte[] nestedJarBytes = new byte[(int) nestedEntry.getSize()];
-            try (InputStream is = war.getInputStream(nestedEntry)) {
-                int offset = 0;
-                int count;
-                while (offset < nestedJarBytes.length && (count = is.read(nestedJarBytes, offset, nestedJarBytes.length - offset)) > 0) {
-                    offset += count;
-                }
-            }
-
-            // Parse the nested JAR from bytes
-            File tempNestedJar = File.createTempFile("nested", ".jar");
-            tempNestedJar.deleteOnExit();
-            Files.write(tempNestedJar.toPath(), nestedJarBytes);
-            try (org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile =
-                    ZipFile.builder().setFile(tempNestedJar).get()) {
-                org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
-                        nestedZipFile.getEntry("nested.txt");
-                assertNotNull("nested.txt should exist in nested JAR", nestedTextEntry);
-
-                byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
-                try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
-                    int totalRead = 0;
-                    while (totalRead < nestedTextBytes.length) {
-                        int read = is.read(nestedTextBytes, totalRead, nestedTextBytes.length - totalRead);
-                        if (read == -1) break;
-                        totalRead += read;
-                    }
-                }
-                String migratedNestedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
-                assertTrue("Nested content should be migrated",
-                        migratedNestedContent.contains("jakarta.servlet"));
-                assertFalse("Nested content should not contain javax",
-                        migratedNestedContent.contains("javax.servlet"));
-            }
-        }
+        verifyNestedJarContentMigrated(warTarget, "WEB-INF/lib/nested.jar", "jakarta.servlet");
     }
 
     @Test
     public void testMigrateNestedArchiveWithCacheHit() throws Exception {
         // Create a nested JAR with javax.servlet references
-        String nestedContent = "javax.servlet.http.HttpServlet";
-        File nestedJar = tempFolder.newFile("nested-hit.jar");
-        try (FileOutputStream fos = new FileOutputStream(nestedJar);
-                org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream zos =
-                        new org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream(fos)) {
-            org.apache.commons.compress.archivers.zip.ZipArchiveEntry entry =
-                    new org.apache.commons.compress.archivers.zip.ZipArchiveEntry("nested.txt");
-            zos.putArchiveEntry(entry);
-            zos.write(nestedContent.getBytes(StandardCharsets.ISO_8859_1));
-            zos.closeArchiveEntry();
-        }
+        File nestedJar = createNestedJarWithContent("nested-hit.jar", "nested.txt", "javax.servlet.http.HttpServlet");
 
         // Create two WARs with the same nested JAR
         File warFile1 = createWarWithNestedJar(nestedJar, "app1.war");
@@ -869,40 +749,7 @@ public class MigrationTest {
 
         // Verify both WARs have migrated nested content
         for (File warTarget : new File[]{warTarget1, warTarget2}) {
-            try (JarFile war = new JarFile(warTarget)) {
-                JarEntry nestedEntry = war.getJarEntry("WEB-INF/lib/nested.jar");
-                assertNotNull("Nested JAR should exist", nestedEntry);
-
-                byte[] nestedJarBytes = new byte[(int) nestedEntry.getSize()];
-                try (InputStream is = war.getInputStream(nestedEntry)) {
-                    int offset = 0;
-                    int count;
-                    while (offset < nestedJarBytes.length && (count = is.read(nestedJarBytes, offset, nestedJarBytes.length - offset)) > 0) {
-                        offset += count;
-                    }
-                }
-
-                File tempNestedJar = File.createTempFile("nested", ".jar");
-                tempNestedJar.deleteOnExit();
-                Files.write(tempNestedJar.toPath(), nestedJarBytes);
-                try (org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile =
-                        ZipFile.builder().setFile(tempNestedJar).get()) {
-                    org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
-                            nestedZipFile.getEntry("nested.txt");
-                    byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
-                    try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
-                        int totalRead = 0;
-                        while (totalRead < nestedTextBytes.length) {
-                            int read = is.read(nestedTextBytes, totalRead, nestedTextBytes.length - totalRead);
-                            if (read == -1) break;
-                            totalRead += read;
-                        }
-                    }
-                    String migratedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
-                    assertTrue("Nested content should be migrated in " + warTarget.getName(),
-                            migratedContent.contains("jakarta.servlet"));
-                }
-            }
+            verifyNestedJarContentMigrated(warTarget, "WEB-INF/lib/nested.jar", "jakarta.servlet");
         }
     }
 
@@ -919,6 +766,74 @@ public class MigrationTest {
             zos.closeArchiveEntry();
         }
         return warFile;
+    }
+
+    private File createNestedJarWithContent(String jarName, String entryName, String content) throws Exception {
+        File nestedJar = tempFolder.newFile(jarName);
+        try (FileOutputStream fos = new FileOutputStream(nestedJar);
+                org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream zos =
+                        new org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream(fos)) {
+            org.apache.commons.compress.archivers.zip.ZipArchiveEntry entry =
+                    new org.apache.commons.compress.archivers.zip.ZipArchiveEntry(entryName);
+            zos.putArchiveEntry(entry);
+            zos.write(content.getBytes(StandardCharsets.ISO_8859_1));
+            zos.closeArchiveEntry();
+        }
+        return nestedJar;
+    }
+
+    private void verifyHelloCGIMigrated(File jarFileTarget) throws Exception {
+        File cgiapiFile = new File("target/test-classes/cgi-api.jar");
+        URLClassLoader classloader = new URLClassLoader(
+                new URL[]{jarFileTarget.toURI().toURL(), cgiapiFile.toURI().toURL()},
+                ClassLoader.getSystemClassLoader().getParent());
+        Class<?> cls = Class.forName("org.apache.tomcat.jakartaee.HelloCGI", true, classloader);
+        assertEquals("jakarta.servlet.CommonGatewayInterface", cls.getSuperclass().getName());
+    }
+
+    private void verifyNestedJarContentMigrated(File warFile, String nestedEntryName, String expectedContent) throws Exception {
+        try (JarFile war = new JarFile(warFile)) {
+            JarEntry nestedEntry = war.getJarEntry(nestedEntryName);
+            assertNotNull("Nested JAR should exist", nestedEntry);
+
+            byte[] nestedJarBytes = readAllBytes(war.getInputStream(nestedEntry), (int) nestedEntry.getSize());
+
+            File tempNestedJar = File.createTempFile("nested", ".jar");
+            tempNestedJar.deleteOnExit();
+            Files.write(tempNestedJar.toPath(), nestedJarBytes);
+            try (org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile =
+                    ZipFile.builder().setFile(tempNestedJar).get()) {
+                org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
+                        nestedZipFile.getEntry("nested.txt");
+                assertNotNull("nested.txt should exist in nested JAR", nestedTextEntry);
+
+                byte[] nestedTextBytes = readAllBytes(nestedZipFile.getInputStream(nestedTextEntry),
+                        (int) nestedTextEntry.getSize());
+                String migratedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
+                assertTrue("Nested content should be migrated in " + warFile.getName(),
+                        migratedContent.contains(expectedContent));
+            }
+        }
+    }
+
+    private byte[] readAllBytes(InputStream is, int expectedSize) throws IOException {
+        byte[] data = new byte[expectedSize];
+        int offset = 0;
+        int count;
+        while (offset < data.length && (count = is.read(data, offset, data.length - offset)) > 0) {
+            offset += count;
+        }
+        return data;
+    }
+
+    private void assertCliError(String... args) throws Exception {
+        Assume.assumeTrue(securityManagerAvailable);
+        try {
+            MigrationCLI.main(args);
+            fail("No error code returned");
+        } catch (SecurityException e) {
+            assertEquals("error code", "1", e.getMessage());
+        }
     }
 
     @Test
@@ -973,15 +888,7 @@ public class MigrationTest {
             JarEntry textEntry = jar.getJarEntry("test.txt");
             assertNotNull("test.txt should exist", textEntry);
 
-            byte[] textBytes = new byte[(int) textEntry.getSize()];
-            try (InputStream is = jar.getInputStream(textEntry)) {
-                int totalRead = 0;
-                while (totalRead < textBytes.length) {
-                    int read = is.read(textBytes, totalRead, textBytes.length - totalRead);
-                    if (read == -1) break;
-                    totalRead += read;
-                }
-            }
+            byte[] textBytes = readAllBytes(jar.getInputStream(textEntry), (int) textEntry.getSize());
             String migratedText = new String(textBytes, StandardCharsets.ISO_8859_1);
             assertTrue("Text should be migrated", migratedText.contains("jakarta.servlet"));
         }
@@ -1043,17 +950,7 @@ public class MigrationTest {
     @Test
     public void testMigrateNestedJarInWarStreaming() throws Exception {
         // Create a WAR with a nested JAR that has javax references
-        File nestedJar = tempFolder.newFile("nested-streaming.jar");
-        String nestedContent = "javax.servlet.http.HttpServlet";
-        try (FileOutputStream fos = new FileOutputStream(nestedJar);
-                org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream zos =
-                        new org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream(fos)) {
-            org.apache.commons.compress.archivers.zip.ZipArchiveEntry entry =
-                    new org.apache.commons.compress.archivers.zip.ZipArchiveEntry("nested.txt");
-            zos.putArchiveEntry(entry);
-            zos.write(nestedContent.getBytes(StandardCharsets.ISO_8859_1));
-            zos.closeArchiveEntry();
-        }
+        File nestedJar = createNestedJarWithContent("nested-streaming.jar", "nested.txt", "javax.servlet.http.HttpServlet");
 
         File warFile = createWarWithNestedJar(nestedJar, "streaming-test.war");
         File warTarget = tempFolder.newFile("streaming-test-migrated.war");
@@ -1068,56 +965,13 @@ public class MigrationTest {
         assertTrue("hasConverted should be true", migration.hasConverted());
 
         // Verify nested JAR content was migrated
-        try (JarFile war = new JarFile(warTarget)) {
-            JarEntry nestedEntry = war.getJarEntry("WEB-INF/lib/nested.jar");
-            assertNotNull("Nested JAR should exist", nestedEntry);
-
-            byte[] nestedJarBytes = new byte[(int) nestedEntry.getSize()];
-            try (InputStream is = war.getInputStream(nestedEntry)) {
-                int offset = 0;
-                int count;
-                while (offset < nestedJarBytes.length && (count = is.read(nestedJarBytes, offset, nestedJarBytes.length - offset)) > 0) {
-                    offset += count;
-                }
-            }
-
-            File tempNestedJar = File.createTempFile("nested", ".jar");
-            tempNestedJar.deleteOnExit();
-            Files.write(tempNestedJar.toPath(), nestedJarBytes);
-            try (org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile =
-                    ZipFile.builder().setFile(tempNestedJar).get()) {
-                org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
-                        nestedZipFile.getEntry("nested.txt");
-                byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
-                try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
-                    int totalRead = 0;
-                    while (totalRead < nestedTextBytes.length) {
-                        int read = is.read(nestedTextBytes, totalRead, nestedTextBytes.length - totalRead);
-                        if (read == -1) break;
-                        totalRead += read;
-                    }
-                }
-                String migratedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
-                assertTrue("Nested content should be migrated",
-                        migratedContent.contains("jakarta.servlet"));
-            }
-        }
+        verifyNestedJarContentMigrated(warTarget, "WEB-INF/lib/nested.jar", "jakarta.servlet");
     }
 
     @Test
     public void testMigrateNestedJarInWarInMemory() throws Exception {
         // Create a WAR with a nested JAR that has javax references
-        File nestedJar = tempFolder.newFile("nested-memory.jar");
-        String nestedContent = "javax.servlet.http.HttpServlet";
-        try (FileOutputStream fos = new FileOutputStream(nestedJar);
-                org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream zos =
-                        new org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream(fos)) {
-            org.apache.commons.compress.archivers.zip.ZipArchiveEntry entry =
-                    new org.apache.commons.compress.archivers.zip.ZipArchiveEntry("nested.txt");
-            zos.putArchiveEntry(entry);
-            zos.write(nestedContent.getBytes(StandardCharsets.ISO_8859_1));
-            zos.closeArchiveEntry();
-        }
+        File nestedJar = createNestedJarWithContent("nested-memory.jar", "nested.txt", "javax.servlet.http.HttpServlet");
 
         File warFile = createWarWithNestedJar(nestedJar, "memory-test.war");
         File warTarget = tempFolder.newFile("memory-test-migrated.war");
@@ -1132,40 +986,7 @@ public class MigrationTest {
         assertTrue("hasConverted should be true", migration.hasConverted());
 
         // Verify nested JAR content was migrated
-        try (JarFile war = new JarFile(warTarget)) {
-            JarEntry nestedEntry = war.getJarEntry("WEB-INF/lib/nested.jar");
-            assertNotNull("Nested JAR should exist", nestedEntry);
-
-            byte[] nestedJarBytes = new byte[(int) nestedEntry.getSize()];
-            try (InputStream is = war.getInputStream(nestedEntry)) {
-                int offset = 0;
-                int count;
-                while (offset < nestedJarBytes.length && (count = is.read(nestedJarBytes, offset, nestedJarBytes.length - offset)) > 0) {
-                    offset += count;
-                }
-            }
-
-            File tempNestedJar = File.createTempFile("nested", ".jar");
-            tempNestedJar.deleteOnExit();
-            Files.write(tempNestedJar.toPath(), nestedJarBytes);
-            try (org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile =
-                    ZipFile.builder().setFile(tempNestedJar).get()) {
-                org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
-                        nestedZipFile.getEntry("nested.txt");
-                byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
-                try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
-                    int totalRead = 0;
-                    while (totalRead < nestedTextBytes.length) {
-                        int read = is.read(nestedTextBytes, totalRead, nestedTextBytes.length - totalRead);
-                        if (read == -1) break;
-                        totalRead += read;
-                    }
-                }
-                String migratedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
-                assertTrue("Nested content should be migrated",
-                        migratedContent.contains("jakarta.servlet"));
-            }
-        }
+        verifyNestedJarContentMigrated(warTarget, "WEB-INF/lib/nested.jar", "jakarta.servlet");
     }
 
     @Test
@@ -1318,90 +1139,32 @@ public class MigrationTest {
 
     @Test
     public void testMigrateCLIMissingArguments() throws Exception {
-        Assume.assumeTrue(securityManagerAvailable);
-
-        try {
-            MigrationCLI.main(new String[] {
-                    "only-source.txt"
-            });
-            fail("No error code returned for missing arguments");
-        } catch (SecurityException e) {
-            assertEquals("error code", "1", e.getMessage());
-        }
+        assertCliError("only-source.txt");
     }
 
     @Test
     public void testMigrateCLITooManyArguments() throws Exception {
-        Assume.assumeTrue(securityManagerAvailable);
-
-        try {
-            MigrationCLI.main(new String[] {
-                    "source.txt", "dest.txt", "extra.txt"
-            });
-            fail("No error code returned for too many arguments");
-        } catch (SecurityException e) {
-            assertEquals("error code", "1", e.getMessage());
-        }
+        assertCliError("source.txt", "dest.txt", "extra.txt");
     }
 
     @Test
     public void testMigrateCLIInvalidCacheRetention() throws Exception {
-        Assume.assumeTrue(securityManagerAvailable);
-
-        try {
-            MigrationCLI.main(new String[] {
-                    "-cacheRetention=-1",
-                    "source.txt", "dest.txt"
-            });
-            fail("No error code returned for invalid cache retention");
-        } catch (SecurityException e) {
-            assertEquals("error code", "1", e.getMessage());
-        }
+        assertCliError("-cacheRetention=-1", "source.txt", "dest.txt");
     }
 
     @Test
     public void testMigrateCLIInvalidLogLevel() throws Exception {
-        Assume.assumeTrue(securityManagerAvailable);
-
-        try {
-            MigrationCLI.main(new String[] {
-                    "-logLevel=INVALID",
-                    "source.txt", "dest.txt"
-            });
-            fail("No error code returned for invalid log level");
-        } catch (SecurityException e) {
-            assertEquals("error code", "1", e.getMessage());
-        }
+        assertCliError("-logLevel=INVALID", "source.txt", "dest.txt");
     }
 
     @Test
     public void testMigrateCLICacheRetentionNonNumeric() throws Exception {
-        Assume.assumeTrue(securityManagerAvailable);
-
-        try {
-            MigrationCLI.main(new String[] {
-                    "-cacheRetention=abc",
-                    "source.txt", "dest.txt"
-            });
-            fail("No error code returned for non-numeric cache retention");
-        } catch (SecurityException e) {
-            assertEquals("error code", "1", e.getMessage());
-        }
+        assertCliError("-cacheRetention=abc", "source.txt", "dest.txt");
     }
 
     @Test
     public void testMigrateCLICacheRetentionZero() throws Exception {
-        Assume.assumeTrue(securityManagerAvailable);
-
-        try {
-            MigrationCLI.main(new String[] {
-                    "-cacheRetention=0",
-                    "source.txt", "dest.txt"
-            });
-            fail("No error code returned for zero cache retention");
-        } catch (SecurityException e) {
-            assertEquals("error code", "1", e.getMessage());
-        }
+        assertCliError("-cacheRetention=0", "source.txt", "dest.txt");
     }
 
     @Test
