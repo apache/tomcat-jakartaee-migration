@@ -29,6 +29,7 @@ import java.util.zip.CRC32;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -794,22 +795,30 @@ public class MigrationTest {
             }
 
             // Parse the nested JAR from bytes
-            org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile = new org.apache.commons.compress.archivers.zip.ZipFile(
-                    new org.apache.commons.compress.utils.SeekableInMemoryByteChannel(nestedJarBytes));
-            org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
-                    nestedZipFile.getEntry("nested.txt");
-            assertNotNull("nested.txt should exist in nested JAR", nestedTextEntry);
+            File tempNestedJar = File.createTempFile("nested", ".jar");
+            tempNestedJar.deleteOnExit();
+            Files.write(tempNestedJar.toPath(), nestedJarBytes);
+            try (org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile =
+                    ZipFile.builder().setFile(tempNestedJar).get()) {
+                org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
+                        nestedZipFile.getEntry("nested.txt");
+                assertNotNull("nested.txt should exist in nested JAR", nestedTextEntry);
 
-            byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
-            try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
-                is.read(nestedTextBytes);
+                byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
+                try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
+                    int totalRead = 0;
+                    while (totalRead < nestedTextBytes.length) {
+                        int read = is.read(nestedTextBytes, totalRead, nestedTextBytes.length - totalRead);
+                        if (read == -1) break;
+                        totalRead += read;
+                    }
+                }
+                String migratedNestedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
+                assertTrue("Nested content should be migrated",
+                        migratedNestedContent.contains("jakarta.servlet"));
+                assertFalse("Nested content should not contain javax",
+                        migratedNestedContent.contains("javax.servlet"));
             }
-            String migratedNestedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
-            assertTrue("Nested content should be migrated",
-                    migratedNestedContent.contains("jakarta.servlet"));
-            assertFalse("Nested content should not contain javax",
-                    migratedNestedContent.contains("javax.servlet"));
-            nestedZipFile.close();
         }
     }
 
@@ -873,18 +882,26 @@ public class MigrationTest {
                     }
                 }
 
-                org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile = new org.apache.commons.compress.archivers.zip.ZipFile(
-                        new org.apache.commons.compress.utils.SeekableInMemoryByteChannel(nestedJarBytes));
-                org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
-                        nestedZipFile.getEntry("nested.txt");
-                byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
-                try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
-                    is.read(nestedTextBytes);
+                File tempNestedJar = File.createTempFile("nested", ".jar");
+                tempNestedJar.deleteOnExit();
+                Files.write(tempNestedJar.toPath(), nestedJarBytes);
+                try (org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile =
+                        ZipFile.builder().setFile(tempNestedJar).get()) {
+                    org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
+                            nestedZipFile.getEntry("nested.txt");
+                    byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
+                    try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
+                        int totalRead = 0;
+                        while (totalRead < nestedTextBytes.length) {
+                            int read = is.read(nestedTextBytes, totalRead, nestedTextBytes.length - totalRead);
+                            if (read == -1) break;
+                            totalRead += read;
+                        }
+                    }
+                    String migratedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
+                    assertTrue("Nested content should be migrated in " + warTarget.getName(),
+                            migratedContent.contains("jakarta.servlet"));
                 }
-                String migratedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
-                assertTrue("Nested content should be migrated in " + warTarget.getName(),
-                        migratedContent.contains("jakarta.servlet"));
-                nestedZipFile.close();
             }
         }
     }
@@ -958,7 +975,12 @@ public class MigrationTest {
 
             byte[] textBytes = new byte[(int) textEntry.getSize()];
             try (InputStream is = jar.getInputStream(textEntry)) {
-                is.read(textBytes);
+                int totalRead = 0;
+                while (totalRead < textBytes.length) {
+                    int read = is.read(textBytes, totalRead, textBytes.length - totalRead);
+                    if (read == -1) break;
+                    totalRead += read;
+                }
             }
             String migratedText = new String(textBytes, StandardCharsets.ISO_8859_1);
             assertTrue("Text should be migrated", migratedText.contains("jakarta.servlet"));
@@ -1059,18 +1081,26 @@ public class MigrationTest {
                 }
             }
 
-            org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile = new org.apache.commons.compress.archivers.zip.ZipFile(
-                    new org.apache.commons.compress.utils.SeekableInMemoryByteChannel(nestedJarBytes));
-            org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
-                    nestedZipFile.getEntry("nested.txt");
-            byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
-            try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
-                is.read(nestedTextBytes);
+            File tempNestedJar = File.createTempFile("nested", ".jar");
+            tempNestedJar.deleteOnExit();
+            Files.write(tempNestedJar.toPath(), nestedJarBytes);
+            try (org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile =
+                    ZipFile.builder().setFile(tempNestedJar).get()) {
+                org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
+                        nestedZipFile.getEntry("nested.txt");
+                byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
+                try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
+                    int totalRead = 0;
+                    while (totalRead < nestedTextBytes.length) {
+                        int read = is.read(nestedTextBytes, totalRead, nestedTextBytes.length - totalRead);
+                        if (read == -1) break;
+                        totalRead += read;
+                    }
+                }
+                String migratedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
+                assertTrue("Nested content should be migrated",
+                        migratedContent.contains("jakarta.servlet"));
             }
-            String migratedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
-            assertTrue("Nested content should be migrated",
-                    migratedContent.contains("jakarta.servlet"));
-            nestedZipFile.close();
         }
     }
 
@@ -1115,18 +1145,26 @@ public class MigrationTest {
                 }
             }
 
-            org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile = new org.apache.commons.compress.archivers.zip.ZipFile(
-                    new org.apache.commons.compress.utils.SeekableInMemoryByteChannel(nestedJarBytes));
-            org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
-                    nestedZipFile.getEntry("nested.txt");
-            byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
-            try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
-                is.read(nestedTextBytes);
+            File tempNestedJar = File.createTempFile("nested", ".jar");
+            tempNestedJar.deleteOnExit();
+            Files.write(tempNestedJar.toPath(), nestedJarBytes);
+            try (org.apache.commons.compress.archivers.zip.ZipFile nestedZipFile =
+                    ZipFile.builder().setFile(tempNestedJar).get()) {
+                org.apache.commons.compress.archivers.zip.ZipArchiveEntry nestedTextEntry =
+                        nestedZipFile.getEntry("nested.txt");
+                byte[] nestedTextBytes = new byte[(int) nestedTextEntry.getSize()];
+                try (InputStream is = nestedZipFile.getInputStream(nestedTextEntry)) {
+                    int totalRead = 0;
+                    while (totalRead < nestedTextBytes.length) {
+                        int read = is.read(nestedTextBytes, totalRead, nestedTextBytes.length - totalRead);
+                        if (read == -1) break;
+                        totalRead += read;
+                    }
+                }
+                String migratedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
+                assertTrue("Nested content should be migrated",
+                        migratedContent.contains("jakarta.servlet"));
             }
-            String migratedContent = new String(nestedTextBytes, StandardCharsets.ISO_8859_1);
-            assertTrue("Nested content should be migrated",
-                    migratedContent.contains("jakarta.servlet"));
-            nestedZipFile.close();
         }
     }
 

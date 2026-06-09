@@ -100,7 +100,8 @@ class CacheEntry {
             try {
                 fos.close();
             } catch (IOException e) {
-                logger.log(Level.WARNING, sm.getString("cacheEntry.closeFail"), e);
+                rollbackStore();
+                throw new IOException(sm.getString("cacheEntry.closeFail"), e);
             }
             fos = null;
         }
@@ -110,6 +111,7 @@ class CacheEntry {
         // Ensure parent directory exists
         File parentDir = cacheFile.getParentFile();
         if (!parentDir.mkdirs() && !parentDir.exists()) {
+            rollbackStore();
             throw new IOException(sm.getString("cache.cannotCreate", parentDir.getAbsolutePath()));
         }
         // Move file to final cache location (atomic if possible)
@@ -121,6 +123,7 @@ class CacheEntry {
                 Files.move(tempFile.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (Exception e) {
+            rollbackStore();
             throw new IOException(sm.getString("cacheEntry.tempRenameFail", tempFile, cacheFile), e);
         }
     }

@@ -254,26 +254,29 @@ public class Migration {
                 destination.getAbsolutePath(), profile.toString()));
 
         long t1 = System.nanoTime();
-        if (source.isDirectory()) {
-            if ((destination.exists() && destination.isDirectory()) || destination.mkdirs()) {
-                migrateDirectory(source, destination);
+        try {
+            if (source.isDirectory()) {
+                if ((destination.exists() && destination.isDirectory()) || destination.mkdirs()) {
+                    migrateDirectory(source, destination);
+                } else {
+                    throw new IOException(sm.getString("migration.mkdirError", destination.getAbsolutePath()));
+                }
             } else {
-                throw new IOException(sm.getString("migration.mkdirError", destination.getAbsolutePath()));
+                // Single file
+                File parentDestination = destination.getAbsoluteFile().getParentFile();
+                if (parentDestination.exists() || parentDestination.mkdirs()) {
+                    migrateFile(source, destination);
+                } else {
+                    throw new IOException(sm.getString("migration.mkdirError", parentDestination.getAbsolutePath()));
+                }
             }
-        } else {
-            // Single file
-            File parentDestination = destination.getAbsoluteFile().getParentFile();
-            if (parentDestination.exists() || parentDestination.mkdirs()) {
-                migrateFile(source, destination);
-            } else {
-                throw new IOException(sm.getString("migration.mkdirError", parentDestination.getAbsolutePath()));
-            }
-        }
-        state = State.COMPLETE;
+        } finally {
+            state = State.COMPLETE;
 
-        // Finalize cache operations (save metadata and prune expired entries)
-        if (cache != null) {
-            cache.pruneCache();
+            // Finalize cache operations (save metadata and prune expired entries)
+            if (cache != null) {
+                cache.pruneCache();
+            }
         }
 
         logger.log(Level.INFO, sm.getString("migration.done",
@@ -302,7 +305,7 @@ public class Migration {
         if (src.equals(dest)) {
             if (src.length() > TEMP_FILE_THRESHOLD) {
                 // For very large files, use a temp file instead of memory
-                File tempFile = File.createTempFile("jakartaee-migration-", ".tmp");
+                File tempFile = createTempFile();
                 tempFile.deleteOnExit();
                 try (InputStream is = new FileInputStream(src); OutputStream os = new FileOutputStream(tempFile)) {
                     if (migrateStream(src.getAbsolutePath(), is, os)) {
@@ -512,7 +515,7 @@ public class Migration {
         } else {
             for (Converter converter : converters) {
                 if (converter.accepts(name)) {
-                    convertedStream  = converter.convert(name, src, dest, profile);
+                    convertedStream = converter.convert(name, src, dest, profile);
                     break;
                 }
             }
@@ -554,6 +557,10 @@ public class Migration {
         public void setName(String name) {
             super.setName(name);
         }
+    }
+
+    private static File createTempFile() throws IOException {
+        return File.createTempFile("jakartaee-migration-", ".tmp");
     }
 
     /**
@@ -607,7 +614,7 @@ public class Migration {
 
         private void maybeSwitchToFile() throws IOException {
             if (buffer != null && buffer.size() > TEMP_FILE_THRESHOLD && fileOutput == null) {
-                tempFile = File.createTempFile("jakartaee-migration-", ".tmp");
+                tempFile = createTempFile();
                 tempFile.deleteOnExit();
                 fileOutput = new FileOutputStream(tempFile);
                 buffer.writeTo(fileOutput);

@@ -189,5 +189,10 @@ public class AntHandlerTest {
             logLevels.add(level);
             logThrown.add(throwable);
         }
+
+        @Override
+        public TestTask clone() {
+            return new TestTask();
+        }
     }
 }

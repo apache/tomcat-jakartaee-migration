@@ -178,16 +178,16 @@ public class ManifestConverter implements Converter {
     private String processOSGIHeader(String value, String header, String replacement) throws BundleException {
         List<String> packages = new ArrayList<>();
         ManifestElement[] elements = ManifestElement.parseHeader(header, value);
+        boolean modified = false;
         for (ManifestElement element : elements) {
             if (element.getValue().startsWith(JAKARTA_SERVLET)) {
                 String oldVersion = element.getAttribute(Constants.VERSION_ATTRIBUTE);
                 if (oldVersion != null) {
-                    // Only replace the version attribute, not occurrences of the version
-                    // string in other attributes or directives
                     String escaped = Pattern.quote(oldVersion);
                     String result = element.toString().replaceFirst("(;version=\\\")" + escaped + "(\\\")",
                             "$1" + replacement + "$2");
                     packages.add(result);
+                    modified = true;
                 } else {
                     packages.add(element.toString());
                 }
@@ -195,7 +195,7 @@ public class ManifestConverter implements Converter {
                 packages.add(element.toString());
             }
         }
-        if (packages.isEmpty()) {
+        if (!modified) {
             return value;
         }
         return String.join(",", packages);

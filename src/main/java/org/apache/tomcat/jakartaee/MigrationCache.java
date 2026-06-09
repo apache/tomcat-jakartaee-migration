@@ -93,7 +93,7 @@ public class MigrationCache {
      */
     public MigrationCache(File cacheDir, int retentionDays) throws IOException {
         if (cacheDir == null) {
-            throw new IllegalStateException(sm.getString("cache.nullDirectory"));
+            throw new IllegalArgumentException(sm.getString("cache.nullDirectory"));
         }
 
         this.retentionDays = retentionDays;

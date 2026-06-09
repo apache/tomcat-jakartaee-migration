@@ -250,7 +250,7 @@ public class MigrationCacheTest {
         try {
             new MigrationCache(null, 30);
             fail("Should throw IllegalStateException for null directory");
-        } catch (IllegalStateException e) {
+        } catch (IllegalArgumentException e) {
             assertTrue("Error message should mention null", e.getMessage().contains("null") || e.getMessage().contains("Null"));
         }
     }
@@ -258,7 +258,7 @@ public class MigrationCacheTest {
     @Test
     public void testCacheNotDirectory() throws Exception {
         File regularFile = new File(tempCacheDir, "regular-file.txt");
-        regularFile.createNewFile();
+        Files.createFile(regularFile.toPath());
 
         try {
             new MigrationCache(regularFile, 30);
@@ -332,12 +332,11 @@ public class MigrationCacheTest {
     public void testCacheTempFileCleanup() throws Exception {
         // Create a temp file that should be cleaned up
         File tempFile = new File(tempCacheDir, "temp-" + java.util.UUID.randomUUID() + ".tmp");
-        tempFile.createNewFile();
+        Files.createFile(tempFile.toPath());
         assertTrue("Temp file should exist before cleanup", tempFile.exists());
 
         // Create cache - should clean up temp files
-        @SuppressWarnings("unused")
-        MigrationCache unused = new MigrationCache(tempCacheDir, 30);
+        new MigrationCache(tempCacheDir, 30);
 
         assertFalse("Temp file should be cleaned up on cache init", tempFile.exists());
     }
@@ -396,8 +395,7 @@ public class MigrationCacheTest {
         }
 
         // Should handle corrupt metadata gracefully
-        @SuppressWarnings("unused")
-        MigrationCache unused = new MigrationCache(tempCacheDir, 30);
+        new MigrationCache(tempCacheDir, 30);
     }
 
     @Test
@@ -411,8 +409,7 @@ public class MigrationCacheTest {
         }
 
         // Should handle invalid dates gracefully
-        @SuppressWarnings("unused")
-        MigrationCache unused = new MigrationCache(tempCacheDir, 30);
+        new MigrationCache(tempCacheDir, 30);
     }
 
     @Test
@@ -470,6 +467,7 @@ public class MigrationCacheTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testCacheFinalizeCacheOperations() throws Exception {
         MigrationCache cache = new MigrationCache(tempCacheDir, 30);
 
@@ -496,7 +494,7 @@ public class MigrationCacheTest {
         File subdir = new File(tempCacheDir, "ab");
         subdir.mkdirs();
         File cachedFile = new File(subdir, "abcdef1234567890.jar");
-        cachedFile.createNewFile();
+        Files.createFile(cachedFile.toPath());
 
         MigrationCache cache = new MigrationCache(tempCacheDir, 30);
         String stats = cache.getStats();
