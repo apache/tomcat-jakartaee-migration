@@ -1,14 +1,12 @@
 # Apache Tomcat migration tool for Jakarta EE
 
-
-[![Coverage Status](https://codecov.io/gh/apache/tomcat-jakartaee-migration/branch/main/graph/badge.svg)](https://app.codecov.io/gh/apache/tomcat-jakartaee-migration/branch/main)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## Overview
 
 The purpose of the tool is to take a web application written for Java EE 8 that
 runs on Apache Tomcat 9 and convert it automatically so it runs on Apache
-Tomcat 10 which implements Jakarta EE 9.
+Tomcat 10 or newer, which implements Jakarta EE 9.
 
 The tool can be used from the command line or as an Ant task.
 
