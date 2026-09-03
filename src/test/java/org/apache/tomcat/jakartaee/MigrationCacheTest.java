@@ -20,6 +20,7 @@ package org.apache.tomcat.jakartaee;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -181,7 +182,7 @@ public class MigrationCacheTest {
 
         String stats = cache.getStats();
         assertNotNull("Stats should not be null", stats);
-        assertTrue("Stats should contain entry count", stats.contains("0"));
+        assertTrue("Stats should contain entry count", stats.contains("0 entries"));
     }
 
     @Test
@@ -249,7 +250,7 @@ public class MigrationCacheTest {
     public void testCacheNullDirectory() throws Exception {
         try {
             new MigrationCache(null, 30);
-            fail("Should throw IllegalStateException for null directory");
+            fail("Should throw IllegalArgumentException for null directory");
         } catch (IllegalArgumentException e) {
             assertTrue("Error message should mention null", e.getMessage().contains("null") || e.getMessage().contains("Null"));
         }
@@ -263,9 +264,8 @@ public class MigrationCacheTest {
         try {
             new MigrationCache(regularFile, 30);
             fail("Should throw IOException when path is not a directory");
-        } catch (Exception e) {
-            assertTrue("Should be IOException or similar",
-                    e instanceof Exception);
+        } catch (IOException e) {
+            // Expected
         }
     }
 
@@ -359,7 +359,7 @@ public class MigrationCacheTest {
 
         String stats = cache.getStats();
         assertNotNull("Stats should not be null", stats);
-        assertTrue("Stats should contain entry count", stats.contains("3"));
+        assertTrue("Stats should contain entry count", stats.contains("3 entries"));
     }
 
     @Test
@@ -400,12 +400,12 @@ public class MigrationCacheTest {
 
     @Test
     public void testCacheMetadataWithInvalidDate() throws Exception {
-        // Create a metadata file with invalid date format
+        // Create a metadata file with a valid hash but an invalid date format
         File metadataFile = new File(tempCacheDir, "cache-metadata.txt");
         try (FileWriter writer = new FileWriter(metadataFile)) {
             writer.write("# Migration cache metadata - hash|last_access_date\n");
-            writer.write("abc123|not-a-date\n");
-            writer.write("def456|2024-01-01\n");
+            writer.write("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef|not-a-date\n");
+            writer.write("fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210|2024-01-01\n");
         }
 
         // Should handle invalid dates gracefully
@@ -499,7 +499,7 @@ public class MigrationCacheTest {
         MigrationCache cache = new MigrationCache(tempCacheDir, 30);
         String stats = cache.getStats();
         assertNotNull("Stats should not be null", stats);
-        assertTrue("Stats should contain entry count", stats.contains("1"));
+        assertTrue("Stats should contain entry count", stats.contains("1 entries"));
     }
 
     @Test
@@ -531,13 +531,31 @@ public class MigrationCacheTest {
         byte[] sourceData = "test source content".getBytes(StandardCharsets.UTF_8);
         CacheEntry entry = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
 
-        // Begin store creates temp file
+        // Begin store creates the temp file
         OutputStream os = entry.beginStore();
+        os.write("partial data".getBytes(StandardCharsets.UTF_8));
         os.close();
 
-        // Delete temp file manually to simulate failure
-        // The temp file path is internal, so we can't easily delete it
-        // Instead, test that commit works normally after writing
-        entry.commitStore();
+        // Locate and delete the temp file to simulate a failure between
+        // beginStore() and commitStore()
+        File tempFile = null;
+        File[] files = tempCacheDir.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                if (file.isFile() && file.getName().startsWith("temp-") && file.getName().endsWith(".tmp")) {
+                    tempFile = file;
+                }
+            }
+        }
+        assertNotNull("Temp file should have been created", tempFile);
+        assertTrue("Temp file should be deleted", tempFile.delete());
+
+        try {
+            entry.commitStore();
+            fail("Should throw IOException when the temp file is missing");
+        } catch (IOException e) {
+            assertTrue("Unexpected error message: " + e.getMessage(),
+                    e.getMessage() != null && e.getMessage().contains("does not exist"));
+        }
     }
 }

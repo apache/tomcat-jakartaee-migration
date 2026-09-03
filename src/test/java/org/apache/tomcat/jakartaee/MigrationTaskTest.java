@@ -21,8 +21,11 @@ import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DefaultLogger;
 import org.apache.tools.ant.Project;
@@ -66,9 +69,15 @@ public class MigrationTaskTest {
         project.addBuildListener(logger);
     }
 
-    @Test(expected = BuildException.class)
+    @Test
     public void testInvalidProfile() {
-        project.executeTarget("invalid-profile");
+        try {
+            project.executeTarget("invalid-profile");
+            fail("Should throw BuildException when profile is invalid");
+        } catch (BuildException e) {
+            assertTrue("Error should mention the invalid profile",
+                    e.getMessage().contains("jserv"));
+        }
     }
 
     @Test
@@ -94,8 +103,7 @@ public class MigrationTaskTest {
             task.execute();
             fail("Should throw BuildException when source is null");
         } catch (BuildException e) {
-            assertTrue("Error should mention source",
-                    e.getMessage().contains("source") || e.getMessage().toLowerCase().contains("source"));
+            assertTrue("Error should mention source", e.getMessage().contains("source"));
         }
     }
 
@@ -103,15 +111,13 @@ public class MigrationTaskTest {
     public void testMigrationTaskNoDest() {
         MigrationTask task = new MigrationTask();
         task.setProject(project);
-        task.setLocation(null);
         task.setSrc(new File("target/test-classes/HelloServlet.java"));
 
         try {
             task.execute();
             fail("Should throw BuildException when dest is null");
         } catch (BuildException e) {
-            assertTrue("Error should mention destination",
-                    e.getMessage().contains("dest") || e.getMessage().toLowerCase().contains("dest"));
+            assertTrue("Error should mention destination", e.getMessage().contains("dest"));
         }
     }
 
@@ -119,7 +125,6 @@ public class MigrationTaskTest {
     public void testMigrationTaskSourceNotExists() {
         MigrationTask task = new MigrationTask();
         task.setProject(project);
-        task.setLocation(null);
         task.setSrc(new File("target/test-classes/nonexistent.java"));
         task.setDest(new File("target/test-classes/output.java"));
 
@@ -127,7 +132,7 @@ public class MigrationTaskTest {
             task.execute();
             fail("Should throw BuildException when source does not exist");
         } catch (BuildException e) {
-            // Expected
+            assertTrue("Error should mention source", e.getMessage().contains("source"));
         }
     }
 
@@ -135,23 +140,27 @@ public class MigrationTaskTest {
     public void testMigrationTaskWithZipInMemory() throws Exception {
         MigrationTask task = new MigrationTask();
         task.setProject(project);
-        task.setLocation(null);
-        task.setSrc(new File("target/test-classes/HelloServlet.java"));
-        File destFile = tempFolder.newFile("ant-zip-memory.java");
+        task.setSrc(new File("target/test-classes/hellocgi.jar"));
+        File destFile = tempFolder.newFile("ant-zip-memory.jar");
         task.setDest(destFile);
         task.setZipInMemory(true);
         task.execute();
 
         assertTrue("Migrated file should exist", destFile.exists());
-        String migratedSource = FileUtils.readFileToString(destFile, StandardCharsets.UTF_8);
-        assertTrue("Imports should be migrated", migratedSource.contains("import jakarta.servlet"));
+        try (JarFile jar = new JarFile(destFile)) {
+            JarEntry entry = jar.getJarEntry("org/apache/tomcat/jakartaee/HelloCGI.class");
+            assertNotNull("HelloCGI class not found in migrated JAR", entry);
+            byte[] classBytes = IOUtils.toByteArray(jar.getInputStream(entry));
+            assertTrue("Class should be migrated",
+                    new String(classBytes, StandardCharsets.ISO_8859_1)
+                            .contains("jakarta/servlet/CommonGatewayInterface"));
+        }
     }
 
     @Test
     public void testMigrationTaskWithExcludes() throws Exception {
         MigrationTask task = new MigrationTask();
         task.setProject(project);
-        task.setLocation(null);
         task.setSrc(new File("target/test-classes/HelloServlet.java"));
         File destFile = tempFolder.newFile("ant-excludes.java");
         task.setDest(destFile);
@@ -159,27 +168,32 @@ public class MigrationTaskTest {
         task.execute();
 
         assertTrue("Migrated file should exist", destFile.exists());
+        String content = FileUtils.readFileToString(destFile, StandardCharsets.UTF_8);
+        assertTrue("Excluded file should not be converted", content.contains("import javax.servlet"));
     }
 
     @Test
     public void testMigrationTaskWithMatchExcludesAgainstPathName() throws Exception {
         MigrationTask task = new MigrationTask();
         task.setProject(project);
-        task.setLocation(null);
         task.setSrc(new File("target/test-classes/HelloServlet.java"));
         File destFile = tempFolder.newFile("ant-path-excludes.java");
         task.setDest(destFile);
+        // Matches the full path but not the bare file name, so the exclude
+        // only takes effect when excludes are matched against the path name
+        task.setExcludes("**" + File.separator + "HelloServlet.java");
         task.setMatchExcludesAgainstPathName(true);
         task.execute();
 
         assertTrue("Migrated file should exist", destFile.exists());
+        String content = FileUtils.readFileToString(destFile, StandardCharsets.UTF_8);
+        assertTrue("Excluded file should not be converted", content.contains("import javax.servlet"));
     }
 
     @Test
     public void testMigrationTaskWithEeProfile() throws Exception {
         MigrationTask task = new MigrationTask();
         task.setProject(project);
-        task.setLocation(null);
         task.setSrc(new File("target/test-classes/HelloServlet.java"));
         File destFile = tempFolder.newFile("ant-ee-profile.java");
         task.setDest(destFile);
@@ -206,7 +220,6 @@ public class MigrationTaskTest {
     public void testMigrationTaskDefaultProfile() throws Exception {
         MigrationTask task = new MigrationTask();
         task.setProject(project);
-        task.setLocation(null);
         task.setSrc(new File("target/test-classes/HelloServlet.java"));
         File destFile = tempFolder.newFile("ant-default-profile.java");
         task.setDest(destFile);

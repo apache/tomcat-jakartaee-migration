@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.tomcat.jakartaee;
 
 import static org.junit.Assert.assertEquals;
@@ -14,26 +31,27 @@ public class TextConverterTest {
 
     private static final String TEST_FILENAME = "text.txt";
 
-	private static final String INPUT = "javax.servlet.http.HttpServletRequest";
-	private static final String OUTPUT = "jakarta.servlet.http.HttpServletRequest";
+    private static final String INPUT = "javax.servlet.http.HttpServletRequest";
+    private static final String OUTPUT = "jakarta.servlet.http.HttpServletRequest";
 
-	@Test
-	public void testConvert() throws IOException {
+    @Test
+    public void testConvert() throws IOException {
 
-		// prepare
-		TextConverter converter = new TextConverter();
-		ByteArrayInputStream in = new ByteArrayInputStream(INPUT.getBytes(StandardCharsets.ISO_8859_1));
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		EESpecProfile profile = EESpecProfiles.EE;
+        // prepare
+        TextConverter converter = new TextConverter();
+        ByteArrayInputStream in = new ByteArrayInputStream(INPUT.getBytes(StandardCharsets.ISO_8859_1));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        EESpecProfile profile = EESpecProfiles.EE;
 
-		// test
-		converter.convert(TEST_FILENAME, in, out, profile);
+        // test
+        boolean converted = converter.convert(TEST_FILENAME, in, out, profile);
 
-		// assert
-		String result = new String(out.toByteArray(), StandardCharsets.ISO_8859_1);
-		assertEquals(OUTPUT, result);
+        // assert
+        assertTrue("Should convert when javax packages present", converted);
+        String result = new String(out.toByteArray(), StandardCharsets.ISO_8859_1);
+        assertEquals(OUTPUT, result);
 
-	}
+    }
 
     @Test
     public void testAcceptsJava() {
@@ -166,6 +184,20 @@ public class TextConverterTest {
         assertFalse("JEE8 profile should not convert", converted);
         String result = new String(out.toByteArray(), StandardCharsets.ISO_8859_1);
         assertEquals(content, result);
+    }
+
+    @Test
+    public void testConvertJakartaWithJee8Profile() throws IOException {
+        TextConverter converter = new TextConverter();
+        String content = "import jakarta.servlet.http.HttpServletRequest;";
+        ByteArrayInputStream in = new ByteArrayInputStream(content.getBytes(StandardCharsets.ISO_8859_1));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        boolean converted = converter.convert("Test.java", in, out, EESpecProfiles.JEE8);
+
+        assertTrue("JEE8 profile should convert jakarta packages", converted);
+        String result = new String(out.toByteArray(), StandardCharsets.ISO_8859_1);
+        assertEquals("import javax.servlet.http.HttpServletRequest;", result);
     }
 
     @Test

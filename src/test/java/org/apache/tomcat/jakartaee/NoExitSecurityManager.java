@@ -19,6 +19,16 @@ package org.apache.tomcat.jakartaee;
 
 import java.security.Permission;
 
+/**
+ * A {@link SecurityManager} used by the tests to turn
+ * {@link System#exit(int)} into a {@link SecurityException} (whose message is
+ * the exit status) instead of terminating the test JVM. All other permission
+ * checks are permitted.
+ * <p>
+ * It can only be installed on JDK versions that still support a security
+ * manager. On JDK 25 and later (JEP 486) {@code System.setSecurityManager()}
+ * itself fails and the tests that rely on this class are skipped.
+ */
 public class NoExitSecurityManager extends SecurityManager {
 
     @Override

@@ -1,4 +1,4 @@
-<project name="Jsign Ant tests">
+<project name="Jakarta EE migration Ant tests">
 
   <taskdef name="javax2jakarta" classname="org.apache.tomcat.jakartaee.MigrationTask"/>
 

@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
@@ -45,8 +46,10 @@ public class ManifestConverterTest {
     public void testConvert() throws IOException {
         ManifestConverter converter = new ManifestConverter();
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        boolean converted = converter.convert("/MANIFEST.test.MF", getClass().getResourceAsStream("/MANIFEST.test.MF"),
-                os, EESpecProfiles.TOMCAT);
+        boolean converted;
+        try (InputStream src = getClass().getResourceAsStream("/MANIFEST.test.MF")) {
+            converted = converter.convert("/MANIFEST.test.MF", src, os, EESpecProfiles.TOMCAT);
+        }
         assertTrue(converted);
 
         String result = os.toString("UTF-8");
@@ -128,12 +131,14 @@ public class ManifestConverterTest {
         manifest.write(manifestBytes);
 
         ByteArrayOutputStream dest = new ByteArrayOutputStream();
-        converter.convert("META-INF/MANIFEST.MF",
+        boolean converted = converter.convert("META-INF/MANIFEST.MF",
                 new ByteArrayInputStream(manifestBytes.toByteArray()), dest, EESpecProfiles.TOMCAT);
 
+        // The suffix is added without counting as a conversion
+        assertFalse("Version suffix should not count as a conversion", converted);
         String result = dest.toString("UTF-8");
         assertTrue("Implementation-Version should have migration suffix",
-                result.contains("-migrated-"));
+                result.contains("Implementation-Version: 1.0.0-" + Info.getVersion()));
     }
 
     @Test
@@ -203,9 +208,10 @@ public class ManifestConverterTest {
     }
 
     @Test
-    public void testConvertPreservesNonStringValues() throws IOException {
+    public void testConvertNoConversionNeededWithTomcatProfile() throws IOException {
         ManifestConverter converter = new ManifestConverter();
 
+        // Create a manifest with no javax packages
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
 
@@ -216,7 +222,6 @@ public class ManifestConverterTest {
         boolean converted = converter.convert("META-INF/MANIFEST.MF",
                 new ByteArrayInputStream(manifestBytes.toByteArray()), dest, EESpecProfiles.TOMCAT);
 
-        // Should not throw and should handle gracefully
-        assertTrue("Conversion should complete", !converted);
+        assertFalse("Should not convert manifest with no javax packages", converted);
     }
 }

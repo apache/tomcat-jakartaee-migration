@@ -24,6 +24,7 @@ import org.apache.bcel.classfile.JavaClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -53,6 +54,7 @@ public class ClassConverterTest {
         // Get the original bytes
         try (InputStream is = this.getClass().getResourceAsStream("/org/apache/tomcat/jakartaee/TesterConstants.class");
                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            assertNotNull(is);
             byte[] buf = new byte[1024];
             int len;
             while ((len = is.read(buf)) > 0) {

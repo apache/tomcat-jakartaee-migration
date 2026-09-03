@@ -70,13 +70,6 @@ public class StringManagerTest {
     }
 
     @Test
-    public void testGetStringWithArgsNoArgs() {
-        StringManager sm = StringManager.getManager(Migration.class);
-        String result = sm.getString("migration.notCompleted");
-        assertEquals("Migration has not completed", result);
-    }
-
-    @Test
     public void testGetManagerByClass() {
         StringManager sm1 = StringManager.getManager(Migration.class);
         StringManager sm2 = StringManager.getManager(Migration.class);
@@ -101,9 +94,11 @@ public class StringManagerTest {
     public void testGetManagerDifferentLocale() {
         StringManager sm1 = StringManager.getManager("org.apache.tomcat.jakartaee", Locale.ENGLISH);
         StringManager sm2 = StringManager.getManager("org.apache.tomcat.jakartaee", Locale.FRANCE);
-        // May or may not be the same depending on available bundles
+        // Managers are cached per (package, requested locale) so different
+        // locales always produce different instances
         assertNotNull("Manager should not be null", sm1);
         assertNotNull("Manager should not be null", sm2);
+        assertNotSame("Different locales should return different managers", sm1, sm2);
     }
 
     @Test
