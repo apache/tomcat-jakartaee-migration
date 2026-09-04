@@ -20,9 +20,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Location;
 import org.apache.tools.ant.Task;
 
 /**
@@ -97,18 +99,25 @@ public class MigrationTask extends Task {
     @Override
     public void execute() throws BuildException {
 
+        // Programmatic task usage may leave the location null. A null location
+        // makes BuildException.toString() throw a NullPointerException.
+        Location location = getLocation();
+        if (location == null) {
+            location = Location.UNKNOWN_LOCATION;
+        }
+
         // Check the parameters
         EESpecProfile profile = null;
         try {
             profile = EESpecProfiles.valueOf(this.profile.toUpperCase(Locale.ENGLISH));
         } catch (IllegalArgumentException e) {
-            throw new BuildException(sm.getString("migrationTask.invalidProfile", this.profile), getLocation());
+            throw new BuildException(sm.getString("migrationTask.invalidProfile", this.profile), location);
         }
         if (src == null || !src.exists() || !src.canRead()) {
-            throw new BuildException(sm.getString("migrationTask.noSource", src));
+            throw new BuildException(sm.getString("migrationTask.noSource", src), location);
         }
         if (dest == null) {
-            throw new BuildException(sm.getString("migrationTask.noDest"));
+            throw new BuildException(sm.getString("migrationTask.noDest"), location);
         }
 
         Migration migration = new Migration();
@@ -124,26 +133,34 @@ public class MigrationTask extends Task {
             }
         }
 
-        // Redirect the log messages to Ant
-        Logger logger = Logger.getLogger(Migration.class.getCanonicalName());
+        // Redirect the log messages to Ant. Use the package logger so the
+        // messages logged by the converters and the cache (which use their own
+        // class loggers) are included as well as those logged by Migration.
+        Logger logger = Logger.getLogger(MigrationTask.class.getPackage().getName());
         Handler[] originalHandlers = logger.getHandlers();
         AntHandler antHandler = new AntHandler(this);
         boolean originalUseParent = logger.getUseParentHandlers();
+        Level originalLevel = logger.getLevel();
         try {
             logger.setUseParentHandlers(false);
+            // Lower the logger level so the detailed (FINE, FINER and FINEST)
+            // messages are forwarded to Ant. Ant itself only displays them
+            // when run with -verbose or -debug.
+            logger.setLevel(Level.FINEST);
             for (Handler h : logger.getHandlers()) {
                 logger.removeHandler(h);
             }
             logger.addHandler(antHandler);
             migration.execute();
         } catch (IOException e) {
-            throw new BuildException(e, getLocation());
+            throw new BuildException(e, location);
         } finally {
             logger.removeHandler(antHandler);
             for (Handler h : originalHandlers) {
                 logger.addHandler(h);
             }
             logger.setUseParentHandlers(originalUseParent);
+            logger.setLevel(originalLevel);
         }
 
     }
