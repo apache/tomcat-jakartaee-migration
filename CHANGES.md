@@ -8,6 +8,7 @@
 - Do not buffer very large nested archives when processing them in streaming mode. (remm)
 - Improve cache robustness. (remm)
 - Improve robustness of source and destination manipulation operations when migrating. (remm)
+- Improve processing of relevant version numbers in manifests. (remm)
 
 ## 1.0.12
 - Add Maven Wrapper Plugin to manage the Maven wrapper. (markt)

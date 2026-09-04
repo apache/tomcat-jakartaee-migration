@@ -38,19 +38,49 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.Constants;
 
 /**
- * Updates Manifests.
+ * Converter for JAR manifest files. Performs the following transformations:
+ * <ul>
+ *   <li>Converts javax.* package names to jakarta.* in manifest attribute values</li>
+ *   <li>Updates OSGi Import-Package and Export-Package version constraints
+ *       for jakarta.servlet packages</li>
+ *   <li>Removes cryptographic signature attributes that are no longer valid</li>
+ *   <li>Appends a migration tool version suffix to Implementation-Version attributes</li>
+ * </ul>
  */
 public class ManifestConverter implements Converter {
 
-    private static final String JAKARTA_SERVLET = "jakarta.servlet";
-    private static final Pattern SERVLET_PATTERN = Pattern.compile("jakarta.servlet([^,]*);version=\"(.*?)\"");
     private static final Logger logger = Logger.getLogger(ManifestConverter.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(ManifestConverter.class);
+
+    private static final String JAKARTA_SERVLET = "jakarta.servlet";
+    // Matches a jakarta.servlet (or jakarta.servlet.*) package name, but not a
+    // package that merely contains that string (e.g. com.foo.jakarta.servlet or
+    // jakarta.servletX), followed by a version attribute.
+    private static final Pattern SERVLET_PATTERN = Pattern.compile(
+            "(?<![A-Za-z0-9_$.])jakarta\\.servlet(?![A-Za-z0-9_$])([^,]*);version=\"(.*?)\"");
+    private String servletExportVersion = "5.0.0";
+    private String servletImportVersion = "[5.0.0,7.0.0)";
 
     /**
      * Manifest converter constructor.
      */
     public ManifestConverter() {
+    }
+
+    /**
+     * Set the OSGi version used for jakarta.servlet Export-Package headers.
+     * @param servletExportVersion the export version (default: "5.0.0")
+     */
+    public void setServletExportVersion(String servletExportVersion) {
+        this.servletExportVersion = servletExportVersion;
+    }
+
+    /**
+     * Set the OSGi version range used for jakarta.servlet Import-Package headers.
+     * @param servletImportVersion the import version range (default: "[5.0.0,7.0.0)")
+     */
+    public void setServletImportVersion(String servletImportVersion) {
+        this.servletImportVersion = servletImportVersion;
     }
 
     @Override
@@ -66,7 +96,20 @@ public class ManifestConverter implements Converter {
     @Override
     public boolean convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
         byte[] srcBytes = IOUtils.toByteArray(src);
-        Manifest srcManifest = new Manifest(new ByteArrayInputStream(srcBytes));
+
+        Manifest srcManifest;
+        try {
+            srcManifest = new Manifest(new ByteArrayInputStream(srcBytes));
+        } catch (IOException e) {
+            // The manifest cannot be parsed (for example, a logical line longer
+            // than the 8192 byte limit enforced by the JDK manifest parser) so
+            // it cannot be converted. Pass it through unchanged rather than
+            // failing the whole migration.
+            logger.log(Level.WARNING, sm.getString("manifestConverter.manifestError", path), e);
+            IOUtils.writeChunked(srcBytes, dest);
+            return false;
+        }
+
         Manifest destManifest = new Manifest(srcManifest);
 
         // Only consider profile conversions, allowing Migration.hasConverted to be true
@@ -132,7 +175,7 @@ public class ManifestConverter implements Converter {
                 attributes.put(Attributes.Name.IMPLEMENTATION_VERSION, newValue);
                 logger.log(Level.FINE, sm.getString("manifestConverter.updatedVersion", newValue));
             }
-            // Purposefully avoid setting result
+            // Purposefully avoid setting converted
         }
         // Update package names in values
         for (Entry<Object, Object> entry : attributes.entrySet()) {
@@ -158,7 +201,7 @@ public class ManifestConverter implements Converter {
                 newValue = replaceVersion(newValue, !Constants.EXPORT_PACKAGE.equals(header));
             }
 
-            // Object comparison is deliberate
+            // Value comparison to detect actual changes
             if (!newValue.equals(entry.getValue())) {
                 entry.setValue(newValue);
                 converted = true;
@@ -168,11 +211,11 @@ public class ManifestConverter implements Converter {
     }
 
     private String processExportPackage(String value) throws BundleException {
-        return processOSGIHeader(value, Constants.EXPORT_PACKAGE, "5.0.0");
+        return processOSGIHeader(value, Constants.EXPORT_PACKAGE, servletExportVersion);
     }
 
     private String processImportPackage(String value) throws BundleException {
-        return processOSGIHeader(value, Constants.IMPORT_PACKAGE, "[5.0.0,7.0.0)");
+        return processOSGIHeader(value, Constants.IMPORT_PACKAGE, servletImportVersion);
     }
 
     private String processOSGIHeader(String value, String header, String replacement) throws BundleException {
@@ -180,25 +223,40 @@ public class ManifestConverter implements Converter {
         ManifestElement[] elements = ManifestElement.parseHeader(header, value);
         boolean modified = false;
         for (ManifestElement element : elements) {
-            if (element.getValue().startsWith(JAKARTA_SERVLET)) {
+            String original = element.toString();
+            String result = original;
+            if (isJakartaServletPackage(element.getValue())) {
                 String oldVersion = element.getAttribute(Constants.VERSION_ATTRIBUTE);
                 if (oldVersion != null) {
                     String escaped = Pattern.quote(oldVersion);
-                    String result = element.toString().replaceFirst("(;version=\\\")" + escaped + "(\\\")",
-                            "$1" + replacement + "$2");
-                    packages.add(result);
-                    modified = true;
-                } else {
-                    packages.add(element.toString());
+                    result = original.replaceFirst("(;version=\\\")" + escaped + "(\\\")",
+                            "$1" + Matcher.quoteReplacement(replacement) + "$2");
                 }
+            }
+            if (result.equals(original)) {
+                packages.add(original);
             } else {
-                packages.add(element.toString());
+                packages.add(result);
+                modified = true;
             }
         }
         if (!modified) {
             return value;
         }
-        return String.join(",", packages);
+        return String.join(", ", packages);
+    }
+
+    /**
+     * Determines whether the given package name is the jakarta.servlet package
+     * or a sub-package of it (e.g. jakarta.servlet.http). Package names that
+     * merely contain that string (e.g. jakarta.servletX or
+     * com.foo.jakarta.servlet) are not matched.
+     * @param packageName the package name to test
+     * @return true if the package name is jakarta.servlet or a sub-package of it
+     */
+    private static boolean isJakartaServletPackage(String packageName) {
+        return packageName != null &&
+                (packageName.equals(JAKARTA_SERVLET) || packageName.startsWith(JAKARTA_SERVLET + "."));
     }
 
     private String replaceVersion(String entryValue) {
@@ -210,8 +268,9 @@ public class ManifestConverter implements Converter {
             StringBuffer builder = new StringBuffer();
             Matcher matcher = SERVLET_PATTERN.matcher(entryValue);
             while (matcher.find()) {
-                String version = range ? "[5.0.0,7.0.0)" : "5.0.0";
-                matcher.appendReplacement(builder, "jakarta.servlet$1;version=\"" + version + "\"");
+                String version = range ? servletImportVersion : servletExportVersion;
+                matcher.appendReplacement(builder,
+                        "jakarta.servlet$1;version=\"" + Matcher.quoteReplacement(version) + "\"");
             }
             matcher.appendTail(builder);
             return builder.toString();
