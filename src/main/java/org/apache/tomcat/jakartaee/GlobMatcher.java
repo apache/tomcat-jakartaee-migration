@@ -38,15 +38,14 @@ public final class GlobMatcher {
 
     /**
      * Tests whether or not a given file name matches any file name pattern in
-     * the given set. The match is performed case-sensitively.
+     * the given set.
      *
      * @see #match(String, String, boolean)
      *
      * @param patternSet The pattern set to match against. Must not be
      *                <code>null</code>.
-     * @param fileName The file name to match, as a String. Must not be
-     *                <code>null</code>. It must be just a file name, without
-     *                a path.
+     * @param fileName The file name (or path name) to match, as a String.
+     *                Must not be <code>null</code>.
      * @param caseSensitive Whether or not matching should be performed
      *                        case sensitively.
      *

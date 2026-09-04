@@ -29,19 +29,22 @@ import java.util.Locale;
 public class Util {
 
     /**
-     * Get the extension of a filename
+     * Get the string after the last dot in the given path.
      * <p>
-     * The extension is the string after the last '{@code .}' in the filename.
-     * @param filename the name of the file
-     * @return the extension or an empty string, if no dot is found in the filename
+     * Returns the substring after the last '{@code .}' character in the path,
+     * converted to lower case. For paths with dots in directory names, this
+     * may not return the actual file extension.
+     *
+     * @param path the file path or name
+     * @return the extension (lowercase) or an empty string if no dot is found
      */
-    public static String getExtension(String filename) {
+    public static String getExtension(String path) {
         // Extract the extension
-        int lastPeriod = filename.lastIndexOf('.');
+        int lastPeriod = path.lastIndexOf('.');
         if (lastPeriod == -1) {
             return "";
         }
-        return filename.substring(lastPeriod + 1).toLowerCase(Locale.ENGLISH);
+        return path.substring(lastPeriod + 1).toLowerCase(Locale.ENGLISH);
     }
 
     /**

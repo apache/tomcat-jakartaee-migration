@@ -191,7 +191,7 @@ public class StringManager {
      *
      * @param clazz The class for which to retrieve the StringManager
      *
-     * @return The instance associated with the package of the provide class
+     * @return The instance associated with the package of the provided class
      */
     public static final StringManager getManager(Class<?> clazz) {
         return getManager(clazz.getPackage().getName());

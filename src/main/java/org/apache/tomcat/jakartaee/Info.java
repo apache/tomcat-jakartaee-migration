@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * Manifest version decorator.
+ * Provides version information for the migration tool.
  */
 public class Info {
 
