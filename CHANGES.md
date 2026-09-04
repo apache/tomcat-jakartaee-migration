@@ -5,6 +5,9 @@
 - Do not buffer very large STORED zip entries when processing them in streaming mode. (remm)
 - Various minor fixes from code review. (remm)
 - Improve logging handling for Ant tasks. (remm)
+- Do not buffer very large nested archives when processing them in streaming mode. (remm)
+- Improve cache robustness. (remm)
+- Improve robustness of source and destination manipulation operations when migrating. (remm)
 
 ## 1.0.12
 - Add Maven Wrapper Plugin to manage the Maven wrapper. (markt)

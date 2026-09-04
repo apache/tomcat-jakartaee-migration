@@ -24,7 +24,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.FileTime;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -194,8 +197,8 @@ public class Migration {
     }
 
     /**
-     * Set source file.
-     * @param source the source file
+     * Set source file or directory.
+     * @param source the source file or directory
      */
     public void setSource(File source) {
         if (!source.canRead()) {
@@ -206,8 +209,8 @@ public class Migration {
     }
 
     /**
-     * Set destination file.
-     * @param destination the destination file
+     * Set destination file or directory.
+     * @param destination the destination file or directory
      */
     public void setDestination(File destination) {
         this.destination = destination;
@@ -254,28 +257,44 @@ public class Migration {
                 destination.getAbsolutePath(), profile.toString()));
 
         long t1 = System.nanoTime();
+        boolean failed = false;
         try {
             if (source.isDirectory()) {
-                if ((destination.exists() && destination.isDirectory()) || destination.mkdirs()) {
-                    migrateDirectory(source, destination);
-                } else {
-                    throw new IOException(sm.getString("migration.mkdirError", destination.getAbsolutePath()));
+                if (!destination.exists()) {
+                    if (!destination.mkdirs()) {
+                        throw new IOException(sm.getString("migration.mkdirError",
+                                destination.getAbsolutePath()));
+                    }
                 }
+                if (!destination.isDirectory()) {
+                    throw new IOException(sm.getString("migration.mkdirError",
+                            destination.getAbsolutePath()));
+                }
+                migrateDirectory(source, destination);
             } else {
                 // Single file
                 File parentDestination = destination.getAbsoluteFile().getParentFile();
-                if (parentDestination.exists() || parentDestination.mkdirs()) {
-                    migrateFile(source, destination);
-                } else {
-                    throw new IOException(sm.getString("migration.mkdirError", parentDestination.getAbsolutePath()));
+                if (!parentDestination.exists() && !parentDestination.mkdirs()) {
+                    throw new IOException(sm.getString("migration.mkdirError",
+                            parentDestination.getAbsolutePath()));
                 }
+                migrateFile(source, destination);
             }
+        } catch (IOException e) {
+            failed = true;
+            throw e;
         } finally {
-            state = State.COMPLETE;
+            state = failed ? State.NOT_STARTED : State.COMPLETE;
 
-            // Finalize cache operations (save metadata and prune expired entries)
+            // Finalize cache operations (save metadata and prune expired entries).
+            // A failure here must not mask a migration failure or cause a
+            // successful migration to be reported as failed.
             if (cache != null) {
-                cache.pruneCache();
+                try {
+                    cache.pruneCache();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, sm.getString("migration.cachePruneFailed"), e);
+                }
             }
         }
 
@@ -284,17 +303,25 @@ public class Migration {
     }
 
     private void migrateDirectory(File src, File dest) throws IOException {
-        // Won't return null because src is known to be a directory
+        // May return null if src ceases to be a directory (e.g. it is
+        // removed) between the isDirectory() check and this call
         String[] files = src.list();
+        if (files == null) {
+            throw new IOException(sm.getString("migration.listError", src.getAbsolutePath()));
+        }
         for (String file : files) {
             File srcFile = new File(src, file);
             File destFile = new File(dest, profile.convert(file));
             if (srcFile.isDirectory()) {
-                if ((destFile.exists() && destFile.isDirectory()) || destFile.mkdir()) {
-                    migrateDirectory(srcFile, destFile);
-                } else {
+                if (!destFile.exists()) {
+                    if (!destFile.mkdir()) {
+                        throw new IOException(sm.getString("migration.mkdirError", destFile.getAbsolutePath()));
+                    }
+                }
+                if (!destFile.isDirectory()) {
                     throw new IOException(sm.getString("migration.mkdirError", destFile.getAbsolutePath()));
                 }
+                migrateDirectory(srcFile, destFile);
             } else {
                 migrateFile(srcFile, destFile);
             }
@@ -337,7 +364,13 @@ public class Migration {
         } else {
             try (InputStream is = new FileInputStream(src);
                     OutputStream os = new FileOutputStream(dest)) {
-                converted = migrateStream(src.getAbsolutePath(), is, os);
+                if (migrateStream(src.getAbsolutePath(), is, os)) {
+                    converted = true;
+                }
+            } catch (IOException e) {
+                // Remove the partially written destination file
+                dest.delete();
+                throw e;
             }
         }
     }
@@ -454,41 +487,54 @@ public class Migration {
             Util.copy(src, dest);
             logger.log(Level.INFO, sm.getString("migration.skip", name));
         } else if (isArchive(name)) {
-            // Only cache nested archives (e.g., JARs inside WARs), not top-level files
-            // Top-level files will have absolute paths starting with a path separator
-            boolean isNestedArchive = !name.startsWith("/") && !name.startsWith("\\");
+            // Only cache nested archives (e.g., JARs inside WARs), not top-level
+            // files which will have absolute paths
+            boolean isNestedArchive = !new File(name).isAbsolute();
 
             CacheEntry cacheEntry = null;
+            SourceSpool sourceSpool = null;
             if (isNestedArchive && cache != null) {
-                // Buffer source to compute hash and check cache
-                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                IOUtils.copy(src, buffer);
-                byte[] sourceBytes = buffer.toByteArray();
+                // Spool source so the cache hash can be computed and, on a cache
+                // miss, the source can be re-read for conversion. Data above
+                // TEMP_FILE_THRESHOLD is spooled to a temp file to avoid
+                // unbounded memory usage.
+                sourceSpool = new SourceSpool(profile);
+                try {
+                    IOUtils.copy(src, sourceSpool);
+                } catch (IOException e) {
+                    sourceSpool.discard();
+                    throw e;
+                }
+                String hash = sourceSpool.getHash();
 
-                // Get cache entry (computes hash and marks as accessed)
-                cacheEntry = cache.getCacheEntry(sourceBytes, profile);
+                // Get cache entry (marks as accessed)
+                cacheEntry = cache.getCacheEntry(hash);
 
                 if (cacheEntry.exists()) {
-                    // Cache hit! Copy cached result to dest and return
-                    logger.log(Level.INFO, sm.getString("cache.hit", name, cacheEntry.getHash()));
-                    cacheEntry.copyToDestination(dest);
+                    try {
+                        // Cache hit! Copy cached result to dest and return
+                        logger.log(Level.INFO, sm.getString("cache.hit", name, hash));
+                        cacheEntry.copyToDestination(dest);
+                    } finally {
+                        sourceSpool.discard();
+                    }
                     // Although it is from the cache, this still counts as converting the source
                     return true;
                 }
 
-                // Cache miss - use buffered source for conversion
-                logger.log(Level.FINE, sm.getString("cache.miss", name, cacheEntry.getHash()));
-                src = new ByteArrayInputStream(sourceBytes);
+                // Cache miss - use spooled source for conversion
+                logger.log(Level.FINE, sm.getString("cache.miss", name, hash));
+                src = sourceSpool.toInputStream();
             }
 
             // Process archive - stream directly to destination (and cache if needed)
-            OutputStream targetOutputStream = dest;
-            if (cacheEntry != null) {
-                // Tee output to both destination and cache temp file
-                targetOutputStream = new org.apache.commons.io.output.TeeOutputStream(dest, cacheEntry.beginStore());
-            }
-
             try {
+                OutputStream targetOutputStream = dest;
+                if (cacheEntry != null) {
+                    // Tee output to both destination and cache temp file
+                    targetOutputStream = new org.apache.commons.io.output.TeeOutputStream(dest, cacheEntry.beginStore());
+                }
+
                 if (zipInMemory) {
                     logger.log(Level.INFO, sm.getString("migration.archive.memory", name));
                     convertedStream = migrateArchiveInMemory(src, targetOutputStream);
@@ -505,12 +551,19 @@ public class Migration {
                     logger.log(Level.FINE, sm.getString("cache.store", cacheEntry.getHash(),
                             Long.valueOf(cacheEntry.getFileSize())));
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 // Rollback cache on error
                 if (cacheEntry != null) {
                     cacheEntry.rollbackStore();
                 }
+                if (e instanceof IOException) {
+                    throw (IOException) e;
+                }
                 throw e;
+            } finally {
+                if (sourceSpool != null) {
+                    sourceSpool.discard();
+                }
             }
         } else {
             for (Converter converter : converters) {
@@ -564,29 +617,20 @@ public class Migration {
     }
 
     /**
-     * Output stream that tracks the CRC32 checksum and byte count of written data.
-     * For data exceeding TEMP_FILE_THRESHOLD, automatically switches from an in-memory
-     * buffer to a temporary file to avoid excessive memory usage. Used for computing
-     * CRC and size of STORED zip entries during streaming migration.
+     * An output stream that spools written data into an in-memory buffer,
+     * switching to a temporary file once the data exceeds
+     * TEMP_FILE_THRESHOLD, to avoid unbounded memory usage. Subclasses track
+     * properties of the spooled data (e.g., a checksum) using
+     * {@link #update(int)} and {@link #update(byte[], int, int)} and consume
+     * or release the spooled data using {@link #writeTo(OutputStream)},
+     * {@link #toInputStream()} or {@link #discard()}.
      */
-    private static class CrcSizeTrackingOutputStream extends OutputStream {
+    private abstract static class SpoolingOutputStream extends OutputStream {
 
-        private final CRC32 crc = new CRC32();
-        private long size;
-        private final OutputStream destStream;
         private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         private FileOutputStream fileOutput;
         private File tempFile;
-
-        /**
-         * Create stream that computes its bytes as CRC while streaming them
-         * to the specified stream on close.
-         * @param destStream the destination stream to write the bytes to
-         */
-        CrcSizeTrackingOutputStream(OutputStream destStream) {
-            super();
-            this.destStream = destStream;
-        }
+        private FileInputStream tempFileIs;
 
         @Override
         public void write(int b) throws IOException {
@@ -596,8 +640,7 @@ public class Migration {
                 buffer.write(b);
                 maybeSwitchToFile();
             }
-            crc.update(b);
-            size++;
+            update(b);
         }
 
         @Override
@@ -608,12 +651,27 @@ public class Migration {
                 buffer.write(b, off, len);
                 maybeSwitchToFile();
             }
-            crc.update(b, off, len);
-            size += len;
+            update(b, off, len);
         }
 
+        /**
+         * Track the written byte.
+         * @param b the byte that was written
+         * @throws IOException if an I/O error occurs
+         */
+        protected abstract void update(int b) throws IOException;
+
+        /**
+         * Track the written bytes.
+         * @param b the bytes that were written
+         * @param off the starting offset in the byte array
+         * @param len the number of bytes that were written
+         * @throws IOException if an I/O error occurs
+         */
+        protected abstract void update(byte[] b, int off, int len) throws IOException;
+
         private void maybeSwitchToFile() throws IOException {
-            if (buffer != null && buffer.size() > TEMP_FILE_THRESHOLD && fileOutput == null) {
+            if (buffer.size() > TEMP_FILE_THRESHOLD && fileOutput == null) {
                 tempFile = createTempFile();
                 tempFile.deleteOnExit();
                 fileOutput = new FileOutputStream(tempFile);
@@ -621,6 +679,120 @@ public class Migration {
                 fileOutput.flush();
                 buffer = null;
             }
+        }
+
+        /**
+         * Write the spooled data to the specified stream and release the
+         * spooled data.
+         * @param dest the stream to write the spooled data to
+         * @throws IOException if an I/O error occurs
+         */
+        protected void writeTo(OutputStream dest) throws IOException {
+            if (fileOutput != null) {
+                IOException closeException = null;
+                try {
+                    fileOutput.close();
+                } catch (IOException e) {
+                    closeException = e;
+                } finally {
+                    fileOutput = null;
+                }
+                try (FileInputStream fis = new FileInputStream(tempFile)) {
+                    IOUtils.copy(fis, dest);
+                } finally {
+                    tempFile.delete();
+                    tempFile = null;
+                }
+                if (closeException != null) {
+                    throw closeException;
+                }
+            } else if (buffer != null) {
+                try {
+                    buffer.writeTo(dest);
+                } finally {
+                    buffer.close();
+                    buffer = null;
+                }
+            }
+        }
+
+        /**
+         * Get an input stream over the spooled data. The spooled data is
+         * retained until {@link #discard()} is called.
+         * @return an input stream over the spooled data
+         * @throws IOException if an I/O error occurs
+         */
+        protected InputStream toInputStream() throws IOException {
+            if (fileOutput != null) {
+                fileOutput.close();
+                fileOutput = null;
+                tempFileIs = new FileInputStream(tempFile);
+                return tempFileIs;
+            }
+            return new ByteArrayInputStream(buffer.toByteArray());
+        }
+
+        /**
+         * Release all spooled data. Safe to call multiple times.
+         */
+        protected void discard() {
+            if (fileOutput != null) {
+                try {
+                    fileOutput.close();
+                } catch (IOException e) {
+                    // Ignore
+                }
+                fileOutput = null;
+            }
+            if (tempFileIs != null) {
+                try {
+                    tempFileIs.close();
+                } catch (IOException e) {
+                    // Ignore
+                }
+                tempFileIs = null;
+            }
+            if (tempFile != null) {
+                tempFile.delete();
+                tempFile = null;
+            }
+            buffer = null;
+        }
+    }
+
+    /**
+     * Output stream that tracks the CRC32 checksum and byte count of written
+     * data, spooling to a temporary file when the data exceeds
+     * TEMP_FILE_THRESHOLD to avoid excessive memory usage. On close, the
+     * spooled data is written to the destination stream. Used for computing
+     * the CRC and size of STORED zip entries during streaming migration.
+     */
+    private static class CrcSizeTrackingOutputStream extends SpoolingOutputStream {
+
+        private final CRC32 crc = new CRC32();
+        private long size;
+        private final OutputStream destStream;
+
+        /**
+         * Create stream that computes the CRC and size of its bytes as they
+         * are written and writes those bytes to the specified stream on
+         * close.
+         * @param destStream the destination stream to write the bytes to
+         */
+        CrcSizeTrackingOutputStream(OutputStream destStream) {
+            this.destStream = destStream;
+        }
+
+        @Override
+        protected void update(int b) {
+            crc.update(b);
+            size++;
+        }
+
+        @Override
+        protected void update(byte[] b, int off, int len) {
+            crc.update(b, off, len);
+            size += len;
         }
 
         public long getSize() {
@@ -633,25 +805,51 @@ public class Migration {
 
         @Override
         public void close() throws IOException {
-            if (fileOutput != null) {
-                try {
-                    fileOutput.close();
-                } finally {
-                    fileOutput = null;
-                    try (FileInputStream fis = new FileInputStream(tempFile)) {
-                        IOUtils.copy(fis, destStream);
-                    } finally {
-                        tempFile.delete();
-                    }
-                }
-            } else if (buffer != null) {
-                try {
-                    buffer.writeTo(destStream);
-                } finally {
-                    buffer.close();
-                    buffer = null;
-                }
+            writeTo(destStream);
+        }
+    }
+
+    /**
+     * Spools archive source data while computing the SHA-256 hash used to
+     * key the migration cache. The hash includes the profile name and must
+     * be computed the same way as MigrationCache computes cache hashes.
+     */
+    private static class SourceSpool extends SpoolingOutputStream {
+
+        private final MessageDigest digest;
+
+        SourceSpool(EESpecProfile profile) throws IOException {
+            try {
+                digest = MessageDigest.getInstance("SHA-256");
+                // Include profile name in hash to differentiate between profiles
+                digest.update(profile.toString().getBytes(StandardCharsets.UTF_8));
+            } catch (NoSuchAlgorithmException e) {
+                throw new IOException(sm.getString("cache.hashError"), e);
             }
+        }
+
+        @Override
+        protected void update(int b) {
+            digest.update((byte) b);
+        }
+
+        @Override
+        protected void update(byte[] b, int off, int len) {
+            digest.update(b, off, len);
+        }
+
+        /**
+         * Get the hash of the spooled data. Must only be called once all data
+         * has been written.
+         * @return the hash as a hex string
+         */
+        String getHash() {
+            byte[] hashBytes = digest.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hashBytes) {
+                sb.append(String.format("%02x", Integer.valueOf(b & 0xFF)));
+            }
+            return sb.toString();
         }
     }
 }

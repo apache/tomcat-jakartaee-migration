@@ -789,6 +789,131 @@ public class MigrationTest {
         }
     }
 
+    @Test
+    public void testMigrateNestedLargeArchiveWithCacheStreaming() throws Exception {
+        // A nested archive larger than TEMP_FILE_THRESHOLD (10MB) forces the
+        // SourceSpool to switch from its in-memory buffer to a temp file
+        // while computing the cache hash and to re-read the spooled source
+        // from that temp file on a cache miss.
+        byte[] largeContent = new byte[11 * 1024 * 1024]; // 11MB
+        for (int i = 0; i < largeContent.length; i++) {
+            largeContent[i] = (byte) (i % 256);
+        }
+        File largeNestedJar = createLargeNestedJar(largeContent);
+        assertTrue("Nested JAR should exceed the temp file threshold",
+                largeNestedJar.length() > 10 * 1024 * 1024);
+
+        File warFile = createWarWithNestedJar(largeNestedJar, "large-spooled.war");
+        File cacheDir = tempFolder.newFolder("large-spooled-cache");
+        File warTarget = tempFolder.newFile("large-spooled-migrated.war");
+
+        Migration migration = new Migration();
+        migration.setSource(warFile);
+        migration.setDestination(warTarget);
+        migration.setCache(new MigrationCache(cacheDir, 30));
+        migration.setZipInMemory(false); // Streaming mode
+        migration.execute();
+
+        assertTrue("Target WAR should exist", warTarget.exists());
+        assertTrue("Nested JAR should have been converted", migration.hasConverted());
+
+        // Cache miss: the converted nested JAR should be stored in the cache
+        // using the hash computed from the spooled (temp file) source
+        assertNotNull("Converted nested JAR should be stored in the cache", findCachedJar(cacheDir));
+
+        verifyNestedJarContentMigrated(warTarget, "WEB-INF/lib/nested.jar", "jakarta.servlet");
+        verifyLargeNestedEntryPreserved(warTarget, largeContent);
+    }
+
+    @Test
+    public void testMigrateNestedLargeArchiveWithCacheInMemory() throws Exception {
+        // As testMigrateNestedLargeArchiveWithCacheStreaming but with
+        // in-memory archive processing, which also spools the nested archive
+        // to a temp file once it exceeds TEMP_FILE_THRESHOLD (10MB).
+        byte[] largeContent = new byte[11 * 1024 * 1024]; // 11MB
+        for (int i = 0; i < largeContent.length; i++) {
+            largeContent[i] = (byte) (i % 256);
+        }
+        File largeNestedJar = createLargeNestedJar(largeContent);
+        assertTrue("Nested JAR should exceed the temp file threshold",
+                largeNestedJar.length() > 10 * 1024 * 1024);
+
+        File warFile = createWarWithNestedJar(largeNestedJar, "large-spooled-memory.war");
+        File cacheDir = tempFolder.newFolder("large-spooled-memory-cache");
+        File warTarget = tempFolder.newFile("large-spooled-memory-migrated.war");
+
+        Migration migration = new Migration();
+        migration.setSource(warFile);
+        migration.setDestination(warTarget);
+        migration.setCache(new MigrationCache(cacheDir, 30));
+        migration.setZipInMemory(true); // In-memory mode
+        migration.execute();
+
+        assertTrue("Target WAR should exist", warTarget.exists());
+        assertTrue("Nested JAR should have been converted", migration.hasConverted());
+
+        assertNotNull("Converted nested JAR should be stored in the cache", findCachedJar(cacheDir));
+
+        verifyNestedJarContentMigrated(warTarget, "WEB-INF/lib/nested.jar", "jakarta.servlet");
+        verifyLargeNestedEntryPreserved(warTarget, largeContent);
+    }
+
+    @Test
+    public void testMigrateNestedLargeArchiveWithCacheHit() throws Exception {
+        // Two WARs with the same nested JAR larger than TEMP_FILE_THRESHOLD
+        // (10MB). The first migration is a cache miss that stores the
+        // converted nested JAR. The second migration must hit the cache using
+        // a hash computed from the temp file based SourceSpool.
+        byte[] largeContent = new byte[11 * 1024 * 1024]; // 11MB
+        for (int i = 0; i < largeContent.length; i++) {
+            largeContent[i] = (byte) (i % 256);
+        }
+        File largeNestedJar = createLargeNestedJar(largeContent);
+
+        File warFile1 = createWarWithNestedJar(largeNestedJar, "large-hit-1.war");
+        File cacheDir = tempFolder.newFolder("large-hit-cache");
+
+        // First migration - cache miss
+        File warTarget1 = tempFolder.newFile("large-hit-1-migrated.war");
+        Migration migration1 = new Migration();
+        migration1.setSource(warFile1);
+        migration1.setDestination(warTarget1);
+        MigrationCache cache = new MigrationCache(cacheDir, 30);
+        migration1.setCache(cache);
+        migration1.setZipInMemory(false);
+        migration1.execute();
+
+        assertTrue("First target WAR should exist", warTarget1.exists());
+        File cachedJar = findCachedJar(cacheDir);
+        assertNotNull("Converted nested JAR should be stored in the cache", cachedJar);
+
+        // Replace the cached content with a canary: if the second migration
+        // hits the cache, the nested JAR in the second WAR must be a byte
+        // for byte copy of the canary.
+        byte[] canary = "cached large nested jar".getBytes(StandardCharsets.ISO_8859_1);
+        Files.write(cachedJar.toPath(), canary);
+
+        // Second migration - should hit the cache for the nested JAR
+        File warFile2 = createWarWithNestedJar(largeNestedJar, "large-hit-2.war");
+        File warTarget2 = tempFolder.newFile("large-hit-2-migrated.war");
+        Migration migration2 = new Migration();
+        migration2.setSource(warFile2);
+        migration2.setDestination(warTarget2);
+        migration2.setCache(cache);
+        migration2.setZipInMemory(false);
+        migration2.execute();
+
+        assertTrue("Second target WAR should exist", warTarget2.exists());
+
+        // First WAR must have the migrated nested content
+        verifyNestedJarContentMigrated(warTarget1, "WEB-INF/lib/nested.jar", "jakarta.servlet");
+
+        // Second WAR's nested JAR must be served from the cache (the canary)
+        File nestedJarInWar = extractNestedJarFromWar(warTarget2, "WEB-INF/lib/nested.jar");
+        assertArrayEquals("Nested JAR should be served from the cache", canary,
+                Files.readAllBytes(nestedJarInWar.toPath()));
+    }
+
     private File createWarWithNestedJar(File nestedJar, String warName) throws Exception {
         File warFile = tempFolder.newFile(warName);
         byte[] nestedJarBytes = Files.readAllBytes(nestedJar.toPath());
@@ -816,6 +941,77 @@ public class MigrationTest {
             zos.closeArchiveEntry();
         }
         return nestedJar;
+    }
+
+    private File createLargeNestedJar(byte[] largeContent) throws Exception {
+        // Create a nested JAR with a large STORED entry (so the JAR exceeds
+        // TEMP_FILE_THRESHOLD) plus a text entry with javax references so the
+        // migration converts the archive
+        File largeNestedJar = tempFolder.newFile("large-nested.jar");
+        try (FileOutputStream fos = new FileOutputStream(largeNestedJar);
+                org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream zos =
+                        new org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream(fos)) {
+            org.apache.commons.compress.archivers.zip.ZipArchiveEntry largeEntry =
+                    new org.apache.commons.compress.archivers.zip.ZipArchiveEntry("large-data.bin");
+            largeEntry.setMethod(org.apache.commons.compress.archivers.zip.ZipArchiveEntry.STORED);
+            largeEntry.setSize(largeContent.length);
+            CRC32 crc = new CRC32();
+            crc.update(largeContent);
+            largeEntry.setCrc(crc.getValue());
+            zos.putArchiveEntry(largeEntry);
+            zos.write(largeContent);
+            zos.closeArchiveEntry();
+
+            org.apache.commons.compress.archivers.zip.ZipArchiveEntry textEntry =
+                    new org.apache.commons.compress.archivers.zip.ZipArchiveEntry("nested.txt");
+            zos.putArchiveEntry(textEntry);
+            zos.write("javax.servlet.http.HttpServlet".getBytes(StandardCharsets.ISO_8859_1));
+            zos.closeArchiveEntry();
+        }
+        return largeNestedJar;
+    }
+
+    private File extractNestedJarFromWar(File warFile, String nestedEntryName) throws Exception {
+        try (JarFile war = new JarFile(warFile)) {
+            JarEntry nestedEntry = war.getJarEntry(nestedEntryName);
+            assertNotNull("Nested JAR should exist in " + warFile.getName(), nestedEntry);
+            byte[] nestedJarBytes = readAllBytes(war.getInputStream(nestedEntry), (int) nestedEntry.getSize());
+            File nestedJar = File.createTempFile("nested-large", ".jar");
+            nestedJar.deleteOnExit();
+            Files.write(nestedJar.toPath(), nestedJarBytes);
+            return nestedJar;
+        }
+    }
+
+    private void verifyLargeNestedEntryPreserved(File warFile, byte[] expectedLargeContent) throws Exception {
+        File nestedJarInWar = extractNestedJarFromWar(warFile, "WEB-INF/lib/nested.jar");
+        try (JarFile nestedJar = new JarFile(nestedJarInWar)) {
+            JarEntry largeEntry = nestedJar.getJarEntry("large-data.bin");
+            assertNotNull("Large entry should exist in the migrated nested JAR", largeEntry);
+            assertEquals("Large entry size should be preserved", expectedLargeContent.length,
+                    largeEntry.getSize());
+            byte[] readContent = readAllBytes(nestedJar.getInputStream(largeEntry), (int) largeEntry.getSize());
+            assertArrayEquals("Large entry content should be preserved", expectedLargeContent, readContent);
+        }
+    }
+
+    private File findCachedJar(File cacheDir) {
+        File[] subdirs = cacheDir.listFiles();
+        if (subdirs != null) {
+            for (File subdir : subdirs) {
+                if (subdir.isDirectory()) {
+                    File[] files = subdir.listFiles();
+                    if (files != null) {
+                        for (File file : files) {
+                            if (file.isFile() && file.getName().endsWith(".jar")) {
+                                return file;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private void verifyHelloCGIMigrated(File jarFileTarget) throws Exception {

@@ -35,6 +35,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Cache for storing and retrieving pre-converted archive files.
@@ -76,8 +77,10 @@ public class MigrationCache {
 
     private static final Logger logger = Logger.getLogger(MigrationCache.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(MigrationCache.class);
+
     private static final String METADATA_FILE = "cache-metadata.txt";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final Pattern HASH_PATTERN = Pattern.compile("[0-9a-f]{64}");
 
     private final File cacheDir;
     private final int retentionDays;
@@ -88,12 +91,17 @@ public class MigrationCache {
      * Construct a new migration cache.
      *
      * @param cacheDir the directory to store cached files
-     * @param retentionDays the number of days to retain cached files
+     * @param retentionDays the number of days to retain cached files (minimum 1)
+     * @throws IllegalArgumentException if cacheDir is null or retentionDays is
+     *                                  less than 1
      * @throws IOException if the cache directory cannot be created
      */
     public MigrationCache(File cacheDir, int retentionDays) throws IOException {
         if (cacheDir == null) {
             throw new IllegalArgumentException(sm.getString("cache.nullDirectory"));
+        }
+        if (retentionDays < 1) {
+            throw new IllegalArgumentException(sm.getString("cache.invalidRetentionDays", Integer.valueOf(retentionDays)));
         }
 
         this.retentionDays = retentionDays;
@@ -170,6 +178,10 @@ public class MigrationCache {
                 String[] parts = line.split("\\|");
                 if (parts.length == 2) {
                     String hash = parts[0];
+                    if (!HASH_PATTERN.matcher(hash).matches()) {
+                        logger.log(Level.WARNING, sm.getString("cache.metadata.invalidLine", line));
+                        continue;
+                    }
                     try {
                         LocalDate lastAccessed = LocalDate.parse(parts[1], DATE_FORMATTER);
                         cacheMetadata.put(hash, lastAccessed);
@@ -240,10 +252,22 @@ public class MigrationCache {
      * @return a CacheEntry object with all operations for this entry
      * @throws IOException if an I/O error occurs
      */
-    public CacheEntry getCacheEntry(byte[] sourceBytes, EESpecProfile profile) throws IOException {
+    public synchronized CacheEntry getCacheEntry(byte[] sourceBytes, EESpecProfile profile) throws IOException {
         // Compute hash once (includes profile)
-        String hash = computeHash(sourceBytes, profile);
+        return getCacheEntry(computeHash(sourceBytes, profile));
+    }
 
+
+    /**
+     * Get a cache entry for a pre-computed hash.
+     *
+     * @param hash the pre-computed hash of the profile name and the
+     *             pre-conversion archive content (computed the same way as
+     *             {@link #computeHash(byte[], EESpecProfile)})
+     * @return a CacheEntry object with all operations for this entry
+     * @throws IOException if an I/O error occurs
+     */
+    public synchronized CacheEntry getCacheEntry(String hash) throws IOException {
         // Get cache file location
         File cachedFile = getCacheFile(hash);
         boolean exists = cachedFile.exists();
@@ -308,7 +332,7 @@ public class MigrationCache {
      *
      * @throws IOException if an I/O error occurs
      */
-    public void clear() throws IOException {
+    public synchronized void clear() throws IOException {
         deleteDirectory(cacheDir);
         cacheMetadata.clear();
         if (!cacheDir.mkdirs() && !cacheDir.exists()) {
@@ -372,7 +396,7 @@ public class MigrationCache {
      *
      * @throws IOException if an I/O error occurs
      */
-    public void pruneCache() throws IOException {
+    public synchronized void pruneCache() throws IOException {
         LocalDate cutoffDate = LocalDate.now().minusDays(retentionDays);
         int prunedCount = 0;
         long prunedSize = 0;
@@ -420,12 +444,13 @@ public class MigrationCache {
 
     /**
      * Finalize cache operations - save metadata and perform cleanup.
-     * Should be called after migration completes.
      *
      * @throws IOException if an I/O error occurs
+     * @deprecated Use {@link #pruneCache()} instead. This method is retained
+     *             for backward compatibility but performs redundant operations.
      */
     @Deprecated
-    public void finalizeCacheOperations() throws IOException {
+    public synchronized void finalizeCacheOperations() throws IOException {
         // Save updated metadata
         saveMetadata();
 
