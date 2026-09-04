@@ -25,16 +25,6 @@ import java.util.regex.Pattern;
  */
 public interface EESpecProfile {
     /**
-     * Convert the specified name to the target namespace.
-     * @param name the name to convert
-     * @return the converted name
-     */
-    default String convert(String name) {
-        Matcher m = getPattern().matcher(name);
-        return m.replaceAll(getTarget() + "$1");
-    }
-
-    /**
      * The source namespace.
      * @return the source namespace
      */
@@ -51,5 +41,22 @@ public interface EESpecProfile {
      * @return the pattern
      */
     Pattern getPattern();
+
+    /**
+     * Convert the specified name to the target namespace.
+     * <p>
+     * The pattern returned by {@link #getPattern()} must contain at least one
+     * capture group. Group 1 is the part of the name that follows the source
+     * namespace and is preserved in the converted result.
+     * <p>
+     * Names that do not match the pattern are returned unchanged.
+     *
+     * @param name the name to convert
+     * @return the converted name
+     */
+    default String convert(String name) {
+        Matcher m = getPattern().matcher(name);
+        return m.replaceAll(Matcher.quoteReplacement(getTarget()) + "$1");
+    }
 }
 

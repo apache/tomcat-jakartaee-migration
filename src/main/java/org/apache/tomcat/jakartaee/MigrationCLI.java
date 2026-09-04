@@ -50,9 +50,8 @@ public class MigrationCLI {
     /**
      * Main method for the CLI tool.
      * @param args the command line arguments
-     * @throws IOException when an exception occurs
      */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 
         // Defaults
         System.setProperty("java.util.logging.SimpleFormatter.format", "%5$s%n");
@@ -138,15 +137,20 @@ public class MigrationCLI {
         String source = arguments.get(0);
         String dest = arguments.get(1);
 
-        migration.setSource(new File(source));
-        migration.setDestination(new File(dest));
+        try {
+            migration.setSource(new File(source));
+            migration.setDestination(new File(dest));
 
-        if (enableCache) {
-            MigrationCache migrationCache = new MigrationCache(cacheDir, cacheRetentionDays);
-            migration.setCache(migrationCache);
+            if (enableCache) {
+                MigrationCache migrationCache = new MigrationCache(cacheDir, cacheRetentionDays);
+                migration.setCache(migrationCache);
+            }
+
+            migration.execute();
+        } catch (IOException | IllegalArgumentException e) {
+            System.err.println(sm.getString("migration.error") + ": " + e.getMessage());
+            System.exit(1);
         }
-
-        migration.execute();
     }
 
     private static void invalidArguments() {

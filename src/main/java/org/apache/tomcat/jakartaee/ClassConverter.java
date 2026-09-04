@@ -27,6 +27,7 @@ import java.security.ProtectionDomain;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.bcel.classfile.ClassFormatException;
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.Constant;
 import org.apache.bcel.classfile.ConstantUtf8;
@@ -108,13 +109,20 @@ public class ClassConverter implements Converter, ClassFileTransformer {
      * @param profile the specification profile to use
      * @param loader the class loader
      * @return true if conversion occurred
-     * @throws IOException rethrow on byte read or write
+     * @throws IOException on byte read or write, or if the class file is malformed
      */
     protected boolean convertInternal(String path, InputStream src, OutputStream dest, EESpecProfile profile, ClassLoader loader)
             throws IOException {
         byte[] classBytes = IOUtils.toByteArray(src);
         ClassParser parser = new ClassParser(new ByteArrayInputStream(classBytes), "unknown");
-        JavaClass javaClass = parser.parse();
+        JavaClass javaClass;
+        try {
+            javaClass = parser.parse();
+        } catch (ClassFormatException e) {
+            // BCEL reports malformed class files with an unchecked exception.
+            // Wrap it so callers only deal with the documented IOException.
+            throw new IOException(sm.getString("classConverter.invalidClass", path), e);
+        }
 
         boolean converted = false;
 
@@ -164,6 +172,11 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                             result.append(convertedFragment);
                         }
                         newString = result.toString();
+                        if (newString.equals(str)) {
+                            // All converted fragments were reverted because the
+                            // target classes do not exist in the container.
+                            continue;
+                        }
                     }
                     c = new ConstantUtf8(newString);
                     constantPool[i] = c;
