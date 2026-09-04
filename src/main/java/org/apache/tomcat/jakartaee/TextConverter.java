@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.IOUtils;
+
 /**
  * Converter for text resources.
  */
@@ -76,7 +78,9 @@ public class TextConverter implements Converter {
      */
     @Override
     public boolean convert(String path, InputStream src, OutputStream dest, EESpecProfile profile) throws IOException {
-        String srcString = Util.toString(src, StandardCharsets.ISO_8859_1);
+        byte[] srcBytes = IOUtils.toByteArray(src);
+        String srcString = new String(srcBytes, StandardCharsets.ISO_8859_1);
+
         String destString = profile.convert(srcString);
         // Object comparison is deliberate here
         boolean converted = srcString != destString;
@@ -85,14 +89,14 @@ public class TextConverter implements Converter {
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE, sm.getString("textConverter.converted", path));
             }
+            ByteArrayInputStream bais = new ByteArrayInputStream(destString.getBytes(StandardCharsets.ISO_8859_1));
+            Util.copy(bais, dest);
         } else {
             if (logger.isLoggable(Level.FINEST)) {
                 logger.log(Level.FINEST, sm.getString("textConverter.noConversion", path));
             }
+            Util.copy(new ByteArrayInputStream(srcBytes), dest);
         }
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(destString.getBytes(StandardCharsets.ISO_8859_1));
-        Util.copy(bais, dest);
 
         return converted;
     }
