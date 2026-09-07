@@ -46,7 +46,7 @@ public class AntHandlerTest {
         handler.publish(record);
 
         assertEquals(1, testTask.logMessages.size());
-        assertEquals((int) Project.MSG_ERR, (int) testTask.logLevels.get(0));
+        assertEquals(Project.MSG_ERR, testTask.logLevels.get(0).intValue());
         assertEquals("Severe message", testTask.logMessages.get(0));
     }
 
@@ -57,7 +57,7 @@ public class AntHandlerTest {
         handler.publish(record);
 
         assertEquals(1, testTask.logMessages.size());
-        assertEquals((int) Project.MSG_WARN, (int) testTask.logLevels.get(0));
+        assertEquals(Project.MSG_WARN, testTask.logLevels.get(0).intValue());
         assertEquals("Warning message", testTask.logMessages.get(0));
     }
 
@@ -68,7 +68,7 @@ public class AntHandlerTest {
         handler.publish(record);
 
         assertEquals(1, testTask.logMessages.size());
-        assertEquals((int) Project.MSG_INFO, (int) testTask.logLevels.get(0));
+        assertEquals(Project.MSG_INFO, testTask.logLevels.get(0).intValue());
         assertEquals("Info message", testTask.logMessages.get(0));
     }
 
@@ -79,7 +79,7 @@ public class AntHandlerTest {
         handler.publish(record);
 
         assertEquals(1, testTask.logMessages.size());
-        assertEquals((int) Project.MSG_VERBOSE, (int) testTask.logLevels.get(0));
+        assertEquals(Project.MSG_VERBOSE, testTask.logLevels.get(0).intValue());
         assertEquals("Fine message", testTask.logMessages.get(0));
     }
 
@@ -90,7 +90,7 @@ public class AntHandlerTest {
         handler.publish(record);
 
         assertEquals(1, testTask.logMessages.size());
-        assertEquals((int) Project.MSG_DEBUG, (int) testTask.logLevels.get(0));
+        assertEquals(Project.MSG_DEBUG, testTask.logLevels.get(0).intValue());
         assertEquals("Finer message", testTask.logMessages.get(0));
     }
 
@@ -101,7 +101,7 @@ public class AntHandlerTest {
         handler.publish(record);
 
         assertEquals(1, testTask.logMessages.size());
-        assertEquals((int) Project.MSG_DEBUG, (int) testTask.logLevels.get(0));
+        assertEquals(Project.MSG_DEBUG, testTask.logLevels.get(0).intValue());
         assertEquals("Finest message", testTask.logMessages.get(0));
     }
 
@@ -179,14 +179,14 @@ public class AntHandlerTest {
         @Override
         public void log(String message, int level) {
             logMessages.add(message);
-            logLevels.add(level);
+            logLevels.add(Integer.valueOf(level));
             logThrown.add(null);
         }
 
         @Override
         public void log(String message, Throwable throwable, int level) {
             logMessages.add(message);
-            logLevels.add(level);
+            logLevels.add(Integer.valueOf(level));
             logThrown.add(throwable);
         }
 

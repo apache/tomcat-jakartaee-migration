@@ -249,7 +249,8 @@ public class MigrationCacheTest {
     @Test
     public void testCacheNullDirectory() throws Exception {
         try {
-            new MigrationCache(null, 30);
+            @SuppressWarnings("unused")
+            Object obj = new MigrationCache(null, 30);
             fail("Should throw IllegalArgumentException for null directory");
         } catch (IllegalArgumentException e) {
             assertTrue("Error message should mention null", e.getMessage().contains("null") || e.getMessage().contains("Null"));
@@ -262,7 +263,8 @@ public class MigrationCacheTest {
         Files.createFile(regularFile.toPath());
 
         try {
-            new MigrationCache(regularFile, 30);
+            @SuppressWarnings("unused")
+            Object obj = new MigrationCache(regularFile, 30);
             fail("Should throw IOException when path is not a directory");
         } catch (IOException e) {
             // Expected
@@ -336,7 +338,8 @@ public class MigrationCacheTest {
         assertTrue("Temp file should exist before cleanup", tempFile.exists());
 
         // Create cache - should clean up temp files
-        new MigrationCache(tempCacheDir, 30);
+        @SuppressWarnings("unused")
+        Object obj = new MigrationCache(tempCacheDir, 30);
 
         assertFalse("Temp file should be cleaned up on cache init", tempFile.exists());
     }
@@ -395,7 +398,8 @@ public class MigrationCacheTest {
         }
 
         // Should handle corrupt metadata gracefully
-        new MigrationCache(tempCacheDir, 30);
+        @SuppressWarnings("unused")
+        Object obj = new MigrationCache(tempCacheDir, 30);
     }
 
     @Test
@@ -409,7 +413,8 @@ public class MigrationCacheTest {
         }
 
         // Should handle invalid dates gracefully
-        new MigrationCache(tempCacheDir, 30);
+        @SuppressWarnings("unused")
+        Object obj = new MigrationCache(tempCacheDir, 30);
     }
 
     @Test
