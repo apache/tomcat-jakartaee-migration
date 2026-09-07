@@ -9,11 +9,12 @@
 - Improve cache robustness. (remm)
 - Improve robustness of source and destination manipulation operations when migrating. (remm)
 - Improve processing of relevant version numbers in manifests. (remm)
+- Avoid shallow copy style issue when converting manifests attributes. (remm)
 
 ## 1.0.12
 - Add Maven Wrapper Plugin to manage the Maven wrapper. (markt)
 - Update the Maven Wrapper and switch to 'only-script' configuration. (markt)
-- Enable successful running of tests without having to clean the output directory bewteen test runs. (markt)
+- Enable successful running of tests without having to clean the output directory between test runs. (markt)
 
 ## 1.0.11
 - Update Eclipse OSGI to 3.23.200. (dependabot/remm)

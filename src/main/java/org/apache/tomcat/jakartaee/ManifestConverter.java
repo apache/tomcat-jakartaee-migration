@@ -120,7 +120,14 @@ public class ManifestConverter implements Converter {
             return false;
         }
 
+        // The JDK Manifest copy constructor shares the section attributes with
+        // the source manifest, so changes to sections made below would also be
+        // visible in the source and be lost when the (equal) source bytes are
+        // written back unchanged. Replace the sections with copies.
         Manifest destManifest = new Manifest(srcManifest);
+        for (Entry<String, Attributes> entry : srcManifest.getEntries().entrySet()) {
+            destManifest.getEntries().put(entry.getKey(), new Attributes(entry.getValue()));
+        }
 
         // Only consider profile conversions, allowing Migration.hasConverted to be true
         // only when there are actual

@@ -224,4 +224,152 @@ public class ManifestConverterTest {
 
         assertFalse("Should not convert manifest with no javax packages", converted);
     }
+
+    @Test
+    public void testReplaceVersionInNonOSGiHeader() throws IOException {
+        ManifestConverter converter = new ManifestConverter();
+
+        // A header that is not Import-Package/Export-Package: the version of
+        // the jakarta.servlet package should be replaced with the import
+        // version range, other packages should be left alone
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes().putValue("Custom-Header",
+                "javax.servlet;version=\"4.0.0\",javax.sql.DataSource;version=\"2.0.0\"");
+
+        ByteArrayOutputStream manifestBytes = new ByteArrayOutputStream();
+        manifest.write(manifestBytes);
+
+        ByteArrayOutputStream dest = new ByteArrayOutputStream();
+        boolean converted = converter.convert("META-INF/MANIFEST.MF",
+                new ByteArrayInputStream(manifestBytes.toByteArray()), dest, EESpecProfiles.TOMCAT);
+
+        assertTrue("Version replacement should count as a conversion", converted);
+        String result = dest.toString("UTF-8").replaceAll("\\s", "");
+        assertTrue(result, result.contains(
+                "jakarta.servlet;version=\"[5.0.0,7.0.0)\",javax.sql.DataSource;version=\"2.0.0\""));
+    }
+
+    @Test
+    public void testReplaceVersionUsesConfiguredVersion() throws IOException {
+        ManifestConverter converter = new ManifestConverter();
+        converter.setServletImportVersion("[6.0.0,8.0.0)");
+
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes().putValue("Custom-Header",
+                "jakarta.servlet.http;version=\"4.0.0\"");
+
+        ByteArrayOutputStream manifestBytes = new ByteArrayOutputStream();
+        manifest.write(manifestBytes);
+
+        ByteArrayOutputStream dest = new ByteArrayOutputStream();
+        boolean converted = converter.convert("META-INF/MANIFEST.MF",
+                new ByteArrayInputStream(manifestBytes.toByteArray()), dest, EESpecProfiles.TOMCAT);
+
+        assertTrue("Version replacement should count as a conversion", converted);
+        String result = dest.toString("UTF-8").replaceAll("\\s", "");
+        assertTrue(result,
+                result.contains("jakarta.servlet.http;version=\"[6.0.0,8.0.0)\""));
+    }
+
+    @Test
+    public void testReplaceVersionInSectionAttributes() throws IOException {
+        ManifestConverter converter = new ManifestConverter();
+
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        Attributes section = new Attributes();
+        section.putValue("Custom-Header", "javax.servlet;version=\"4.0.0\"");
+        manifest.getEntries().put("test.txt", section);
+
+        ByteArrayOutputStream manifestBytes = new ByteArrayOutputStream();
+        manifest.write(manifestBytes);
+
+        ByteArrayOutputStream dest = new ByteArrayOutputStream();
+        boolean converted = converter.convert("META-INF/MANIFEST.MF",
+                new ByteArrayInputStream(manifestBytes.toByteArray()), dest, EESpecProfiles.TOMCAT);
+
+        assertTrue("Version replacement should count as a conversion", converted);
+        String result = dest.toString("UTF-8").replaceAll("\\s", "");
+        assertTrue(result,
+                result.contains("jakarta.servlet;version=\"[5.0.0,7.0.0)\""));
+    }
+
+    @Test
+    public void testReplaceVersionFallbackOnInvalidImportPackage() throws IOException {
+        ManifestConverter converter = new ManifestConverter();
+
+        // Malformed header: parsing fails so the fallback version replacement
+        // applies the import version range
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes().putValue("Import-Package",
+                "javax.servlet;uses:=\"x\"(;version=\"4.0.0\"");
+
+        ByteArrayOutputStream manifestBytes = new ByteArrayOutputStream();
+        manifest.write(manifestBytes);
+
+        ByteArrayOutputStream dest = new ByteArrayOutputStream();
+        boolean converted = converter.convert("META-INF/MANIFEST.MF",
+                new ByteArrayInputStream(manifestBytes.toByteArray()), dest, EESpecProfiles.TOMCAT);
+
+        assertTrue("Version replacement should count as a conversion", converted);
+        String result = dest.toString("UTF-8").replaceAll("\\s", "");
+        assertTrue(result, result.contains(
+                "jakarta.servlet;uses:=\"x\"(;version=\"[5.0.0,7.0.0)\""));
+    }
+
+    @Test
+    public void testReplaceVersionFallbackOnInvalidExportPackage() throws IOException {
+        ManifestConverter converter = new ManifestConverter();
+
+        // Malformed Export-Package header: parsing fails so the fallback
+        // version replacement applies the single export version (Export-
+        // Package cannot use a version range)
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes().putValue("Export-Package",
+                "javax.servlet;uses:=\"x\"(;version=\"4.0.0\"");
+
+        ByteArrayOutputStream manifestBytes = new ByteArrayOutputStream();
+        manifest.write(manifestBytes);
+
+        ByteArrayOutputStream dest = new ByteArrayOutputStream();
+        boolean converted = converter.convert("META-INF/MANIFEST.MF",
+                new ByteArrayInputStream(manifestBytes.toByteArray()), dest, EESpecProfiles.TOMCAT);
+
+        assertTrue("Version replacement should count as a conversion", converted);
+        String result = dest.toString("UTF-8").replaceAll("\\s", "");
+        assertTrue(result, result.contains(
+                "jakarta.servlet;uses:=\"x\"(;version=\"5.0.0\""));
+    }
+
+    @Test
+    public void testReplaceVersionIgnoresLookalikePackages() throws IOException {
+        ManifestConverter converter = new ManifestConverter();
+
+        // Values that contain the jakarta.servlet string but do not match the
+        // servlet package version pattern must be left unchanged
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes().putValue("Custom-Header",
+                "com.example.jakarta.servlet;version=\"1.0.0\", " +
+                "jakarta.servletX;version=\"1.0.0\", " +
+                "jakarta.servlet");
+
+        ByteArrayOutputStream manifestBytes = new ByteArrayOutputStream();
+        manifest.write(manifestBytes);
+
+        ByteArrayOutputStream dest = new ByteArrayOutputStream();
+        boolean converted = converter.convert("META-INF/MANIFEST.MF",
+                new ByteArrayInputStream(manifestBytes.toByteArray()), dest, EESpecProfiles.TOMCAT);
+
+        assertFalse("Similar package names should not be modified", converted);
+        String result = dest.toString("UTF-8").replaceAll("\\s", "");
+        assertTrue(result, result.contains(
+                "com.example.jakarta.servlet;version=\"1.0.0\"," +
+                "jakarta.servletX;version=\"1.0.0\"," +
+                "jakarta.servlet"));
+    }
 }
