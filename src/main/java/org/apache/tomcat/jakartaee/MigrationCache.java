@@ -229,6 +229,12 @@ public class MigrationCache {
                         for (File file : files) {
                             if (file.isFile() && file.getName().endsWith(".jar")) {
                                 String hash = file.getName().substring(0, file.getName().length() - 4);
+                                // Ignore any file whose name is not a valid
+                                // hash so malformed entries cannot end up in
+                                // the metadata
+                                if (!HASH_PATTERN.matcher(hash).matches()) {
+                                    continue;
+                                }
                                 hashes.add(hash);
                                 if (accessDate != null) {
                                     cacheMetadata.put(hash, accessDate);
@@ -265,9 +271,19 @@ public class MigrationCache {
      *             pre-conversion archive content (computed the same way as
      *             {@link #computeHash(byte[], EESpecProfile)})
      * @return a CacheEntry object with all operations for this entry
+     * @throws IllegalArgumentException if the hash is not a valid hash string
+     *                                  (64 lower-case hexadecimal characters)
      * @throws IOException if an I/O error occurs
      */
     public synchronized CacheEntry getCacheEntry(String hash) throws IOException {
+        // The hash forms part of the path of the cached file. Validate it to
+        // ensure malformed values cannot escape the cache directory (or fail
+        // with a StringIndexOutOfBoundsException when the sub-directory
+        // prefix is extracted).
+        if (hash == null || !HASH_PATTERN.matcher(hash).matches()) {
+            throw new IllegalArgumentException(sm.getString("cache.invalidHash", hash));
+        }
+
         // Get cache file location
         File cachedFile = getCacheFile(hash);
         boolean exists = cachedFile.exists();
