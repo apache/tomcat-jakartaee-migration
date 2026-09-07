@@ -16,11 +16,9 @@
  */
 package org.apache.tomcat.jakartaee;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
@@ -66,20 +64,6 @@ public class Util {
             os.write(buf, 0, numRead);
         }
         os.flush();
-    }
-
-    /**
-     * Convert the input bytes as a string.
-     * @param is the input byte stream
-     * @param charset the charset to use
-     * @return the converted string
-     * @throws IOException if an exception occurs
-     */
-    public static String toString(InputStream is, Charset charset) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Util.copy(is, baos);
-
-        return new String(baos.toByteArray(), charset);
     }
 
     private Util() {

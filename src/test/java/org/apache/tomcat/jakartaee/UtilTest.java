@@ -114,44 +114,4 @@ public class UtilTest {
 
         assertArrayEquals(source, out.toByteArray());
     }
-
-    @Test
-    public void testToString() throws IOException {
-        String original = "Hello, World!";
-        ByteArrayInputStream in = new ByteArrayInputStream(original.getBytes(StandardCharsets.ISO_8859_1));
-
-        String result = Util.toString(in, StandardCharsets.ISO_8859_1);
-
-        assertEquals(original, result);
-    }
-
-    @Test
-    public void testToStringEmpty() throws IOException {
-        ByteArrayInputStream in = new ByteArrayInputStream(new byte[0]);
-
-        String result = Util.toString(in, StandardCharsets.ISO_8859_1);
-
-        assertEquals("", result);
-    }
-
-    @Test
-    public void testToStringUtf8() throws IOException {
-        String original = "Hello, 世界!";
-        ByteArrayInputStream in = new ByteArrayInputStream(original.getBytes(StandardCharsets.UTF_8));
-
-        String result = Util.toString(in, StandardCharsets.UTF_8);
-
-        assertEquals(original, result);
-    }
-
-    @Test
-    public void testToStringBinary() throws IOException {
-        byte[] binary = new byte[]{0, 1, 2, 127, -128, -1};
-        ByteArrayInputStream in = new ByteArrayInputStream(binary);
-
-        String result = Util.toString(in, StandardCharsets.ISO_8859_1);
-
-        assertNotNull(result);
-        assertEquals(binary.length, result.length());
-    }
 }
