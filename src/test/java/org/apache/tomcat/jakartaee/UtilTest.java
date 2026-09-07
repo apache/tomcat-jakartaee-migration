@@ -66,6 +66,21 @@ public class UtilTest {
     }
 
     @Test
+    public void testGetExtensionPathWithEmpty() {
+        assertEquals("", Util.getExtension("/path/some.path/file"));
+    }
+
+    @Test
+    public void testGetExtensionPathWithExtension() {
+        assertEquals("txt", Util.getExtension("/path/some.path/file.txt"));
+    }
+
+    @Test
+    public void testGetExtensionPathRoot() {
+        assertEquals("", Util.getExtension("/"));
+    }
+
+    @Test
     public void testCopy() throws IOException {
         byte[] source = "Hello, World!".getBytes(StandardCharsets.UTF_8);
         ByteArrayInputStream in = new ByteArrayInputStream(source);

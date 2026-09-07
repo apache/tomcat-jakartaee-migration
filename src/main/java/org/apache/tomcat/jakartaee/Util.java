@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Locale;
 
 /**
@@ -29,22 +31,26 @@ import java.util.Locale;
 public class Util {
 
     /**
-     * Get the string after the last dot in the given path.
+     * Get the string after the last dot in filename in the given path / name.
      * <p>
      * Returns the substring after the last '{@code .}' character in the path,
-     * converted to lower case. For paths with dots in directory names, this
-     * may not return the actual file extension.
+     * converted to lower case.
      *
      * @param path the file path or name
      * @return the extension (lowercase) or an empty string if no dot is found
      */
     public static String getExtension(String path) {
+        Path filePath = Paths.get(path).getFileName();
+        if (filePath == null) {
+            return "";
+        }
+        String fileName = filePath.toString();
         // Extract the extension
-        int lastPeriod = path.lastIndexOf('.');
+        int lastPeriod = fileName.lastIndexOf('.');
         if (lastPeriod == -1) {
             return "";
         }
-        return path.substring(lastPeriod + 1).toLowerCase(Locale.ENGLISH);
+        return fileName.substring(lastPeriod + 1).toLowerCase(Locale.ENGLISH);
     }
 
     /**

@@ -10,6 +10,7 @@
 - Improve robustness of source and destination manipulation operations when migrating. (remm)
 - Improve processing of relevant version numbers in manifests. (remm)
 - Avoid shallow copy style issue when converting manifests attributes. (remm)
+- Make file extension check more robust. (markt)
 
 ## 1.0.12
 - Add Maven Wrapper Plugin to manage the Maven wrapper. (markt)
