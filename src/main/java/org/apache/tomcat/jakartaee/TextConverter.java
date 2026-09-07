@@ -61,8 +61,8 @@ public class TextConverter implements Converter {
     public TextConverter() {}
 
     @Override
-    public boolean accepts(String filename) {
-        String extension = Util.getExtension(filename);
+    public boolean accepts(String path) {
+        String extension = Util.getExtension(path);
 
         return supportedExtensions.contains(extension);
     }

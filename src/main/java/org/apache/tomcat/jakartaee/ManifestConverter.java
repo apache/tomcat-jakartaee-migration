@@ -88,14 +88,14 @@ public class ManifestConverter implements Converter {
     }
 
     @Override
-    public boolean accepts(String filename) {
+    public boolean accepts(String path) {
         // Archive entry names always use '/'. Paths generated while
         // migrating a directory tree use the platform separator ('\' on
         // Windows), so both forms must be matched or manifests in an
         // exploded directory would never be converted.
-        if (filename.equals(JarFile.MANIFEST_NAME) ||
-                filename.endsWith(MANIFEST_NAME_PATH) ||
-                filename.endsWith(MANIFEST_NAME_PATH_PLATFORM)) {
+        if (path.equals(JarFile.MANIFEST_NAME) ||
+                path.endsWith(MANIFEST_NAME_PATH) ||
+                path.endsWith(MANIFEST_NAME_PATH_PLATFORM)) {
             return true;
         }
 

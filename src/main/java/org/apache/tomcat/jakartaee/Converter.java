@@ -27,10 +27,10 @@ public interface Converter {
 
     /**
      * Check if the file can be processed by this converter.
-     * @param filename the file name
+     * @param path Path to the file to convert
      * @return true if the converter will process this file
      */
-    boolean accepts(String filename);
+    boolean accepts(String path);
 
     /**
      * Copies the source to the destination, converting it if necessary,

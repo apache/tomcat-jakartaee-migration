@@ -74,8 +74,8 @@ public class ClassConverter implements Converter, ClassFileTransformer {
     }
 
     @Override
-    public boolean accepts(String filename) {
-        String extension = Util.getExtension(filename);
+    public boolean accepts(String path) {
+        String extension = Util.getExtension(path);
         return "class".equals(extension);
     }
 

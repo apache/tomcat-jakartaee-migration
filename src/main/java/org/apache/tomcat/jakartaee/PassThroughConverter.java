@@ -36,7 +36,7 @@ public class PassThroughConverter implements Converter {
     public PassThroughConverter() {}
 
     @Override
-    public boolean accepts(String filename) {
+    public boolean accepts(String path) {
         // Accepts everything
         return true;
     }
