@@ -257,7 +257,7 @@ public class Migration {
                 destination.getAbsolutePath(), profile.toString()));
 
         long t1 = System.nanoTime();
-        boolean failed = false;
+        boolean completed = false;
         try {
             if (source.isDirectory()) {
                 if (!destination.exists()) {
@@ -280,11 +280,14 @@ public class Migration {
                 }
                 migrateFile(source, destination);
             }
-        } catch (IOException e) {
-            failed = true;
-            throw e;
+            completed = true;
         } finally {
-            state = failed ? State.NOT_STARTED : State.COMPLETE;
+            // The migration only counts as complete if it ran to completion.
+            // Any exception that escapes (including unchecked exceptions, for
+            // example from a malformed class file) must leave the state as
+            // NOT_STARTED so a failed migration is never reported as having
+            // completed.
+            state = completed ? State.COMPLETE : State.NOT_STARTED;
 
             // Finalize cache operations (save metadata and prune expired entries).
             // A failure here must not mask a migration failure or cause a
@@ -362,15 +365,27 @@ public class Migration {
                 }
             }
         } else {
-            try (InputStream is = new FileInputStream(src);
-                    OutputStream os = new FileOutputStream(dest)) {
-                if (migrateStream(src.getAbsolutePath(), is, os)) {
-                    converted = true;
+            try (InputStream is = new FileInputStream(src)) {
+                final OutputStream os;
+                try {
+                    os = new FileOutputStream(dest);
+                } catch (IOException | RuntimeException e) {
+                    // The destination could not be opened. Any existing
+                    // destination file has not been modified and must be
+                    // left in place.
+                    throw e;
                 }
-            } catch (IOException e) {
-                // Remove the partially written destination file
-                dest.delete();
-                throw e;
+                // The destination has now been created (and truncated). If
+                // it cannot be written completely, remove the partial file
+                // rather than leaving corrupted output behind.
+                try (OutputStream destStream = os) {
+                    if (migrateStream(src.getAbsolutePath(), is, destStream)) {
+                        converted = true;
+                    }
+                } catch (IOException | RuntimeException e) {
+                    dest.delete();
+                    throw e;
+                }
             }
         }
     }
