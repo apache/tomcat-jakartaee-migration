@@ -502,8 +502,7 @@ public class MigrationTest {
 
         try (org.apache.commons.compress.archivers.zip.ZipFile jar =
                 org.apache.commons.compress.archivers.zip.ZipFile.builder().setFile(jarFileTarget).get()) {
-            org.apache.commons.compress.archivers.zip.ZipArchiveEntry entry =
-                    (org.apache.commons.compress.archivers.zip.ZipArchiveEntry) jar.getEntry("test.txt");
+            org.apache.commons.compress.archivers.zip.ZipArchiveEntry entry = jar.getEntry("test.txt");
             assertNotNull("Entry should exist in migrated JAR", entry);
             assertNull("ZIP64 extra field should have been removed",
                     entry.getExtraField(new org.apache.commons.compress.archivers.zip.ZipShort(1)));
