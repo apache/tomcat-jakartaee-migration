@@ -17,6 +17,7 @@
 package org.apache.tomcat.jakartaee;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -53,6 +54,9 @@ public class ManifestConverter implements Converter {
     private static final StringManager sm = StringManager.getManager(ManifestConverter.class);
 
     private static final String JAKARTA_SERVLET = "jakarta.servlet";
+    private static final String MANIFEST_NAME_PATH = "/" + JarFile.MANIFEST_NAME;
+    private static final String MANIFEST_NAME_PATH_PLATFORM =
+            File.separator + JarFile.MANIFEST_NAME.replace('/', File.separatorChar);
     // Matches a jakarta.servlet (or jakarta.servlet.*) package name, but not a
     // package that merely contains that string (e.g. com.foo.jakarta.servlet or
     // jakarta.servletX), followed by a version attribute.
@@ -85,7 +89,13 @@ public class ManifestConverter implements Converter {
 
     @Override
     public boolean accepts(String filename) {
-        if (filename.equals(JarFile.MANIFEST_NAME) || filename.endsWith("/" + JarFile.MANIFEST_NAME)) {
+        // Archive entry names always use '/'. Paths generated while
+        // migrating a directory tree use the platform separator ('\' on
+        // Windows), so both forms must be matched or manifests in an
+        // exploded directory would never be converted.
+        if (filename.equals(JarFile.MANIFEST_NAME) ||
+                filename.endsWith(MANIFEST_NAME_PATH) ||
+                filename.endsWith(MANIFEST_NAME_PATH_PLATFORM)) {
             return true;
         }
 
@@ -185,20 +195,24 @@ public class ManifestConverter implements Converter {
             }
             String newValue = profile.convert((String) value);
             String header = entry.getKey().toString();
+            // Attribute names are case-insensitive per the JAR file
+            // specification, so the header name must be compared
+            // case-insensitively.
+            boolean exportPackageHeader = Constants.EXPORT_PACKAGE.equalsIgnoreCase(header);
             try {
                 // Need to be careful with OSGI headers.
                 // Specifically, Export-Package cannot specify a version range.
                 // There may be other weird things as well (like directives that have
                 // jakarta.servlet packages).
-                if (Constants.IMPORT_PACKAGE.equals(header)) {
+                if (Constants.IMPORT_PACKAGE.equalsIgnoreCase(header)) {
                     newValue = processImportPackage(newValue);
-                } else if (Constants.EXPORT_PACKAGE.equals(header)) {
+                } else if (exportPackageHeader) {
                     newValue = processExportPackage(newValue);
                 } else {
                     newValue = replaceVersion(newValue);
                 }
             } catch (BundleException e) {
-                newValue = replaceVersion(newValue, !Constants.EXPORT_PACKAGE.equals(header));
+                newValue = replaceVersion(newValue, !exportPackageHeader);
             }
 
             // Value comparison to detect actual changes
