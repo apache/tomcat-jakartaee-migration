@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -487,11 +488,12 @@ public class Migration {
 
 
     private boolean isSignatureFile(String sourceName) {
-        return sourceName.startsWith("META-INF/") && (
-                sourceName.endsWith(".SF") ||
-                sourceName.endsWith(".RSA") ||
-                sourceName.endsWith(".DSA") ||
-                sourceName.endsWith(".EC")
+        String ucSourceName = sourceName.toUpperCase(Locale.ENGLISH);
+        return ucSourceName.startsWith("META-INF/") && (
+                ucSourceName.endsWith(".SF") ||
+                ucSourceName.endsWith(".RSA") ||
+                ucSourceName.endsWith(".DSA") ||
+                ucSourceName.endsWith(".EC")
                 );
     }
 
@@ -586,8 +588,9 @@ public class Migration {
     }
 
     private boolean isArchive(String fileName) {
-        return fileName.endsWith(".jar") || fileName.endsWith(".war") || fileName.endsWith(".ear") ||
-                fileName.endsWith(".zip");
+        String lcFileName = fileName.toLowerCase(Locale.ENGLISH);
+        return lcFileName.endsWith(".jar") || lcFileName.endsWith(".war") || lcFileName.endsWith(".ear") ||
+                lcFileName.endsWith(".zip");
     }
 
 

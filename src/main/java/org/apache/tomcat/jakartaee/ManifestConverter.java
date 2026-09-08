@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.jar.Attributes;
@@ -93,9 +94,11 @@ public class ManifestConverter implements Converter {
         // migrating a directory tree use the platform separator ('\' on
         // Windows), so both forms must be matched or manifests in an
         // exploded directory would never be converted.
-        if (path.equals(JarFile.MANIFEST_NAME) ||
-                path.endsWith(MANIFEST_NAME_PATH) ||
-                path.endsWith(MANIFEST_NAME_PATH_PLATFORM)) {
+        // JarFile is case-insensitive for these files
+        String ucPath = path.toUpperCase(Locale.ENGLISH);
+        if (ucPath.equals(JarFile.MANIFEST_NAME) ||
+                ucPath.endsWith(MANIFEST_NAME_PATH) ||
+                ucPath.endsWith(MANIFEST_NAME_PATH_PLATFORM)) {
             return true;
         }
 
@@ -166,7 +169,7 @@ public class ManifestConverter implements Converter {
 
     private boolean isCryptoSignatureEntry(Attributes attributes) {
         for (Object attributeKey : attributes.keySet()) {
-            if (attributeKey.toString().endsWith("-Digest")) {
+            if (attributeKey.toString().toLowerCase(Locale.ENGLISH).endsWith("-digest")) {
                 return true;
             }
         }
