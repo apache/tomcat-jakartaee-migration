@@ -8,7 +8,7 @@
 - Do not buffer very large nested archives when processing them in streaming mode. (remm)
 - Improve cache robustness. (remm)
 - Improve robustness of source and destination manipulation operations when migrating. (remm)
-- Improve processing of relevant version numbers in manifests. (remm)
+- Improve processing of relevant version numbers in manifests. (remm/markt)
 - Avoid shallow copy style issue when converting manifests attributes. (remm)
 - Make file extension check more robust. (markt)
 

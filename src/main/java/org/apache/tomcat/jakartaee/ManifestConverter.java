@@ -268,16 +268,26 @@ public class ManifestConverter implements Converter {
     }
 
     /**
-     * Determines whether the given package name is the jakarta.servlet package
+     * Determines whether the given package name(s) is(are) the jakarta.servlet package
      * or a sub-package of it (e.g. jakarta.servlet.http). Package names that
      * merely contain that string (e.g. jakarta.servletX or
      * com.foo.jakarta.servlet) are not matched.
-     * @param packageName the package name to test
-     * @return true if the package name is jakarta.servlet or a sub-package of it
+     * <p>
+     * Multi-name inputs are expected to consist of a semi-colon separated list of package names
+     * @param packageName the package name(s) to test.
+     * @return true if the package name(s) is(are) jakarta.servlet or a sub-package of it
      */
     private static boolean isJakartaServletPackage(String packageName) {
-        return packageName != null &&
-                (packageName.equals(JAKARTA_SERVLET) || packageName.startsWith(JAKARTA_SERVLET + "."));
+        if (packageName == null) {
+            return false;
+        }
+        String[] names = packageName.split(";");
+        for (String name : names) {
+            if (!name.equals(JAKARTA_SERVLET) && !name.startsWith(JAKARTA_SERVLET + ".")) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String replaceVersion(String entryValue) {

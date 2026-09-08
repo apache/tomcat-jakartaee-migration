@@ -81,6 +81,28 @@ public class ManifestConverterTest {
     }
 
     @Test
+    public void testConvertMultiNameImportPackage() throws IOException {
+        ManifestConverter converter = new ManifestConverter();
+
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        manifest.getMainAttributes().putValue("Import-Package",
+                "javax.servlet;javax.servlet.http;version=\"[2.0.0,5.0.0)\"");
+
+        ByteArrayOutputStream manifestBytes = new ByteArrayOutputStream();
+        manifest.write(manifestBytes);
+
+        ByteArrayOutputStream dest = new ByteArrayOutputStream();
+        boolean converted = converter.convert("META-INF/MANIFEST.MF",
+                new ByteArrayInputStream(manifestBytes.toByteArray()), dest, EESpecProfiles.TOMCAT);
+
+        assertTrue("Package names should count as a conversion", converted);
+        String result = dest.toString("UTF-8").replaceAll("\\s", "");
+        assertTrue(result, result.contains(
+                "jakarta.servlet;jakarta.servlet.http;version=\"[5.0.0,7.0.0)\""));
+    }
+
+    @Test
     public void testAcceptsRootManifest() {
         ManifestConverter converter = new ManifestConverter();
         assertTrue(converter.accepts("META-INF/MANIFEST.MF"));
