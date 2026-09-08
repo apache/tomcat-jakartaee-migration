@@ -27,6 +27,13 @@ package org.apache.tomcat.jakartaee;
  * rewrite them. The {@code JAVA_NOT_PRESENT_} constants reference a class that
  * does not exist in either namespace, so the converter must leave them
  * unchanged.
+ * <p>
+ * The {@code MULTI_FRAGMENT_} constants mimic a bytecode method descriptor:
+ * multiple {@code ;}-delimited class name fragments in a single constant.
+ * They exercise the loader-guided per-fragment conversion/reversion in
+ * {@link ClassConverter#convertInternal}, which must preserve the {@code ;}
+ * delimiters between fragments regardless of which fragments are converted,
+ * reverted, or a mix of both.
  */
 public class TesterConstants {
 
@@ -34,4 +41,14 @@ public class TesterConstants {
     public static final String JAVA_PRESENT_PATH = "javax/servlet/CommonGatewayInterface";
     public static final String JAVA_NOT_PRESENT_DOT = "javax.servlet.DoesNotExist";
     public static final String JAVA_NOT_PRESENT_PATH = "javax/servlet/DoesNotExist";
+
+    // One fragment resolves in jakarta (must convert), the other does not
+    // (must revert) - the ';' delimiters between and around them must survive.
+    public static final String MULTI_FRAGMENT_PARTIAL =
+            "(Ljavax/servlet/CommonGatewayInterface;Ljavax/servlet/DoesNotExist;)V";
+
+    // Neither fragment resolves in jakarta, so the whole value must revert to
+    // exactly the original string, delimiters included.
+    public static final String MULTI_FRAGMENT_ALL_MISSING =
+            "(Ljavax/servlet/DoesNotExist;Ljavax/servlet/DoesNotExist;)V";
 }

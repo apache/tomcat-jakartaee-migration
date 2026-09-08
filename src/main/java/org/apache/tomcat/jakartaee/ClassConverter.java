@@ -24,8 +24,12 @@ import java.io.OutputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.security.ProtectionDomain;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.bcel.classfile.ClassFormatException;
 import org.apache.bcel.classfile.ClassParser;
@@ -47,6 +51,13 @@ public class ClassConverter implements Converter, ClassFileTransformer {
 
     private static final Logger logger = Logger.getLogger(ClassConverter.class.getCanonicalName());
     private static final StringManager sm = StringManager.getManager(ClassConverter.class);
+
+    // Delimiters used to split a ConstantUtf8 value (e.g. a method
+    // descriptor) into independently convertible fragments. profile.convert()
+    // never matches or introduces these characters, so the delimiter
+    // sequence found in the original string is also valid for the converted
+    // string and can be reinserted verbatim when fragments are reassembled.
+    private static final Pattern FRAGMENT_DELIMITER = Pattern.compile("[;<]");
 
     /**
      * The configured spec profile.
@@ -142,10 +153,19 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                         // independently so we never need to revert a conversion.
                         String[] convertedFragments = newString.split(";|<", -1);
                         String[] originalFragments = str.split(";|<", -1);
+                        // Capture the delimiters split() discarded so they can be
+                        // reinserted below; there is exactly one fewer delimiter
+                        // than fragments.
+                        List<String> delimiters = new ArrayList<>();
+                        Matcher delimiterMatcher = FRAGMENT_DELIMITER.matcher(str);
+                        while (delimiterMatcher.find()) {
+                            delimiters.add(delimiterMatcher.group());
+                        }
                         StringBuilder result = new StringBuilder();
                         for (int fi = 0; fi < convertedFragments.length; fi++) {
                             String convertedFragment = convertedFragments[fi];
                             String originalFragment = originalFragments[fi];
+                            String fragmentToAppend = convertedFragment;
                             int pos = convertedFragment.indexOf(profile.getTarget() + "/");
                             boolean dotMode = false;
                             if (pos < 0) {
@@ -165,11 +185,13 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                                                 convertedFragment.substring(pos).replace('/','.')));
                                     }
                                     // Use the original (unconverted) fragment
-                                    result.append(originalFragment);
-                                    continue;
+                                    fragmentToAppend = originalFragment;
                                 }
                             }
-                            result.append(convertedFragment);
+                            result.append(fragmentToAppend);
+                            if (fi < delimiters.size()) {
+                                result.append(delimiters.get(fi));
+                            }
                         }
                         newString = result.toString();
                         if (newString.equals(str)) {

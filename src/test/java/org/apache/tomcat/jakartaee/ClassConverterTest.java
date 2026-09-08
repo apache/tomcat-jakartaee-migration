@@ -95,4 +95,74 @@ public class ClassConverterTest {
         assertTrue(strings.contains("jakarta.servlet.CommonGatewayInterface"));
         assertTrue(strings.contains("jakarta/servlet/CommonGatewayInterface"));
     }
+
+
+    /**
+     * Multi-fragment constant (mimicking a method descriptor) where one
+     * fragment resolves in the jakarta namespace and must be converted, and
+     * the other does not and must be reverted. The ';' delimiters between
+     * fragments must be preserved either way.
+     *
+     * @throws Exception if the transformation of the test constants fails
+     */
+    @Test
+    public void testTransformMultiFragmentPartialRevertPreservesDelimiters() throws Exception {
+        Set<String> strings = transformTesterConstants();
+
+        assertFalse("Fully unconverted value should not remain",
+                strings.contains(TesterConstants.MULTI_FRAGMENT_PARTIAL));
+        assertTrue("Convertible fragment should be converted and delimiters preserved",
+                strings.contains("(Ljakarta/servlet/CommonGatewayInterface;Ljavax/servlet/DoesNotExist;)V"));
+    }
+
+
+    /**
+     * Multi-fragment constant where neither fragment resolves in the jakarta
+     * namespace, so every fragment is reverted. The reassembled value must be
+     * byte-for-byte identical to the original (delimiters included) and must
+     * not be reported as a change to the constant pool.
+     *
+     * @throws Exception if the transformation of the test constants fails
+     */
+    @Test
+    public void testTransformMultiFragmentFullRevertPreservesDelimiters() throws Exception {
+        Set<String> strings = transformTesterConstants();
+
+        assertTrue("Fully reverted value must be reconstructed exactly, delimiters included",
+                strings.contains(TesterConstants.MULTI_FRAGMENT_ALL_MISSING));
+        assertFalse("Delimiter-stripped corruption must not appear",
+                strings.contains("(Ljavax/servlet/DoesNotExistLjavax/servlet/DoesNotExist)V"));
+    }
+
+
+    private Set<String> transformTesterConstants() throws Exception {
+        byte[] original;
+
+        try (InputStream is = this.getClass().getResourceAsStream("/org/apache/tomcat/jakartaee/TesterConstants.class");
+                ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            assertNotNull(is);
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = is.read(buf)) > 0) {
+                baos.write(buf, 0, len);
+            }
+            original = baos.toByteArray();
+        }
+
+        ClassConverter converter = new ClassConverter(EESpecProfiles.TOMCAT);
+        byte[] transformed = converter.transform(this.getClass().getClassLoader(),
+                "org.apache.tomcat.jakartaee.TesterConstants", null, null, original);
+
+        Set<String> strings = new HashSet<>();
+        ClassParser parser = new ClassParser(new ByteArrayInputStream(transformed), "unknown");
+        JavaClass javaClass = parser.parse();
+        Constant[] constantPool = javaClass.getConstantPool().getConstantPool();
+        for (int i = 0; i < constantPool.length; i++) {
+            if (constantPool[i] instanceof ConstantUtf8) {
+                ConstantUtf8 c = (ConstantUtf8) constantPool[i];
+                strings.add(c.getBytes());
+            }
+        }
+        return strings;
+    }
 }
