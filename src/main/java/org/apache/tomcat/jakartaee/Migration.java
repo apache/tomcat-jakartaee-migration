@@ -508,73 +508,67 @@ public class Migration {
 
             CacheEntry cacheEntry = null;
             SourceSpool sourceSpool = null;
-            if (isNestedArchive && cache != null) {
-                // Spool source so the cache hash can be computed and, on a cache
-                // miss, the source can be re-read for conversion. Data above
-                // TEMP_FILE_THRESHOLD is spooled to a temp file to avoid
-                // unbounded memory usage.
-                sourceSpool = new SourceSpool(profile);
-                try {
+            try {
+                if (isNestedArchive && cache != null) {
+                    // Spool source so the cache hash can be computed and, on a cache
+                    // miss, the source can be re-read for conversion. Data above
+                    // TEMP_FILE_THRESHOLD is spooled to a temp file to avoid
+                    // unbounded memory usage.
+                    sourceSpool = new SourceSpool(profile);
                     IOUtils.copy(src, sourceSpool);
-                } catch (IOException e) {
-                    sourceSpool.discard();
-                    throw e;
-                }
-                String hash = sourceSpool.getHash();
+                    String hash = sourceSpool.getHash();
 
-                // Get cache entry (marks as accessed)
-                cacheEntry = cache.getCacheEntry(hash);
+                    // Get cache entry (marks as accessed)
+                    cacheEntry = cache.getCacheEntry(hash);
 
-                if (cacheEntry.exists()) {
-                    try {
+                    if (cacheEntry.exists()) {
                         // Cache hit! Copy cached result to dest and return
                         logger.log(Level.INFO, sm.getString("cache.hit", name, hash));
                         cacheEntry.copyToDestination(dest);
-                    } finally {
-                        sourceSpool.discard();
+                        // Although it is from the cache, this still counts as converting the source
+                        return true;
                     }
-                    // Although it is from the cache, this still counts as converting the source
-                    return true;
+
+                    // Cache miss - use spooled source for conversion
+                    logger.log(Level.FINE, sm.getString("cache.miss", name, hash));
+                    src = sourceSpool.toInputStream();
                 }
 
-                // Cache miss - use spooled source for conversion
-                logger.log(Level.FINE, sm.getString("cache.miss", name, hash));
-                src = sourceSpool.toInputStream();
-            }
+                // Process archive - stream directly to destination (and cache if needed)
+                try {
+                    OutputStream targetOutputStream = dest;
+                    if (cacheEntry != null) {
+                        // Tee output to both destination and cache temp file
+                        targetOutputStream =
+                                new org.apache.commons.io.output.TeeOutputStream(dest, cacheEntry.beginStore());
+                    }
 
-            // Process archive - stream directly to destination (and cache if needed)
-            try {
-                OutputStream targetOutputStream = dest;
-                if (cacheEntry != null) {
-                    // Tee output to both destination and cache temp file
-                    targetOutputStream = new org.apache.commons.io.output.TeeOutputStream(dest, cacheEntry.beginStore());
-                }
+                    if (zipInMemory) {
+                        logger.log(Level.INFO, sm.getString("migration.archive.memory", name));
+                        convertedStream = migrateArchiveInMemory(src, targetOutputStream);
+                        logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
+                    } else {
+                        logger.log(Level.INFO, sm.getString("migration.archive.stream", name));
+                        convertedStream = migrateArchiveStreaming(src, targetOutputStream);
+                        logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
+                    }
 
-                if (zipInMemory) {
-                    logger.log(Level.INFO, sm.getString("migration.archive.memory", name));
-                    convertedStream = migrateArchiveInMemory(src, targetOutputStream);
-                    logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
-                } else {
-                    logger.log(Level.INFO, sm.getString("migration.archive.stream", name));
-                    convertedStream = migrateArchiveStreaming(src, targetOutputStream);
-                    logger.log(Level.INFO, sm.getString("migration.archive.complete", name));
+                    // Commit to cache on success
+                    if (cacheEntry != null) {
+                        cacheEntry.commitStore();
+                        logger.log(Level.FINE, sm.getString("cache.store", cacheEntry.getHash(),
+                                Long.valueOf(cacheEntry.getFileSize())));
+                    }
+                } catch (Exception e) {
+                    // Rollback cache on error
+                    if (cacheEntry != null) {
+                        cacheEntry.rollbackStore();
+                    }
+                    if (e instanceof IOException) {
+                        throw (IOException) e;
+                    }
+                    throw e;
                 }
-
-                // Commit to cache on success
-                if (cacheEntry != null) {
-                    cacheEntry.commitStore();
-                    logger.log(Level.FINE, sm.getString("cache.store", cacheEntry.getHash(),
-                            Long.valueOf(cacheEntry.getFileSize())));
-                }
-            } catch (Exception e) {
-                // Rollback cache on error
-                if (cacheEntry != null) {
-                    cacheEntry.rollbackStore();
-                }
-                if (e instanceof IOException) {
-                    throw (IOException) e;
-                }
-                throw e;
             } finally {
                 if (sourceSpool != null) {
                     sourceSpool.discard();
