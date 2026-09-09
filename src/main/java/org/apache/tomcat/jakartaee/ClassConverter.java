@@ -153,47 +153,54 @@ public class ClassConverter implements Converter, ClassFileTransformer {
                         // independently so we never need to revert a conversion.
                         String[] convertedFragments = newString.split(";|<", -1);
                         String[] originalFragments = str.split(";|<", -1);
-                        // Capture the delimiters split() discarded so they can be
-                        // reinserted below; there is exactly one fewer delimiter
-                        // than fragments.
-                        List<String> delimiters = new ArrayList<>();
-                        Matcher delimiterMatcher = FRAGMENT_DELIMITER.matcher(str);
-                        while (delimiterMatcher.find()) {
-                            delimiters.add(delimiterMatcher.group());
-                        }
-                        StringBuilder result = new StringBuilder();
-                        for (int fi = 0; fi < convertedFragments.length; fi++) {
-                            String convertedFragment = convertedFragments[fi];
-                            String originalFragment = originalFragments[fi];
-                            String fragmentToAppend = convertedFragment;
-                            int pos = convertedFragment.indexOf(profile.getTarget() + "/");
-                            boolean dotMode = false;
-                            if (pos < 0) {
-                                pos = convertedFragment.indexOf(profile.getTarget() + ".");
-                                dotMode = true;
+                        // The fragment processing relies on the profile neither
+                        // matching nor introducing the fragment delimiters. If a
+                        // custom profile breaks that, the converted string is used
+                        // as-is since the per-fragment processing can not be
+                        // applied safely.
+                        if (convertedFragments.length == originalFragments.length) {
+                            // Capture the delimiters split() discarded so they can be
+                            // reinserted below; there is exactly one fewer delimiter
+                            // than fragments.
+                            List<String> delimiters = new ArrayList<>();
+                            Matcher delimiterMatcher = FRAGMENT_DELIMITER.matcher(str);
+                            while (delimiterMatcher.find()) {
+                                delimiters.add(delimiterMatcher.group());
                             }
-                            if (pos >= 0) {
-                                String resourceName = convertedFragment.substring(pos);
-                                if (dotMode) {
-                                    resourceName = resourceName.replace('.', '/');
+                            StringBuilder result = new StringBuilder();
+                            for (int fi = 0; fi < convertedFragments.length; fi++) {
+                                String convertedFragment = convertedFragments[fi];
+                                String originalFragment = originalFragments[fi];
+                                String fragmentToAppend = convertedFragment;
+                                int pos = convertedFragment.indexOf(profile.getTarget() + "/");
+                                boolean dotMode = false;
+                                if (pos < 0) {
+                                    pos = convertedFragment.indexOf(profile.getTarget() + ".");
+                                    dotMode = true;
                                 }
-                                resourceName = resourceName + ".class";
-                                if (loader.getResource(resourceName) == null) {
-                                    if (logger.isLoggable(Level.FINE)) {
-                                        logger.log(Level.FINE, sm.getString("classConverter.skipName",
-                                                profile.getSource(),
-                                                convertedFragment.substring(pos).replace('/','.')));
+                                if (pos >= 0) {
+                                    String resourceName = convertedFragment.substring(pos);
+                                    if (dotMode) {
+                                        resourceName = resourceName.replace('.', '/');
                                     }
-                                    // Use the original (unconverted) fragment
-                                    fragmentToAppend = originalFragment;
+                                    resourceName = resourceName + ".class";
+                                    if (loader.getResource(resourceName) == null) {
+                                        if (logger.isLoggable(Level.FINE)) {
+                                            logger.log(Level.FINE, sm.getString("classConverter.skipName",
+                                                    profile.getSource(),
+                                                    convertedFragment.substring(pos).replace('/','.')));
+                                        }
+                                        // Use the original (unconverted) fragment
+                                        fragmentToAppend = originalFragment;
+                                    }
+                                }
+                                result.append(fragmentToAppend);
+                                if (fi < delimiters.size()) {
+                                    result.append(delimiters.get(fi));
                                 }
                             }
-                            result.append(fragmentToAppend);
-                            if (fi < delimiters.size()) {
-                                result.append(delimiters.get(fi));
-                            }
+                            newString = result.toString();
                         }
-                        newString = result.toString();
                         if (newString.equals(str)) {
                             // All converted fragments were reverted because the
                             // target classes do not exist in the container.

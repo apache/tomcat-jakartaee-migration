@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class ClassConverterTest {
 
@@ -132,6 +133,77 @@ public class ClassConverterTest {
                 strings.contains(TesterConstants.MULTI_FRAGMENT_ALL_MISSING));
         assertFalse("Delimiter-stripped corruption must not appear",
                 strings.contains("(Ljavax/servlet/DoesNotExistLjavax/servlet/DoesNotExist)V"));
+    }
+
+
+    /**
+     * A custom profile may implement convert() in a way that introduces the
+     * characters used to split a converted value into fragments. The
+     * converter must not fail (previously an ArrayIndexOutOfBoundsException
+     * was possible) or corrupt the constant pool in that case.
+     *
+     * @throws Exception if the transformation of the test constants fails
+     */
+    @Test
+    public void testTransformCustomProfileIntroducesFragmentDelimiter() throws Exception {
+        // A profile based on SERVLET where convert() appends a '<' to every
+        // converted string, breaking the fragment count invariant
+        EESpecProfile profile = new EESpecProfile() {
+            @Override
+            public String getSource() {
+                return EESpecProfiles.SERVLET.getSource();
+            }
+
+            @Override
+            public String getTarget() {
+                return EESpecProfiles.SERVLET.getTarget();
+            }
+
+            @Override
+            public Pattern getPattern() {
+                return EESpecProfiles.SERVLET.getPattern();
+            }
+
+            @Override
+            public String convert(String name) {
+                return EESpecProfile.super.convert(name) + '<';
+            }
+        };
+
+        byte[] original;
+        try (InputStream is = this.getClass().getResourceAsStream(
+                        "/org/apache/tomcat/jakartaee/TesterConstants.class");
+                ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            assertNotNull(is);
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = is.read(buf)) > 0) {
+                baos.write(buf, 0, len);
+            }
+            original = baos.toByteArray();
+        }
+
+        ClassConverter converter = new ClassConverter(profile);
+        byte[] transformed = converter.transform(this.getClass().getClassLoader(),
+                "org.apache.tomcat.jakartaee.TesterConstants", null, null, original);
+
+        // The class file must remain valid (no lost/garbled fragments)
+        Set<String> strings = new HashSet<>();
+        ClassParser parser = new ClassParser(new ByteArrayInputStream(transformed), "unknown");
+        JavaClass javaClass = parser.parse();
+        Constant[] constantPool = javaClass.getConstantPool().getConstantPool();
+        for (int i = 0; i < constantPool.length; i++) {
+            if (constantPool[i] instanceof ConstantUtf8) {
+                ConstantUtf8 c = (ConstantUtf8) constantPool[i];
+                strings.add(c.getBytes());
+            }
+        }
+
+        // The whole value, including the profile's added delimiter, must be
+        // present. Mangled combinations of converted and original fragments
+        // must not be.
+        assertTrue(strings.contains("(Ljakarta/servlet/CommonGatewayInterface;Ljakarta/servlet/DoesNotExist;)V<"));
+        assertFalse(strings.contains("(Ljakarta/servlet/CommonGatewayInterface;Ljavax/servlet/DoesNotExist;)V"));
     }
 
 
