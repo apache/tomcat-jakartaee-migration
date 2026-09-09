@@ -24,7 +24,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.attribute.FileTime;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -333,7 +334,12 @@ public class Migration {
     }
 
     private void migrateFile(File src, File dest) throws IOException {
-        if (src.equals(dest)) {
+        // If the source and destination are the same file, the migrated
+        // content is buffered first and only written to the destination
+        // (which truncates the file) after a successful migration. The
+        // same physical file may be identified by different path strings
+        // so File.equals() is not sufficient to detect this case.
+        if (isSameFile(src, dest)) {
             if (src.length() > TEMP_FILE_THRESHOLD) {
                 // For very large files, use a temp file instead of memory
                 File tempFile = createTempFile();
@@ -389,6 +395,33 @@ public class Migration {
                 }
             }
         }
+    }
+
+
+    private boolean isSameFile(File src, File dest) throws IOException {
+        // File.equals() only compares path strings. The same physical file
+        // may be addressed by different path strings (e.g. differing use of
+        // "." or ".." components, a symlink or, on case-insensitive file
+        // systems, a different case) and File.equals() would not detect that.
+        // That must be detected, otherwise opening the destination for
+        // writing would truncate the source before it is read.
+        if (src.equals(dest)) {
+            return true;
+        }
+        // Files.isSameFile() requires both files to exist. If the
+        // destination does not exist, it cannot refer to the same file as
+        // the source.
+        if (dest.exists()) {
+            try {
+                return Files.isSameFile(src.toPath(), dest.toPath());
+            } catch (NoSuchFileException e) {
+                // The file disappeared between the check above and this call.
+                // Treat as different files and report the missing file when it
+                // is opened.
+                return false;
+            }
+        }
+        return false;
     }
 
 
@@ -833,8 +866,10 @@ public class Migration {
         SourceSpool(EESpecProfile profile) throws IOException {
             try {
                 digest = MessageDigest.getInstance("SHA-256");
-                // Include profile name in hash to differentiate between profiles
-                digest.update(profile.toString().getBytes(StandardCharsets.UTF_8));
+                // The keying data (tool version and profile definition) must
+                // be identical to the one used by MigrationCache so hashes
+                // computed here match those used for cache storage/lookup
+                digest.update(MigrationCache.getHashKeyData(profile));
             } catch (NoSuchAlgorithmException e) {
                 throw new IOException(sm.getString("cache.hashError"), e);
             }

@@ -107,6 +107,38 @@ public class MigrationTest {
         assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
     }
 
+    /**
+     * The source and destination may identify the same physical file via
+     * different path strings (relative vs absolute components, symlinks,
+     * differing case on case-insensitive file systems). The migration must
+     * treat it as an in-place migration (migrate before overwriting),
+     * otherwise the destination is truncated before the source is read and
+     * all data is lost. This is a regression test for that behaviour.
+     */
+    @Test
+    public void testMigrateSingleSourceFileInPlaceWithAlternativePath() throws Exception {
+        File sourceFile = tempFolder.newFile("HelloServlet.alt.inplace.java");
+        FileUtils.copyFile(new File("target/test-classes/HelloServlet.java"), sourceFile);
+        String original = FileUtils.readFileToString(sourceFile, StandardCharsets.UTF_8);
+        assertTrue(original.contains("import javax.servlet"));
+
+        // Build a destination path string that differs from the source path
+        // (the extra "." component) but resolves to the same physical file
+        File destinationFile = new File(new File(sourceFile.getParentFile(), "."), sourceFile.getName());
+        assertFalse("Test set-up error - paths must differ", destinationFile.equals(sourceFile));
+
+        Migration migration = new Migration();
+        migration.setSource(sourceFile);
+        migration.setDestination(destinationFile);
+        migration.execute();
+
+        // The source (same physical file as the destination) must have been
+        // migrated in place, not truncated by the destination stream
+        String migratedSource = FileUtils.readFileToString(sourceFile, StandardCharsets.UTF_8);
+        assertFalse("Imports not migrated", migratedSource.contains("import javax.servlet"));
+        assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
+    }
+
     @Test
     public void testInvalidOption() throws Exception {
         File sourceFile = new File("target/test-classes/HelloServlet.java");
