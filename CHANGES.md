@@ -11,6 +11,8 @@
 - Improve processing of relevant version numbers in manifests. (remm/markt)
 - Avoid shallow copy style issue when converting manifests attributes. (remm)
 - Make file extension check more robust. (markt)
+- Avoid shallow copy style issue when converting manifests attributes. (remm)
+- Associate cache entries with profile and tool version used. (remm)
 
 ## 1.0.12
 - Add Maven Wrapper Plugin to manage the Maven wrapper. (markt)

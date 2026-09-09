@@ -55,11 +55,15 @@ import java.util.regex.Pattern;
  * <h2>Cache Key</h2>
  * <p>Each cache entry is keyed by a SHA-256 hash computed from:</p>
  * <ul>
- *   <li>The migration profile name (e.g., "TOMCAT", "EE")</li>
+ *   <li>The version of the migration tool (a different version may convert
+ *       the same content differently)</li>
+ *   <li>The name and definition (source, target and pattern) of the
+ *       migration profile (e.g., "TOMCAT", "EE")</li>
  *   <li>The pre-conversion archive content (as bytes)</li>
  * </ul>
- * <p>This ensures that the same archive converted with different profiles
- * produces different cache entries.</p>
+ * <p>This ensures that the same archive converted with different profiles,
+ * or with a different version of the tool, produces different cache
+ * entries.</p>
  *
  * <h2>Metadata Format</h2>
  * <p>The {@code cache-metadata.txt} file tracks access times for cache pruning:</p>
@@ -316,8 +320,11 @@ public class MigrationCache {
     }
 
     /**
-     * Compute SHA-256 hash of the given bytes combined with the profile name.
-     * The profile is included to ensure different profiles produce different cache entries.
+     * Compute SHA-256 hash of the given bytes combined with the version of
+     * the tool and the profile definition.
+     * The tool version is included because a new version may convert the
+     * same content differently. The profile is included to ensure different
+     * profiles produce different cache entries.
      *
      * @param bytes the bytes to hash
      * @param profile the migration profile
@@ -327,8 +334,7 @@ public class MigrationCache {
     private String computeHash(byte[] bytes, EESpecProfile profile) throws IOException {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            // Include profile name in hash to differentiate between profiles
-            digest.update(profile.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            digest.update(getHashKeyData(profile));
             digest.update(bytes);
             byte[] hashBytes = digest.digest();
 
@@ -341,6 +347,35 @@ public class MigrationCache {
         } catch (NoSuchAlgorithmException e) {
             throw new IOException(sm.getString("cache.hashError"), e);
         }
+    }
+
+    /**
+     * Build the keying data that, together with the pre-conversion content,
+     * determines the cache hash. Cache entries outlive the process that
+     * created them so the key must include every input that determines the
+     * conversion output:
+     * <ul>
+     *   <li>the tool version - so entries created by an older version of the
+     *       tool are never used by a newer one (the two may convert the same
+     *       content differently and the version is embedded in manifest
+     *       attributes)</li>
+     *   <li>the profile definition, in addition to the profile name - so
+     *       that two EESpecProfile implementations that share a name but use
+     *       different conversion definitions never collide</li>
+     * </ul>
+     * This must be kept consistent with any other implementation that
+     * computes cache hashes.
+     *
+     * @param profile the migration profile
+     * @return the keying data as UTF-8 bytes
+     */
+    static byte[] getHashKeyData(EESpecProfile profile) {
+        // Note that Pattern.toString() returns the pattern source and is
+        // deterministic
+        String key = Info.getVersion() + '-' + profile.toString() + '-' +
+                profile.getSource() + '-' + profile.getTarget() + '-' +
+                profile.getPattern();
+        return key.getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
 
     /**

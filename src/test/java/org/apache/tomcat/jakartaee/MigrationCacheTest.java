@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.LocalDate;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -386,6 +387,82 @@ public class MigrationCacheTest {
         // Check with TOMCAT profile - should be a cache hit
         CacheEntry entry3 = cache.getCacheEntry(sourceData, EESpecProfiles.TOMCAT);
         assertTrue("Should be cache hit for same profile", entry3.exists());
+    }
+
+    /**
+     * Two profiles that report the same name (toString()) but have different
+     * conversion definitions must not share cache entries. Without the
+     * profile definition (source, target, pattern) in the hash, one would
+     * corrupt the other's results. This is a regression test for that
+     * behaviour - previously only the profile name was part of the hash.
+     *
+     * @throws Exception if the test fails
+     */
+    @Test
+    public void testCacheDifferentProfilesWithSameName() throws Exception {
+        MigrationCache cache = new MigrationCache(tempCacheDir, 30);
+
+        byte[] sourceData = "test source content".getBytes(StandardCharsets.UTF_8);
+        byte[] convertedData = "converted content".getBytes(StandardCharsets.UTF_8);
+
+        EESpecProfile profileA = new EESpecProfile() {
+            @Override
+            public String getSource() {
+                return "javax";
+            }
+
+            @Override
+            public String getTarget() {
+                return "jakarta";
+            }
+
+            @Override
+            public Pattern getPattern() {
+                return Pattern.compile("javax([/\\.](servlet))");
+            }
+
+            @Override
+            public String toString() {
+                // Deliberately the same name as the other profile
+                return "SAME-NAME";
+            }
+        };
+
+        EESpecProfile profileB = new EESpecProfile() {
+            @Override
+            public String getSource() {
+                return "jakarta";
+            }
+
+            @Override
+            public String getTarget() {
+                return "javax";
+            }
+
+            @Override
+            public Pattern getPattern() {
+                return Pattern.compile("jakarta([/\\.](servlet))");
+            }
+
+            @Override
+            public String toString() {
+                // Deliberately the same name as the other profile
+                return "SAME-NAME";
+            }
+        };
+
+        // Store with one profile
+        CacheEntry entry1 = cache.getCacheEntry(sourceData, profileA);
+        try (OutputStream os = entry1.beginStore()) {
+            os.write(convertedData);
+        }
+        entry1.commitStore();
+
+        // The same name but a different definition - must not be served
+        // from the cache
+        CacheEntry entry2 = cache.getCacheEntry(sourceData, profileB);
+        assertFalse("Profile with same name but different definition must not use another profile's cache entry",
+                entry2.exists());
     }
 
     @Test
