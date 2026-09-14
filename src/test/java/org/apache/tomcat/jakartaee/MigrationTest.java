@@ -107,7 +107,7 @@ public class MigrationTest {
         assertTrue("Migrated imports not found", migratedSource.contains("import jakarta.servlet"));
     }
 
-    /**
+    /*
      * The source and destination may identify the same physical file via
      * different path strings (relative vs absolute components, symlinks,
      * differing case on case-insensitive file systems). The migration must
