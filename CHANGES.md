@@ -11,7 +11,6 @@
 - Improve processing of relevant version numbers in manifests. (remm/markt)
 - Avoid shallow copy style issue when converting manifests attributes. (remm)
 - Make file extension check more robust. (markt)
-- Avoid shallow copy style issue when converting manifests attributes. (remm)
 - Associate cache entries with profile and tool version used. (remm)
 - Update Commons BCEL to 6.13.0. (dependabot/markt)
 - Update Eclipse OSGi to 3.24.300. (dependabot/markt)
